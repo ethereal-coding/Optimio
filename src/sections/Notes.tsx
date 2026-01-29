@@ -1,0 +1,815 @@
+import { useState, useEffect } from 'react';
+import { useAppState, actions } from '@/hooks/useAppState';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  FileText,
+  Search,
+  Plus,
+  Star,
+  Trash2,
+  Edit2,
+  X,
+  Tag,
+  Folder,
+  Grid3x3,
+  List,
+  MoreVertical
+} from 'lucide-react';
+import { PinIcon } from '@/components/icons/PinIcon';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow, format } from 'date-fns';
+import { AddNoteForm } from '@/components/AddNoteForm';
+import type { Note } from '@/types';
+
+type ViewMode = 'grid' | 'list';
+type FilterMode = 'all' | 'pinned' | 'favorites';
+
+export function Notes() {
+  const { state, dispatch } = useAppState();
+  const { notes, notesViewMode } = state;
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+
+  // Auto-open note from search
+  useEffect(() => {
+    if (state.selectedItemToOpen?.type === 'note') {
+      const note = state.notes.find(n => n.id === state.selectedItemToOpen.id);
+      if (note) {
+        setSelectedNote(note);
+        dispatch(actions.setSelectedItemToOpen(null));
+      }
+    }
+  }, [state.selectedItemToOpen, state.notes, dispatch]);
+
+  // Filter notes based on search and filter mode
+  const filteredNotes = notes.filter(note => {
+    const matchesSearch =
+      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      note.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (filterMode === 'pinned') return note.isPinned;
+    if (filterMode === 'favorites') return note.isFavorite;
+    return true;
+  });
+
+  // Separate pinned and unpinned notes
+  const pinnedNotes = filteredNotes
+    .filter(note => note.isPinned)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const unpinnedNotes = filteredNotes
+    .filter(note => !note.isPinned)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const handleAddNote = (note: Note) => {
+    dispatch(actions.addNote(note));
+    setShowAddNote(false);
+  };
+
+  const handleUpdateNote = (note: Note) => {
+    dispatch(actions.updateNote(note));
+    setEditingNote(null);
+    setSelectedNote(note);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    dispatch(actions.deleteNote(noteId));
+    setSelectedNote(null);
+  };
+
+  const handleTogglePin = (note: Note, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    dispatch(actions.updateNote({ ...note, isPinned: !note.isPinned }));
+    if (selectedNote?.id === note.id) {
+      setSelectedNote({ ...note, isPinned: !note.isPinned });
+    }
+  };
+
+  const handleToggleFavorite = (note: Note, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    dispatch(actions.updateNote({ ...note, isFavorite: !note.isFavorite }));
+    if (selectedNote?.id === note.id) {
+      setSelectedNote({ ...note, isFavorite: !note.isFavorite });
+    }
+  };
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const activeNote = notes.find(n => n.id === active.id);
+    if (!activeNote) return;
+
+    // Determine which list the note is in
+    const activeIsPinned = activeNote.isPinned;
+    const overNote = notes.find(n => n.id === over.id);
+    if (!overNote || overNote.isPinned !== activeIsPinned) return;
+
+    // Get the relevant list
+    const relevantNotes = activeIsPinned ? pinnedNotes : unpinnedNotes;
+    const oldIndex = relevantNotes.findIndex(n => n.id === active.id);
+    const newIndex = relevantNotes.findIndex(n => n.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the notes
+    const reorderedNotes = [...relevantNotes];
+    const [movedNote] = reorderedNotes.splice(oldIndex, 1);
+    reorderedNotes.splice(newIndex, 0, movedNote);
+
+    // Update order field for all notes in this list
+    const updatedNotes = reorderedNotes.map((note, index) => ({
+      ...note,
+      order: index
+    }));
+
+    // Merge with the other list and all unfiltered notes
+    const otherNotes = activeIsPinned ? unpinnedNotes : pinnedNotes;
+    const allUpdatedNotes = notes.map(note => {
+      if (note.isPinned === activeIsPinned && relevantNotes.find(n => n.id === note.id)) {
+        return updatedNotes.find(n => n.id === note.id) || note;
+      }
+      return note;
+    });
+
+    dispatch(actions.reorderNotes(allUpdatedNotes));
+  };
+
+  return (
+    <div className="flex-1 flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-background px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
+              <FileText className="h-5 w-5 text-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Notes</h1>
+              <p className="text-xs text-muted-foreground">{filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowAddNote(true)}
+            className="bg-white text-black hover:bg-white/90 h-10 px-4"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Note
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
+            />
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterMode('all')}
+              className={cn(
+                "h-8 text-xs transition-colors",
+                filterMode === 'all'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              All
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterMode('pinned')}
+              className={cn(
+                "h-8 text-xs transition-colors",
+                filterMode === 'pinned'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              <PinIcon className="h-3 w-3 mr-1" />
+              Pinned
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterMode('favorites')}
+              className={cn(
+                "h-8 text-xs transition-colors",
+                filterMode === 'favorites'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              <Star className="h-3 w-3 mr-1" />
+              Favorites
+            </Button>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => dispatch(actions.setNotesViewMode('grid'))}
+              className={cn(
+                "h-8 w-8 transition-colors",
+                notesViewMode === 'grid'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => dispatch(actions.setNotesViewMode('list'))}
+              className={cn(
+                "h-8 w-8 transition-colors",
+                notesViewMode === 'list'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Notes Grid/List */}
+      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+        {pinnedNotes.length === 0 && unpinnedNotes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[400px] text-center">
+            <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+              <FileText className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">No notes found</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {searchQuery ? 'Try adjusting your search' : 'Start by creating your first note'}
+            </p>
+            {!searchQuery && (
+              <Button
+                onClick={() => setShowAddNote(true)}
+                className="bg-white text-black hover:bg-white/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Note
+              </Button>
+            )}
+          </div>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="space-y-6">
+              {/* Pinned Notes */}
+              {pinnedNotes.length > 0 && (
+                <div>
+                  {(filterMode === 'all' || filterMode === 'pinned' || (filterMode === 'favorites' && unpinnedNotes.length > 0)) && (
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-1">
+                      {filterMode === 'favorites' ? 'Pinned Favorites' : 'Pinned'}
+                    </h3>
+                  )}
+                  <SortableContext
+                    items={pinnedNotes.map(n => n.id)}
+                    strategy={notesViewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+                  >
+                    <div className={cn(
+                      notesViewMode === 'grid'
+                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                        : 'space-y-2 max-w-3xl'
+                    )}>
+                      {pinnedNotes.map((note) => (
+                        <SortableNoteCard
+                          key={note.id}
+                          note={note}
+                          viewMode={notesViewMode}
+                          onClick={() => setSelectedNote(note)}
+                          onTogglePin={handleTogglePin}
+                          onToggleFavorite={handleToggleFavorite}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </div>
+              )}
+
+              {/* Unpinned Notes */}
+              {unpinnedNotes.length > 0 && (
+                <div>
+                  {((filterMode === 'all' && pinnedNotes.length > 0) || (filterMode === 'favorites' && pinnedNotes.length > 0)) && (
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-1">
+                      {filterMode === 'favorites' ? 'Favorites' : 'Others'}
+                    </h3>
+                  )}
+                  <SortableContext
+                    items={unpinnedNotes.map(n => n.id)}
+                    strategy={notesViewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+                  >
+                    <div className={cn(
+                      notesViewMode === 'grid'
+                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                        : 'space-y-2 max-w-3xl'
+                    )}>
+                      {unpinnedNotes.map((note) => (
+                        <SortableNoteCard
+                          key={note.id}
+                          note={note}
+                          viewMode={notesViewMode}
+                          onClick={() => setSelectedNote(note)}
+                          onTogglePin={handleTogglePin}
+                          onToggleFavorite={handleToggleFavorite}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </div>
+              )}
+            </div>
+          </DndContext>
+        )}
+      </div>
+
+      {/* Add Note Dialog */}
+      <Dialog open={showAddNote} onOpenChange={setShowAddNote}>
+        <DialogContent className="bg-card border-border max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Create New Note</DialogTitle>
+          </DialogHeader>
+          <AddNoteForm onSubmit={handleAddNote} onCancel={() => setShowAddNote(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* View/Edit Note Dialog */}
+      <Dialog open={!!selectedNote} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedNote(null);
+          setEditingNote(null);
+        }
+      }}>
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
+          {selectedNote && !editingNote && (
+            <ViewNoteContent
+              note={selectedNote}
+              onEdit={() => setEditingNote(selectedNote)}
+              onDelete={() => handleDeleteNote(selectedNote.id)}
+              onTogglePin={() => handleTogglePin(selectedNote)}
+              onToggleFavorite={() => handleToggleFavorite(selectedNote)}
+              onClose={() => {
+                setSelectedNote(null);
+                setEditingNote(null);
+              }}
+            />
+          )}
+          {editingNote && (
+            <EditNoteContent
+              note={editingNote}
+              onSave={handleUpdateNote}
+              onCancel={() => setEditingNote(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Sortable Note Card Component
+interface NoteCardProps {
+  note: Note;
+  viewMode: ViewMode;
+  onClick: () => void;
+  onTogglePin: (note: Note, e: React.MouseEvent) => void;
+  onToggleFavorite: (note: Note, e: React.MouseEvent) => void;
+}
+
+function SortableNoteCard(props: NoteCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.note.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <NoteCard {...props} />
+    </div>
+  );
+}
+
+function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
+  if (viewMode === 'list') {
+    return (
+      <Card
+        onClick={onClick}
+        className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-white/60" />}
+              <h3 className="text-base font-medium text-foreground truncate">{note.title}</h3>
+            </div>
+            {note.content && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                {note.content}
+              </p>
+            )}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{format(note.updatedAt, 'MMM d, yyyy')}</span>
+              {note.tags.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {note.tags.slice(0, 3).map((tag) => (
+                    <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                  {note.tags.length > 3 && <span>+{note.tags.length - 3}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              onClick={(e) => onTogglePin(note, e)}
+            >
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+              onClick={(e) => onToggleFavorite(note, e)}
+            >
+              <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card
+      onClick={onClick}
+      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[260px]"
+    >
+      {/* Top: Title and Date */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1 mb-1">
+            {note.title}
+          </h3>
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
+            <span>•</span>
+            <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent transition-opacity",
+              note.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}
+            onClick={(e) => onTogglePin(note, e)}
+          >
+            <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10 transition-opacity",
+              note.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}
+            onClick={(e) => onToggleFavorite(note, e)}
+          >
+            <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Preview with Fade */}
+      {note.content && (
+        <div className="relative mb-auto">
+          <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
+            {note.content}
+          </p>
+          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+        </div>
+      )}
+
+      {/* Bottom: Folder and Tags */}
+      {(note.folder || note.tags.length > 0) && (
+        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border">
+          {note.folder && (
+            <>
+              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Folder className="h-3 w-3" />
+                {note.folder}
+              </span>
+              {note.tags.length > 0 && (
+                <span className="text-muted-foreground/50">|</span>
+              )}
+            </>
+          )}
+          {note.tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {note.tags.slice(0, 2).map((tag) => (
+                <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground">
+                  {tag}
+                </span>
+              ))}
+              {note.tags.length > 2 && (
+                <span className="text-[10px] text-muted-foreground">+{note.tags.length - 2}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// View Note Content
+interface ViewNoteContentProps {
+  note: Note;
+  onEdit: () => void;
+  onDelete: () => void;
+  onTogglePin: () => void;
+  onToggleFavorite: () => void;
+  onClose: () => void;
+}
+
+function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite, onClose }: ViewNoteContentProps) {
+  return (
+    <>
+      <DialogHeader>
+        <div className="flex items-start justify-between gap-4 pt-4">
+          <DialogTitle className="text-xl text-foreground flex-1">{note.title}</DialogTitle>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              onClick={onTogglePin}
+            >
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+              onClick={onToggleFavorite}
+            >
+              <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              onClick={onEdit}
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="border-t border-border -mt-4"></div>
+
+      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
+            <span>•</span>
+            <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+          </div>
+
+          {note.folder && (
+            <div className="flex items-center gap-2 text-sm">
+              <Folder className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{note.folder}</span>
+            </div>
+          )}
+
+          {note.tags.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              {note.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2.5 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="prose prose-invert max-w-none pt-4">
+            <p className="text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">
+              {note.content}
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Edit Note Content
+interface EditNoteContentProps {
+  note: Note;
+  onSave: (note: Note) => void;
+  onCancel: () => void;
+}
+
+function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
+  const [title, setTitle] = useState(note.title);
+  const [content, setContent] = useState(note.content);
+  const [folder, setFolder] = useState(note.folder || '');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>(note.tags);
+
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      ...note,
+      title: title.trim(),
+      content: content.trim(),
+      tags,
+      folder: folder.trim() || undefined,
+      updatedAt: new Date(),
+    });
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="text-foreground">Edit Note</DialogTitle>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+            className="bg-background border-border text-foreground text-lg font-medium placeholder:text-muted-foreground focus:border-border focus:ring-0"
+          />
+        </div>
+
+        <div>
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your note..."
+            rows={10}
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 resize-none"
+          />
+        </div>
+
+        <div>
+          <Input
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+            placeholder="Folder (optional)"
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+              placeholder="Add tag and press Enter"
+              className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0"
+            />
+            <Button type="button" variant="outline" onClick={addTag} className="border-border text-muted-foreground hover:text-foreground hover:bg-accent">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-red-400 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-accent">
+            Cancel
+          </Button>
+          <Button type="submit" disabled={!title.trim()} className="bg-white text-black hover:bg-white/90">
+            Save Changes
+          </Button>
+        </div>
+      </form>
+    </>
+  );
+}
