@@ -7,27 +7,56 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { initializeDatabase, db } from '@/lib/db';
+import { loadTodosFromDB } from '@/lib/todo-sync';
+import { loadGoalsFromDB } from '@/lib/goal-sync';
+import { loadNotesFromDB } from '@/lib/note-sync';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { getCurrentUser, isAuthenticated } from '@/lib/google-auth';
+import { AuthWall } from '@/components/AuthWall';
 import { syncCalendarList } from '@/lib/calendar-storage';
-import { syncAllEvents } from '@/lib/event-sync';
+import { useCalendarSync } from '@/hooks/useCalendarSync';
+import { logger } from '@/lib/logger';
+import '@/lib/debug-helpers'; // Loads debug helpers into window.debugCRM
 
+const log = logger('App');
+
+/**
+ * Main application content component
+ * Handles data hydration, sync, and renders the dashboard
+ */
 function AppContent() {
   const { state, dispatch } = useAppState();
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Initialize calendar sync (automatic background sync every 10s)
+  useCalendarSync({
+    interval: 10000,
+    enabled: true,
+    maxRetries: 3,
+  });
 
   useKeyboardShortcuts({
     onSearch: () => setSearchOpen(true),
     onSettings: () => dispatch(actions.setView('settings'))
   });
 
-  // Hydrate events from IndexedDB on mount
+  // Hydrate events and todos from IndexedDB on mount
   useEffect(() => {
     let isMounted = true;
 
     async function hydrateFromDatabase() {
       try {
-        debug.log('💧 Hydrating events from IndexedDB...');
+        log.info('Hydrating data from IndexedDB');
+        debug.log('💧 Hydrating data from IndexedDB...');
+
+        // Load enabled calendar IDs first
+        const enabledCalendars = await db.calendars
+          .where('enabled')
+          .equals(1)
+          .toArray();
+        const enabledCalendarIds = new Set(enabledCalendars.map(c => c.id));
+        
+        debug.log(`📅 ${enabledCalendarIds.size} enabled calendars`);
 
         // Load events from IndexedDB
         const storedEvents = await db.events.toArray();
@@ -37,28 +66,104 @@ function AppContent() {
         if (storedEvents.length > 0) {
           debug.log(`📥 Loaded ${storedEvents.length} events from cache`);
 
-          // Group events by calendar
-          const eventsByCalendar = new Map<string, any[]>();
-          storedEvents.forEach(event => {
-            const calId = event.calendarId || '1';
-            if (!eventsByCalendar.has(calId)) {
-              eventsByCalendar.set(calId, []);
-            }
-            eventsByCalendar.get(calId)!.push(event);
-          });
+          // Convert date strings back to Date objects
+          // Filter out events from disabled calendars
+          const hydratedEvents = storedEvents
+            .filter(event => !event.sourceCalendarId || enabledCalendarIds.has(event.sourceCalendarId))
+            .map(event => ({
+              ...event,
+              startTime: event.startTime instanceof Date ? event.startTime : new Date(event.startTime),
+              endTime: event.endTime instanceof Date ? event.endTime : new Date(event.endTime)
+            }));
 
-          // Dispatch events to state
-          eventsByCalendar.forEach((events, calendarId) => {
-            events.forEach(event => {
-              dispatch(actions.addEvent(calendarId, event));
-            });
-          });
+          const skippedCount = storedEvents.length - hydratedEvents.length;
+          if (skippedCount > 0) {
+            debug.log(`⏭️ Skipped ${skippedCount} events from disabled calendars`);
+          }
 
-          debug.log('✅ Hydration complete');
+          // Replace all events at once (properly handles deletions)
+          dispatch(actions.setEvents('1', hydratedEvents));
+          debug.log(`✅ Hydrated ${hydratedEvents.length} events into state`);
         } else {
           debug.log('📭 No cached events found');
         }
+
+        // Load todos from IndexedDB
+        const storedTodos = await db.todos.toArray();
+        
+        if (!isMounted) return;
+
+        if (storedTodos.length > 0) {
+          debug.log(`📥 Loaded ${storedTodos.length} todos from cache`);
+
+          for (const todo of storedTodos) {
+            // Ensure dates are Date objects and provide defaults for missing fields
+            const hydratedTodo = {
+              ...todo,
+              dueDate: todo.dueDate ? (todo.dueDate instanceof Date ? todo.dueDate : new Date(todo.dueDate)) : undefined,
+              completedAt: todo.completedAt ? (todo.completedAt instanceof Date ? todo.completedAt : new Date(todo.completedAt)) : undefined,
+              createdAt: todo.createdAt instanceof Date ? todo.createdAt : new Date(todo.createdAt),
+              updatedAt: todo.updatedAt instanceof Date ? todo.updatedAt : new Date(todo.updatedAt),
+              priority: todo.priority || 'medium',
+              completed: todo.completed || false
+            };
+            dispatch(actions.addTodo(hydratedTodo));
+          }
+        } else {
+          debug.log('📭 No cached todos found');
+        }
+
+        // Load goals from IndexedDB
+        const storedGoals = await db.goals.toArray();
+        
+        if (!isMounted) return;
+
+        if (storedGoals.length > 0) {
+          debug.log(`📥 Loaded ${storedGoals.length} goals from cache`);
+
+          for (const goal of storedGoals) {
+            // Ensure dates are Date objects and provide defaults for missing fields
+            const hydratedGoal = {
+              ...goal,
+              deadline: goal.deadline ? (goal.deadline instanceof Date ? goal.deadline : new Date(goal.deadline)) : undefined,
+              createdAt: goal.createdAt instanceof Date ? goal.createdAt : new Date(goal.createdAt),
+              milestones: goal.milestones || [],
+              currentValue: goal.currentValue || 0
+            };
+            dispatch(actions.addGoal(hydratedGoal));
+          }
+        } else {
+          debug.log('📭 No cached goals found');
+        }
+
+        // Load notes from IndexedDB
+        const storedNotes = await db.notes.toArray();
+        
+        if (!isMounted) return;
+
+        if (storedNotes.length > 0) {
+          debug.log(`📥 Loaded ${storedNotes.length} notes from cache`);
+
+          for (const note of storedNotes) {
+            // Ensure dates are Date objects and provide defaults for missing fields
+            const hydratedNote = {
+              ...note,
+              createdAt: note.createdAt instanceof Date ? note.createdAt : new Date(note.createdAt),
+              updatedAt: note.updatedAt instanceof Date ? note.updatedAt : new Date(note.updatedAt),
+              tags: note.tags || [],
+              isPinned: note.isPinned || false,
+              isFavorite: note.isFavorite || false
+            };
+            dispatch(actions.addNote(hydratedNote));
+          }
+        } else {
+          debug.log('📭 No cached notes found');
+        }
+
+        log.info('Hydration complete');
+        debug.log('✅ Hydration complete');
       } catch (error) {
+        log.error('Failed to hydrate from IndexedDB', error instanceof Error ? error : new Error(String(error)));
         console.error('Failed to hydrate from IndexedDB:', error);
       }
     }
@@ -70,20 +175,22 @@ function AppContent() {
     };
   }, [dispatch]);
 
-  // Setup Google Calendar sync when user is authenticated
+  // Setup Google Calendar user info when authenticated
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
     let isMounted = true;
 
-    async function initializeSync() {
+    async function initializeUser() {
+      log.info('Checking authentication status');
       debug.log('🔍 Checking authentication status...');
+      
       const authenticated = await isAuthenticated();
       debug.log('✅ Authenticated:', authenticated);
 
       if (!isMounted) return;
 
       if (authenticated) {
-        debug.log('🔐 User authenticated, setting up Google Calendar sync...');
+        log.info('User authenticated, loading user info');
+        debug.log('🔐 User authenticated, setting up Google Calendar...');
 
         // Load user info if not already in state
         const googleUser = await getCurrentUser();
@@ -92,7 +199,7 @@ function AppContent() {
         if (!isMounted) return;
 
         if (googleUser && !state.user) {
-          // Only set user if not already set
+          log.info('Setting user in app state', { email: googleUser.email });
           debug.log('📝 Setting user in app state...');
           dispatch(actions.setUser({
             id: googleUser.id,
@@ -108,75 +215,61 @@ function AppContent() {
           }));
         }
 
-        // Initial calendar and event sync
-        debug.log('🔄 Starting initial sync...');
-        (async () => {
-          try {
-            await syncCalendarList();
-            await syncAllEvents();
-            debug.log('✅ Initial sync complete');
-
-            // Reload events from database
-            const events = await db.events.toArray();
-            events.forEach(event => {
-              dispatch(actions.addEvent('1', event));
-            });
-          } catch (error) {
-            console.error('Failed to sync:', error);
-          }
-        })();
-
-        // Setup periodic sync (syncs every 5 minutes)
-        const intervalId = setInterval(async () => {
-          debug.log('🔄 Periodic sync...');
-          try {
-            await syncAllEvents();
-          } catch (error) {
-            console.error('Periodic sync failed:', error);
-          }
-        }, 5 * 60 * 1000);
-
-        cleanup = () => clearInterval(intervalId);
+        // Initial calendar list sync
+        debug.log('🔄 Starting initial calendar sync...');
+        try {
+          await syncCalendarList();
+          log.info('Initial calendar sync complete');
+          debug.log('✅ Initial calendar sync complete');
+        } catch (error) {
+          log.error('Initial calendar sync failed', error instanceof Error ? error : new Error(String(error)));
+          console.error('Failed to sync calendar list:', error);
+        }
       } else {
+        log.info('User not authenticated');
         debug.log('❌ Not authenticated, skipping sync setup');
       }
     }
 
-    initializeSync();
+    initializeUser();
 
-    // Cleanup function to stop syncing when component unmounts
     return () => {
       isMounted = false;
-      if (cleanup) cleanup();
     };
-  }, []); // Only run once on mount
+  }, [dispatch, state.user]);
 
   return (
-    <>
+    <AuthWall>
       <Dashboard onSearchOpen={() => setSearchOpen(true)} />
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-    </>
+    </AuthWall>
   );
 }
 
+/**
+ * Root App component
+ * Handles database initialization and provides error boundary
+ */
 function App() {
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
-  const [showError, setShowError] = useState(true);
 
   useEffect(() => {
     async function setupDatabase() {
       try {
+        log.info('Initializing Optimio');
         debug.log('🚀 Initializing Optimio...');
 
         // Initialize IndexedDB
         await initializeDatabase();
 
+        log.info('Database initialized');
         debug.log('✅ Database initialized');
 
         setDbReady(true);
         debug.log('✅ Optimio ready!');
       } catch (error) {
+        log.error('Failed to initialize database', error instanceof Error ? error : new Error(String(error)));
         console.error('❌ Failed to initialize database:', error);
         // Don't block the UI - just skip database features for now
         setDbError(error instanceof Error ? error.message : 'Unknown error');
@@ -187,13 +280,12 @@ function App() {
     setupDatabase();
   }, []);
 
-  // Loading state
   if (!dbReady) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
-          <p className="mt-4 text-muted-foreground">Loading Optimio...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading Optimio...</p>
         </div>
       </div>
     );
@@ -201,28 +293,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <ThemeProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            {dbError && showError && (
-              <div className="fixed top-4 right-4 bg-red-500/10 border border-red-500/20 rounded-lg p-4 max-w-md z-50 flex items-start gap-3">
-                <p className="text-red-400 text-sm flex-1">
-                  Database initialization failed. Some features may not work.
-                </p>
-                <button
-                  onClick={() => setShowError(false)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-            <AppContent />
-            <Toaster position="bottom-right" />
-          </div>
-        </ThemeProvider>
-      </AppProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="optimio-theme">
+        <AppProvider>
+          <AppContent />
+          <Toaster />
+        </AppProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

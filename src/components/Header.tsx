@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { initializeGoogleAuth, signOut } from '@/lib/google-auth';
+import { SyncIndicator } from './SyncIndicator';
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -138,6 +139,9 @@ export function Header({ onSearchOpen }: HeaderProps) {
           </button>
         </div>
 
+        {/* Sync Status */}
+        <SyncIndicator />
+
         {/* Separator */}
         <div className="h-6 w-px bg-border" />
 
@@ -157,12 +161,12 @@ export function Header({ onSearchOpen }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex flex-col items-end h-auto py-1 px-2 hover:bg-accent"
+                className="flex flex-col items-end h-auto py-0.5 px-2 hover:bg-accent leading-none gap-0.5"
               >
-                <span className="text-sm text-foreground font-medium">
+                <span className="text-sm text-foreground font-medium leading-tight">
                   Hello, {user.name.split(' ')[0]}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground leading-tight">
                   {format(currentTime, 'h:mm a')}
                 </span>
               </Button>
