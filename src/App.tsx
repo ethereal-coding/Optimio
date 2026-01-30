@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { initializeDatabase, migrateFromLocalStorage, checkDatabaseHealth } from '@/lib/db';
+import { initializeDatabase, migrateFromLocalStorage, checkDatabaseHealth, db } from '@/lib/db';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { setupPeriodicSync } from '@/lib/calendar-sync';
 import { getCurrentUser, isAuthenticated } from '@/lib/google-auth';
@@ -19,36 +19,98 @@ function AppContent() {
     onSettings: () => dispatch(actions.setView('settings'))
   });
 
+  // Hydrate events from IndexedDB on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function hydrateFromDatabase() {
+      try {
+        console.log('💧 Hydrating events from IndexedDB...');
+
+        // Load events from IndexedDB
+        const storedEvents = await db.events.toArray();
+
+        if (!isMounted) return;
+
+        if (storedEvents.length > 0) {
+          console.log(`📥 Loaded ${storedEvents.length} events from cache`);
+
+          // Group events by calendar
+          const eventsByCalendar = new Map<string, any[]>();
+          storedEvents.forEach(event => {
+            const calId = event.calendarId || '1';
+            if (!eventsByCalendar.has(calId)) {
+              eventsByCalendar.set(calId, []);
+            }
+            eventsByCalendar.get(calId)!.push(event);
+          });
+
+          // Dispatch events to state
+          eventsByCalendar.forEach((events, calendarId) => {
+            events.forEach(event => {
+              dispatch(actions.addEvent(calendarId, event));
+            });
+          });
+
+          console.log('✅ Hydration complete');
+        } else {
+          console.log('📭 No cached events found');
+        }
+      } catch (error) {
+        console.error('Failed to hydrate from IndexedDB:', error);
+      }
+    }
+
+    hydrateFromDatabase();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch]);
+
   // Setup Google Calendar sync when user is authenticated
   useEffect(() => {
     let cleanup: (() => void) | undefined;
+    let isMounted = true;
 
     async function initializeSync() {
+      console.log('🔍 Checking authentication status...');
       const authenticated = await isAuthenticated();
+      console.log('✅ Authenticated:', authenticated);
+
+      if (!isMounted) return;
+
       if (authenticated) {
         console.log('🔐 User authenticated, setting up Google Calendar sync...');
 
         // Load user info if not already in state
-        if (!state.user) {
-          const googleUser = await getCurrentUser();
-          if (googleUser) {
-            dispatch(actions.setUser({
-              id: googleUser.id,
-              name: googleUser.name,
-              email: googleUser.email,
-              picture: googleUser.picture,
-              avatar: googleUser.picture,
-              preferences: {
-                theme: 'dark',
-                notifications: true,
-                startOfWeek: 0
-              }
-            }));
-          }
+        const googleUser = await getCurrentUser();
+        console.log('👤 Google User:', googleUser);
+
+        if (!isMounted) return;
+
+        if (googleUser && !state.user) {
+          // Only set user if not already set
+          console.log('📝 Setting user in app state...');
+          dispatch(actions.setUser({
+            id: googleUser.id,
+            name: googleUser.name,
+            email: googleUser.email,
+            picture: googleUser.picture,
+            avatar: googleUser.picture,
+            preferences: {
+              theme: 'dark',
+              notifications: true,
+              startOfWeek: 0
+            }
+          }));
         }
 
         // Setup periodic sync (syncs every 5 minutes)
-        cleanup = setupPeriodicSync('primary', dispatch, actions, 5);
+        console.log('🔄 Setting up periodic sync...');
+        cleanup = setupPeriodicSync('1', dispatch, actions, 5); // Use calendar ID '1' to match app state
+      } else {
+        console.log('❌ Not authenticated, skipping sync setup');
       }
     }
 
@@ -56,6 +118,7 @@ function AppContent() {
 
     // Cleanup function to stop syncing when component unmounts
     return () => {
+      isMounted = false;
       if (cleanup) cleanup();
     };
   }, []); // Only run once on mount

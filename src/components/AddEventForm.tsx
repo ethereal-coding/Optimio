@@ -12,6 +12,7 @@ import {
 import { CalendarIcon, Clock, MapPin, X } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 interface AddEventFormProps {
   onSubmit: (event: any) => void;
@@ -20,14 +21,11 @@ interface AddEventFormProps {
   initialEvent?: any;
 }
 
-const colors = [
-  { value: 'rgb(139, 92, 246)', label: 'Purple' },
-  { value: 'rgb(59, 130, 246)', label: 'Blue' },
-  { value: 'rgb(34, 197, 94)', label: 'Green' },
-  { value: 'rgb(245, 158, 11)', label: 'Orange' },
-  { value: 'rgb(239, 68, 68)', label: 'Red' },
-  { value: 'rgb(236, 72, 153)', label: 'Pink' },
-];
+// Use Google Calendar colors for consistency
+const colors = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({
+  value: hex,
+  label: name,
+}));
 
 export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: AddEventFormProps) {
   const getInitialDate = () => {
@@ -49,8 +47,11 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
   const [date, setDate] = useState<Date>(getInitialDate());
   const [startTime, setStartTime] = useState(getInitialTime(initialEvent?.startTime, '09:00'));
   const [endTime, setEndTime] = useState(getInitialTime(initialEvent?.endTime, '10:00'));
-  const [color, setColor] = useState(initialEvent?.color || 'rgb(139, 92, 246)');
+  const [color, setColor] = useState(initialEvent?.color || '#5484ed'); // Default to Blueberry
   const [isAllDay, setIsAllDay] = useState(initialEvent?.isAllDay || false);
+  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'>(
+    initialEvent?.recurrence || 'none'
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +77,7 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
       endTime: endDateTime,
       color,
       isAllDay,
-      recurrence: initialEvent?.recurrence || 'none'
+      recurrence
     });
   };
 
@@ -203,6 +204,22 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
         <Label htmlFor="allDay" className="text-sm text-muted-foreground cursor-pointer">
           All day event
         </Label>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="recurrence" className="text-muted-foreground">Repeat</Label>
+        <select
+          id="recurrence"
+          value={recurrence}
+          onChange={(e) => setRecurrence(e.target.value as any)}
+          className="w-full h-10 px-3 bg-input border border-border text-foreground rounded-md focus:border-border focus:ring-0"
+        >
+          <option value="none">Does not repeat</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

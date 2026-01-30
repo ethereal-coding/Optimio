@@ -18,6 +18,7 @@ import {
   MapPin,
   Trash2,
   Edit,
+  Repeat,
 } from 'lucide-react';
 import { Button as UIButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,11 @@ export function Calendar() {
   const { state, dispatch } = useAppState();
   const { calendars, calendarView } = state;
   const events = calendars[0]?.events || [];
+
+  // Debug: Log event count
+  console.log('📊 Calendar component - Total events in state:', events.length);
+  console.log('📊 Calendar ID:', calendars[0]?.id);
+  console.log('📊 First few events:', events.slice(0, 3));
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
@@ -733,6 +739,13 @@ function ViewEventContent({ event, onEdit, onDelete, onClose }: ViewEventContent
           <div className="flex items-center gap-2 text-sm">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-foreground/70">{event.location}</span>
+          </div>
+        )}
+
+        {event.recurrence && event.recurrence !== 'none' && (
+          <div className="flex items-center gap-2 text-sm">
+            <Repeat className="h-4 w-4 text-muted-foreground" />
+            <span className="text-foreground/70 capitalize">{event.recurrence}</span>
           </div>
         )}
 

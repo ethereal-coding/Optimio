@@ -8,7 +8,7 @@ export interface CalendarEvent {
   location?: string;
   color?: string;
   isAllDay?: boolean;
-  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
   reminder?: number; // minutes before
   calendarId?: string;
   googleEventId?: string; // Google Calendar event ID

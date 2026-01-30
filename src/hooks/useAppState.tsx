@@ -5,237 +5,22 @@ import type {
   UserPreferences, AppState 
 } from '@/types';
 
-// Initial mock data
-const mockUser: User = {
-  id: '1',
-  name: 'Alex Johnson',
-  email: 'alex@example.com',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-  preferences: {
-    theme: 'dark',
-    weekStartsOn: 1,
-    defaultCalendarView: 'week',
-    timeFormat: '12h',
-    dateFormat: 'MMM dd, yyyy'
-  }
-};
-
-const mockCalendars: Calendar[] = [
-  {
-    id: '1',
-    name: 'Personal',
-    color: '#8b5cf6',
-    isSynced: true,
-    provider: 'google',
-    events: [
-      {
-        id: 'e1',
-        title: 'Team Standup',
-        description: 'Daily team sync meeting',
-        startTime: new Date(new Date().setHours(9, 0, 0, 0)),
-        endTime: new Date(new Date().setHours(9, 30, 0, 0)),
-        location: 'Zoom',
-        color: '#3b82f6',
-        isAllDay: false
-      },
-      {
-        id: 'e2',
-        title: 'Lunch with Sarah',
-        description: 'Catch up over lunch',
-        startTime: new Date(new Date().setHours(12, 0, 0, 0)),
-        endTime: new Date(new Date().setHours(13, 0, 0, 0)),
-        location: 'Downtown Cafe',
-        color: '#22c55e',
-        isAllDay: false
-      },
-      {
-        id: 'e3',
-        title: 'Project Review',
-        description: 'Q1 project review meeting',
-        startTime: new Date(new Date().setHours(15, 0, 0, 0)),
-        endTime: new Date(new Date().setHours(16, 30, 0, 0)),
-        location: 'Conference Room A',
-        color: '#f59e0b',
-        isAllDay: false
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Work',
-    color: '#3b82f6',
-    isSynced: true,
-    provider: 'outlook',
-    events: []
-  }
-];
-
-const mockTodos: Todo[] = [
-  {
-    id: 't1',
-    title: 'Review quarterly report',
-    description: 'Go through the Q1 financial report',
-    completed: false,
-    priority: 'high',
-    dueDate: new Date(),
-    category: 'Work',
-    createdAt: new Date(Date.now() - 86400000),
-    subtasks: [
-      { id: 'st1', title: 'Gather data', completed: true },
-      { id: 'st2', title: 'Analyze metrics', completed: false }
-    ]
-  },
-  {
-    id: 't2',
-    title: 'Call dentist for appointment',
-    completed: false,
-    priority: 'medium',
-    dueDate: new Date(Date.now() + 86400000),
-    category: 'Personal',
-    createdAt: new Date(Date.now() - 172800000)
-  },
-  {
-    id: 't3',
-    title: 'Buy groceries',
-    completed: true,
-    priority: 'low',
-    dueDate: new Date(),
-    category: 'Personal',
-    createdAt: new Date(Date.now() - 259200000),
-    completedAt: new Date()
-  },
-  {
-    id: 't4',
-    title: 'Prepare presentation slides',
-    description: 'Create slides for Friday\'s client meeting',
-    completed: false,
-    priority: 'high',
-    dueDate: new Date(Date.now() + 172800000),
-    category: 'Work',
-    createdAt: new Date(Date.now() - 43200000)
-  },
-  {
-    id: 't5',
-    title: 'Exercise - 30 min run',
-    completed: false,
-    priority: 'medium',
-    dueDate: new Date(),
-    category: 'Health',
-    createdAt: new Date(Date.now() - 86400000)
-  }
-];
-
-const mockGoals: Goal[] = [
-  {
-    id: 'g1',
-    title: 'Write a book',
-    description: 'Complete my first novel',
-    targetValue: 80000,
-    currentValue: 51200,
-    unit: 'words',
-    deadline: new Date('2025-06-30'),
-    color: '#8b5cf6',
-    milestones: [
-      { id: 'm1', title: 'Outline complete', targetValue: 0, isCompleted: true, completedAt: new Date('2025-01-15') },
-      { id: 'm2', title: 'First draft 25%', targetValue: 20000, isCompleted: true, completedAt: new Date('2025-02-01') },
-      { id: 'm3', title: 'First draft 50%', targetValue: 40000, isCompleted: true, completedAt: new Date('2025-02-20') },
-      { id: 'm4', title: 'First draft 75%', targetValue: 60000, isCompleted: false },
-      { id: 'm5', title: 'First draft complete', targetValue: 80000, isCompleted: false }
-    ],
-    createdAt: new Date('2025-01-01'),
-    category: 'Creative'
-  },
-  {
-    id: 'g2',
-    title: 'Learn Spanish',
-    description: 'Reach conversational fluency',
-    targetValue: 100,
-    currentValue: 45,
-    unit: 'lessons',
-    deadline: new Date('2025-12-31'),
-    color: '#ec4899',
-    milestones: [
-      { id: 'm6', title: 'Complete basics', targetValue: 20, isCompleted: true },
-      { id: 'm7', title: 'Intermediate level', targetValue: 50, isCompleted: false },
-      { id: 'm8', title: 'Advanced level', targetValue: 80, isCompleted: false },
-      { id: 'm9', title: 'Fluency achieved', targetValue: 100, isCompleted: false }
-    ],
-    createdAt: new Date('2025-01-01'),
-    category: 'Learning'
-  },
-  {
-    id: 'g3',
-    title: 'Save for vacation',
-    description: 'Save money for summer trip to Japan',
-    targetValue: 5000,
-    currentValue: 3250,
-    unit: 'dollars',
-    deadline: new Date('2025-07-01'),
-    color: '#22c55e',
-    milestones: [
-      { id: 'm10', title: 'Flight fund', targetValue: 1500, isCompleted: true },
-      { id: 'm11', title: 'Hotel fund', targetValue: 3000, isCompleted: true },
-      { id: 'm12', title: 'Spending money', targetValue: 4500, isCompleted: false },
-      { id: 'm13', title: 'Goal reached', targetValue: 5000, isCompleted: false }
-    ],
-    createdAt: new Date('2025-01-01'),
-    category: 'Finance'
-  }
-];
-
-const mockNotes: Note[] = [
-  {
-    id: 'n1',
-    title: 'Book Ideas',
-    content: 'Main character should be a detective with a mysterious past. Setting: rainy Seattle. Plot twist: the villain is actually the protagonist\'s long-lost sibling.\n\nKey themes:\n- Redemption\n- Family secrets\n- Justice vs. revenge',
-    tags: ['writing', 'creative', 'mystery'],
-    createdAt: new Date(Date.now() - 604800000),
-    updatedAt: new Date(Date.now() - 86400000),
-    folder: 'Writing',
-    isPinned: true,
-    isFavorite: true
-  },
-  {
-    id: 'n2',
-    title: 'Meeting Notes - Product Review',
-    content: 'Attendees: John, Sarah, Mike\n\nKey points:\n- Q1 metrics exceeded expectations by 15%\n- New feature rollout scheduled for next month\n- Need to address customer feedback about UI\n\nAction items:\n1. Update roadmap document\n2. Schedule user testing sessions\n3. Prepare marketing materials',
-    tags: ['work', 'meeting', 'product'],
-    createdAt: new Date(Date.now() - 172800000),
-    updatedAt: new Date(Date.now() - 172800000),
-    folder: 'Work',
-    isPinned: false,
-    isFavorite: false
-  },
-  {
-    id: 'n3',
-    title: 'Spanish Vocabulary',
-    content: 'Common phrases:\n- Buenos días - Good morning\n- ¿Cómo estás? - How are you?\n- Muchas gracias - Thank you very much\n- Hasta luego - See you later\n\nVerbs to practice:\n- Ser (to be)\n- Estar (to be)\n- Tener (to have)\n- Hacer (to do/make)',
-    tags: ['spanish', 'learning', 'language'],
-    createdAt: new Date(Date.now() - 259200000),
-    updatedAt: new Date(Date.now() - 43200000),
-    folder: 'Learning',
-    isPinned: false,
-    isFavorite: true
-  },
-  {
-    id: 'n4',
-    title: 'Grocery List',
-    content: '- Milk (2%)\n- Eggs (organic)\n- Bread (sourdough)\n- Avocados (3)\n- Chicken breast\n- Spinach\n- Greek yogurt\n- Coffee beans\n- Olive oil',
-    tags: ['personal', 'shopping'],
-    createdAt: new Date(Date.now() - 86400000),
-    updatedAt: new Date(Date.now() - 3600000),
-    folder: 'Personal',
-    isPinned: false,
-    isFavorite: false
-  }
-];
-
+// Initial state with no sample data
 const initialState: AppState = {
   user: null,
-  calendars: mockCalendars,
-  todos: mockTodos,
-  goals: mockGoals,
-  notes: mockNotes,
+  calendars: [
+    {
+      id: '1',
+      name: 'Personal',
+      color: '#8b5cf6',
+      isSynced: false,
+      provider: 'local',
+      events: []
+    }
+  ],
+  todos: [],
+  goals: [],
+  notes: [],
   selectedDate: new Date(),
   selectedItemToOpen: null,
   view: 'dashboard',
@@ -294,7 +79,15 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         calendars: state.calendars.map(cal =>
           cal.id === action.payload.calendarId
-            ? { ...cal, events: [...cal.events, action.payload.event] }
+            ? {
+                ...cal,
+                events: cal.events.some(e =>
+                  e.id === action.payload.event.id ||
+                  (e.googleEventId && e.googleEventId === action.payload.event.googleEventId)
+                )
+                  ? cal.events // Don't add duplicate
+                  : [...cal.events, action.payload.event]
+              }
             : cal
         )
       };

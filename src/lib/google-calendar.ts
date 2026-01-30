@@ -8,6 +8,30 @@ import type { Event } from '@/types';
 
 const CALENDAR_API_BASE = 'https://www.googleapis.com/calendar/v3';
 
+// Google Calendar color palette
+// Map of Google Calendar colorId to hex colors
+export const GOOGLE_CALENDAR_COLORS: Record<string, { hex: string; name: string }> = {
+  '1': { hex: '#a4bdfc', name: 'Lavender' },
+  '2': { hex: '#7ae7bf', name: 'Sage' },
+  '3': { hex: '#dbadff', name: 'Grape' },
+  '4': { hex: '#ff887c', name: 'Flamingo' },
+  '5': { hex: '#fbd75b', name: 'Banana' },
+  '6': { hex: '#ffb878', name: 'Tangerine' },
+  '7': { hex: '#46d6db', name: 'Peacock' },
+  '8': { hex: '#e1e1e1', name: 'Graphite' },
+  '9': { hex: '#5484ed', name: 'Blueberry' },
+  '10': { hex: '#51b749', name: 'Basil' },
+  '11': { hex: '#dc2127', name: 'Tomato' },
+};
+
+// Reverse mapping: hex to colorId
+export const hexToGoogleColorId = (hex: string): string | undefined => {
+  const entry = Object.entries(GOOGLE_CALENDAR_COLORS).find(([_, color]) =>
+    color.hex.toLowerCase() === hex.toLowerCase()
+  );
+  return entry?.[0];
+};
+
 export interface GoogleCalendarEvent {
   id: string;
   summary: string;
@@ -25,6 +49,9 @@ export interface GoogleCalendarEvent {
   };
   colorId?: string;
   status?: string;
+  recurrence?: string[]; // RRULE array for recurring events
+  recurringEventId?: string; // ID of the master recurring event (for instances)
+  etag?: string; // Version identifier for conflict detection
 }
 
 /**
@@ -67,34 +94,60 @@ export async function fetchGoogleCalendarEvents(
 }
 
 /**
+ * Parse Google Calendar RRULE to app recurrence format
+ */
+function parseRecurrenceRule(rrules?: string[]): 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' {
+  if (!rrules || rrules.length === 0) return 'none';
+
+  // RRULE format: "RRULE:FREQ=DAILY;COUNT=5" or similar
+  const rrule = rrules[0];
+
+  if (rrule.includes('FREQ=DAILY')) return 'daily';
+  if (rrule.includes('FREQ=WEEKLY')) return 'weekly';
+  if (rrule.includes('FREQ=MONTHLY')) return 'monthly';
+  if (rrule.includes('FREQ=YEARLY')) return 'yearly';
+
+  return 'none';
+}
+
+/**
  * Convert Google Calendar event to app Event format
  */
 export function convertGoogleEventToAppEvent(googleEvent: GoogleCalendarEvent, calendarId: string): Event {
   // Parse start and end times
+  // For all-day events (date without time), create proper day boundaries
+  const isAllDayEvent = !googleEvent.start.dateTime;
+
   const startTime = googleEvent.start.dateTime
     ? new Date(googleEvent.start.dateTime)
-    : new Date(googleEvent.start.date!);
+    : (() => {
+        const [year, month, day] = googleEvent.start.date!.split('-').map(Number);
+        return new Date(year, month - 1, day, 0, 0, 0, 0); // Start of day
+      })();
 
   const endTime = googleEvent.end.dateTime
     ? new Date(googleEvent.end.dateTime)
-    : new Date(googleEvent.end.date!);
+    : (() => {
+        const [year, month, day] = googleEvent.end.date!.split('-').map(Number);
+        // For all-day events, end should be end of the SAME day, not start of next day
+        return new Date(year, month - 1, day, 23, 59, 59, 999); // End of day
+      })();
 
   // Map Google Calendar colors to hex colors
-  const colorMap: Record<string, string> = {
-    '1': '#a4bdfc', // Lavender
-    '2': '#7ae7bf', // Sage
-    '3': '#dbadff', // Grape
-    '4': '#ff887c', // Flamingo
-    '5': '#fbd75b', // Banana
-    '6': '#ffb878', // Tangerine
-    '7': '#46d6db', // Peacock
-    '8': '#e1e1e1', // Graphite
-    '9': '#5484ed', // Blueberry
-    '10': '#51b749', // Basil
-    '11': '#dc2127', // Tomato
-  };
+  const color = googleEvent.colorId && GOOGLE_CALENDAR_COLORS[googleEvent.colorId]
+    ? GOOGLE_CALENDAR_COLORS[googleEvent.colorId].hex
+    : '#5484ed'; // Default to Blueberry
 
-  const color = googleEvent.colorId ? colorMap[googleEvent.colorId] : '#3b82f6';
+  // Determine recurrence: either from the recurrence rules, or if this is a recurring instance,
+  // we'll need to fetch the master event to know the pattern. For now, mark as 'yearly' for birthdays
+  let recurrence = parseRecurrenceRule(googleEvent.recurrence);
+
+  // If this is a recurring event instance without explicit recurrence rules,
+  // mark it as recurring (we'll default to yearly for all-day recurring events like birthdays)
+  const isAllDay = !googleEvent.start.dateTime;
+  if (recurrence === 'none' && googleEvent.recurringEventId && isAllDay) {
+    recurrence = 'yearly'; // Most likely a birthday or anniversary
+  }
 
   return {
     id: googleEvent.id,
@@ -106,8 +159,12 @@ export function convertGoogleEventToAppEvent(googleEvent: GoogleCalendarEvent, c
     color,
     calendarId,
     isAllDay: !googleEvent.start.dateTime,
+    recurrence,
     googleEventId: googleEvent.id,
-    syncedFromGoogle: true
+    syncedFromGoogle: true,
+    etag: googleEvent.etag,
+    recurringEventId: googleEvent.recurringEventId,
+    isRecurringInstance: !!googleEvent.recurringEventId
   };
 }
 
@@ -122,19 +179,60 @@ export async function syncGoogleCalendar(
 ): Promise<Event[]> {
   try {
     console.log('🔄 Syncing Google Calendar events...');
+    console.log('📅 Calendar ID:', calendarId);
+    console.log('📆 Time range:', { timeMin, timeMax });
 
     const googleEvents = await fetchGoogleCalendarEvents(calendarId, timeMin, timeMax);
+    console.log('📥 Received', googleEvents.length, 'events from Google');
+
+    // Track recurring event series we've already imported
+    const importedRecurringSeries = new Set<string>();
+
     const appEvents = googleEvents
-      .filter(event => event.status !== 'cancelled')
+      .filter(event => {
+        // Filter out cancelled events
+        if (event.status === 'cancelled') return false;
+
+        // For recurring event instances, only import the first occurrence
+        if (event.recurringEventId) {
+          if (importedRecurringSeries.has(event.recurringEventId)) {
+            console.log('⏭️ Skipping duplicate recurring instance:', event.summary);
+            return false;
+          }
+          importedRecurringSeries.add(event.recurringEventId);
+        }
+
+        return true;
+      })
       .map(event => convertGoogleEventToAppEvent(event, calendarId));
 
     console.log(`✅ Synced ${appEvents.length} events from Google Calendar`);
+    if (appEvents.length > 0) {
+      console.log('🎯 Sample event:', appEvents[0]);
+    }
 
     return appEvents;
   } catch (error) {
-    console.error('Failed to sync Google Calendar:', error);
+    console.error('❌ Failed to sync Google Calendar:', error);
+    console.error('Error details:', error instanceof Error ? error.message : error);
     throw error;
   }
+}
+
+/**
+ * Convert app recurrence format to Google Calendar RRULE
+ */
+function convertToGoogleRecurrence(recurrence?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'): string[] | undefined {
+  if (!recurrence || recurrence === 'none') return undefined;
+
+  const rruleMap: Record<string, string> = {
+    daily: 'RRULE:FREQ=DAILY',
+    weekly: 'RRULE:FREQ=WEEKLY',
+    monthly: 'RRULE:FREQ=MONTHLY',
+    yearly: 'RRULE:FREQ=YEARLY'
+  };
+
+  return [rruleMap[recurrence]];
 }
 
 /**
@@ -155,6 +253,8 @@ export async function createGoogleCalendarEvent(
       end: event.isAllDay
         ? { date: event.endTime?.toISOString().split('T')[0] }
         : { dateTime: event.endTime?.toISOString() },
+      colorId: event.color ? hexToGoogleColorId(event.color) : undefined,
+      recurrence: convertToGoogleRecurrence(event.recurrence),
     };
 
     const response = await googleApiRequest(
@@ -198,6 +298,8 @@ export async function updateGoogleCalendarEvent(
       end: event.isAllDay
         ? { date: event.endTime?.toISOString().split('T')[0] }
         : { dateTime: event.endTime?.toISOString() },
+      colorId: event.color ? hexToGoogleColorId(event.color) : undefined,
+      recurrence: convertToGoogleRecurrence(event.recurrence),
     };
 
     const response = await googleApiRequest(
@@ -265,4 +367,107 @@ export async function listGoogleCalendars(): Promise<any[]> {
     console.error('Failed to list Google Calendars:', error);
     throw error;
   }
+}
+
+/**
+ * Fetch events incrementally using sync token
+ * Returns only changed events since last sync
+ */
+export async function fetchGoogleCalendarChanges(
+  calendarId: string = 'primary',
+  syncToken: string | null
+): Promise<{
+  events: GoogleCalendarEvent[];
+  nextSyncToken: string;
+  nextPageToken?: string;
+}> {
+  try {
+    const params = new URLSearchParams({
+      showDeleted: 'true' // Include deleted events
+    });
+
+    if (syncToken) {
+      params.append('syncToken', syncToken);
+    } else {
+      // Initial sync: fetch from 1 year ago
+      const timeMin = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      params.append('timeMin', timeMin.toISOString());
+      params.append('singleEvents', 'false'); // Get master recurring events
+    }
+
+    const response = await googleApiRequest(
+      `${CALENDAR_API_BASE}/calendars/${calendarId}/events?${params}`
+    );
+
+    if (!response.ok) {
+      // Sync token invalid - need full sync
+      if (response.status === 410) {
+        console.log('⚠️ Sync token expired, performing full sync');
+        return fetchGoogleCalendarChanges(calendarId, null);
+      }
+      throw new Error(`Failed to fetch changes: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      events: data.items || [],
+      nextSyncToken: data.nextSyncToken,
+      nextPageToken: data.nextPageToken
+    };
+  } catch (error) {
+    console.error('Failed to fetch calendar changes:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate instances for recurring events locally
+ * Avoids fetching all instances from Google
+ */
+export function expandRecurringEvent(
+  masterEvent: GoogleCalendarEvent,
+  startDate: Date,
+  endDate: Date
+): GoogleCalendarEvent[] {
+  // Simple implementation for yearly recurrence (birthdays)
+  if (!masterEvent.recurrence) return [masterEvent];
+
+  const instances: GoogleCalendarEvent[] = [];
+  const recurrence = parseRecurrenceRule(masterEvent.recurrence);
+
+  console.log('🔧 Expanding event:', {
+    summary: masterEvent.summary,
+    recurrence,
+    originalDate: masterEvent.start.date,
+    startYear: startDate.getFullYear(),
+    endYear: endDate.getFullYear()
+  });
+
+  if (recurrence === 'yearly' && masterEvent.start.date) {
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    const [_, month, day] = masterEvent.start.date.split('-');
+
+    console.log(`  → Parsed date parts: year=?, month=${month}, day=${day}`);
+
+    for (let year = startYear; year <= endYear; year++) {
+      const instanceDate = `${year}-${month}-${day}`;
+      const instance: GoogleCalendarEvent = {
+        ...masterEvent,
+        id: `${masterEvent.id}_${year}`, // Create instance with unique ID
+        start: { date: instanceDate },
+        end: { date: instanceDate },
+        recurringEventId: masterEvent.id // Track master event
+      };
+
+      console.log(`  → Created instance for ${instanceDate}`);
+      instances.push(instance);
+    }
+  } else {
+    // For other recurrence types, return master event as-is
+    console.log(`  → Non-yearly or no date, returning as-is`);
+    instances.push(masterEvent);
+  }
+
+  return instances;
 }

@@ -6,6 +6,9 @@ export interface SyncableEvent extends CalendarEvent {
   googleEventId?: string;
   syncStatus?: 'pending' | 'synced' | 'conflict' | 'error';
   lastSyncedAt?: string;
+  etag?: string; // Google's version identifier for conflict detection
+  recurringEventId?: string; // Master event ID for recurring series
+  isRecurringInstance?: boolean; // Whether this is an instance of a recurring event
 }
 
 export interface SyncableTodo extends Todo {
@@ -53,9 +56,37 @@ export interface ConflictEntry {
 export interface AuthToken {
   id: string; // 'google'
   accessToken: string;
-  refreshToken: string;
   expiresAt: number;
   scope: string;
+}
+
+// Sync Metadata for incremental sync
+export interface SyncMetadata {
+  id: string; // 'google-calendar-primary'
+  calendarId: string; // 'primary'
+  lastSyncTime: number; // Unix timestamp
+  syncToken: string | null; // Google Calendar sync token
+  pageToken: string | null; // For pagination
+  status: 'idle' | 'syncing' | 'error';
+  lastError: string | null;
+  fullSyncCompletedAt: number | null;
+  eventsCount: number; // Track synced events count
+}
+
+// User
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  preferences: {
+    theme: 'dark' | 'light' | 'auto';
+    startOfWeek?: number;
+    dateFormat?: string;
+    timeFormat?: string;
+    notifications?: boolean;
+  };
+  createdAt: Date;
 }
 
 // Settings
@@ -79,12 +110,15 @@ export class OptimioDB extends Dexie {
   syncQueue!: Table<SyncQueueEntry, number>;
   conflicts!: Table<ConflictEntry, number>;
   authTokens!: Table<AuthToken, string>;
+  users!: Table<User, string>;
   settings!: Table<AppSettings, string>;
+  syncMetadata!: Table<SyncMetadata, string>;
 
   constructor() {
     super('OptimioDB');
 
-    this.version(1).stores({
+    // Keep version 2 for backward compatibility
+    this.version(2).stores({
       // Primary data tables with sync metadata
       events: 'id, startTime, endTime, googleEventId, syncStatus, lastSyncedAt',
       todos: 'id, dueDate, completed, priority, category, googleTaskId, syncStatus, lastSyncedAt',
@@ -97,6 +131,26 @@ export class OptimioDB extends Dexie {
 
       // Auth and settings
       authTokens: 'id, expiresAt',
+      users: 'id, email',
+      settings: 'id'
+    });
+
+    // Version 3: Add incremental sync support
+    this.version(3).stores({
+      // Enhanced events table with recurring event tracking
+      events: 'id, startTime, endTime, googleEventId, recurringEventId, syncStatus, lastSyncedAt, etag',
+      todos: 'id, dueDate, completed, priority, category, googleTaskId, syncStatus, lastSyncedAt',
+      goals: 'id, deadline, category, syncStatus, lastSyncedAt',
+      notes: 'id, updatedAt, createdAt, folder, *tags, isPinned, isFavorite, syncStatus, lastSyncedAt',
+
+      // Sync infrastructure
+      syncQueue: '++id, entityType, entityId, operation, timestamp, retryCount, conflictResolution',
+      conflicts: '++id, entityType, entityId, detectedAt, resolvedAt',
+      syncMetadata: 'id, calendarId, lastSyncTime, status', // New table for sync state
+
+      // Auth and settings
+      authTokens: 'id, expiresAt',
+      users: 'id, email',
       settings: 'id'
     });
   }
@@ -124,6 +178,9 @@ export async function initializeDatabase() {
         syncInterval: 15
       });
     }
+
+    // Migrate to v3 schema if needed
+    await migrateEventsToV3();
 
     console.log('✅ Optimio Database initialized');
   } catch (error) {
@@ -202,6 +259,76 @@ export async function migrateFromLocalStorage() {
     return false;
   } catch (error) {
     console.error('❌ Migration failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Initialize sync metadata for Google Calendar
+ */
+export async function migrateSyncMetadata() {
+  try {
+    const existing = await db.syncMetadata.get('google-calendar-primary');
+    if (!existing) {
+      await db.syncMetadata.add({
+        id: 'google-calendar-primary',
+        calendarId: 'primary',
+        lastSyncTime: 0,
+        syncToken: null,
+        pageToken: null,
+        status: 'idle',
+        lastError: null,
+        fullSyncCompletedAt: null,
+        eventsCount: 0
+      });
+      console.log('✅ Initialized sync metadata');
+    }
+  } catch (error) {
+    console.error('Failed to initialize sync metadata:', error);
+  }
+}
+
+/**
+ * Migrate existing events to v3 schema
+ */
+export async function migrateEventsToV3() {
+  try {
+    const migrationFlag = localStorage.getItem('optimio-migrated-to-v3');
+
+    if (migrationFlag) {
+      console.log('✅ Already migrated to v3');
+      return false;
+    }
+
+    console.log('🔄 Migrating events to v3 schema...');
+
+    // Get all existing events
+    const events = await db.events.toArray();
+
+    if (events.length > 0) {
+      // Update all events with new schema fields
+      await db.events.bulkPut(
+        events.map(event => ({
+          ...event,
+          etag: undefined, // Will be populated on next sync
+          recurringEventId: undefined,
+          isRecurringInstance: false
+        }))
+      );
+
+      console.log(`✅ Migrated ${events.length} events`);
+    }
+
+    // Initialize sync metadata
+    await migrateSyncMetadata();
+
+    // Mark migration as complete
+    localStorage.setItem('optimio-migrated-to-v3', 'true');
+    console.log('✅ Migration to v3 complete!');
+
+    return true;
+  } catch (error) {
+    console.error('❌ Migration to v3 failed:', error);
     throw error;
   }
 }
