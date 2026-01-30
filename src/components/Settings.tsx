@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { exportData, importData, getExportStats } from '@/lib/export-import';
 import { getSyncStatus, processSyncQueue } from '@/lib/sync-engine';
-import { checkDatabaseHealth, db } from '@/lib/db';
+import { getDatabaseHealth, db } from '@/lib/db';
 import { SHORTCUTS, getShortcutDisplay } from '@/hooks/useKeyboardShortcuts';
 
 interface SettingsProps {
@@ -46,7 +46,7 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
     const [stats, sync, health] = await Promise.all([
       getExportStats(),
       getSyncStatus(),
-      checkDatabaseHealth()
+      getDatabaseHealth()
     ]);
 
     setExportStats(stats);
