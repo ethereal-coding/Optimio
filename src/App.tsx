@@ -172,15 +172,7 @@ function App() {
         // Initialize IndexedDB
         await initializeDatabase();
 
-        // Migrate legacy data if needed
-        const migrated = await migrateFromLocalStorage();
-        if (migrated) {
-          debug.log('✅ Migrated legacy data to IndexedDB');
-        }
-
-        // Check database health
-        const health = await checkDatabaseHealth();
-        debug.log('📊 Database health:', health);
+        debug.log('✅ Database initialized');
 
         setDbReady(true);
         debug.log('✅ Optimio ready!');
