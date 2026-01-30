@@ -116,21 +116,16 @@ async function processEventInstance(
   googleEvent: GoogleCalendarEvent,
   localCalendarId: string,
   dispatch: (action: any) => void,
-  actions: any
+  actions: any,
+  sourceCalendarId?: string // Add source calendar ID parameter
 ): Promise<'added' | 'updated' | 'skipped'> {
   try {
-    // Check if event already exists in IndexedDB
-    // First try by googleEventId, then fall back to local id for edge cases
+    // Check if event already exists in IndexedDB from THIS calendar
     let existingEvent = await db.events
       .where('googleEventId')
       .equals(googleEvent.id)
+      .filter(e => !sourceCalendarId || e.sourceCalendarId === sourceCalendarId)
       .first();
-
-    // Fallback: check by local ID if not found by googleEventId
-    // This handles cases where an event exists but googleEventId wasn't set yet
-    if (!existingEvent) {
-      existingEvent = await db.events.get(googleEvent.id);
-    }
 
     const appEvent = convertGoogleEventToAppEvent(googleEvent, localCalendarId);
 
@@ -147,13 +142,15 @@ async function processEventInstance(
         ...appEvent,
         syncStatus: 'synced',
         lastSyncedAt: new Date().toISOString(),
-        etag: googleEvent.etag
+        etag: googleEvent.etag,
+        sourceCalendarId: sourceCalendarId
       });
 
       // Update in state
       dispatch(actions.updateEvent(localCalendarId, {
         ...appEvent,
-        id: existingEvent.id // Keep local ID
+        id: existingEvent.id, // Keep local ID
+        sourceCalendarId: sourceCalendarId
       }));
 
       return 'updated';
@@ -163,7 +160,8 @@ async function processEventInstance(
         ...appEvent,
         syncStatus: 'synced' as const,
         lastSyncedAt: new Date().toISOString(),
-        etag: googleEvent.etag
+        etag: googleEvent.etag,
+        sourceCalendarId: sourceCalendarId // Tag with source calendar
       };
 
       // Add to IndexedDB
@@ -182,6 +180,7 @@ async function processEventInstance(
 
 /**
  * Sync Google Calendar events to local state using incremental sync
+ * Now supports syncing from multiple enabled calendars
  * Call this on app load or periodically
  */
 export async function syncFromGoogleCalendar(
@@ -198,112 +197,152 @@ export async function syncFromGoogleCalendar(
   }
 
   try {
-    // Get sync metadata
-    const syncMeta = await db.syncMetadata.get('google-calendar-primary');
-    if (!syncMeta) {
-      console.error('Sync metadata not initialized');
-      return [];
+    // Get all enabled calendars
+    const enabledCalendars = await db.calendarPreferences.where('enabled').equals(1).toArray();
+
+    if (enabledCalendars.length === 0) {
+      debug.log('⚠️ No enabled calendars found, syncing from primary only');
+      enabledCalendars.push({
+        id: 'primary',
+        summary: 'Primary Calendar',
+        enabled: true,
+        color: '#3b82f6',
+        primary: true
+      });
     }
 
-    // Check if already syncing (prevent race conditions)
-    // Use timestamp-based lock with 5-minute timeout
-    const now = Date.now();
-    const SYNC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+    debug.log(`🔄 Syncing ${enabledCalendars.length} calendar(s)...`);
 
-    if (syncMeta.status === 'syncing') {
-      const timeSinceLastSync = now - syncMeta.lastSyncTime;
-      if (timeSinceLastSync < SYNC_TIMEOUT_MS) {
-        debug.log('⏭️ Sync already in progress, skipping');
-        return [];
-      } else {
-        debug.warn('⚠️ Sync lock timeout detected, forcing release');
+    let totalAdded = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+
+    // Sync each enabled calendar
+    for (const calendar of enabledCalendars) {
+      debug.log(`📅 Syncing calendar: ${calendar.summary} (${calendar.id})`);
+
+      // Get sync metadata for this calendar
+      const syncMetaId = `google-calendar-${calendar.id}`;
+      let syncMeta = await db.syncMetadata.get(syncMetaId);
+
+      // Initialize metadata if not exists
+      if (!syncMeta) {
+        syncMeta = {
+          id: syncMetaId,
+          calendarId: calendar.id,
+          lastSyncTime: 0,
+          syncToken: null,
+          pageToken: null,
+          status: 'idle',
+          lastError: null,
+          fullSyncCompletedAt: null,
+          eventsCount: 0
+        };
+        await db.syncMetadata.add(syncMeta);
       }
-    }
 
-    // Atomically set status to syncing with current timestamp
-    // This reduces (but doesn't eliminate) race window
-    await db.syncMetadata.update('google-calendar-primary', {
-      status: 'syncing',
-      lastSyncTime: now,
-      lastError: null
-    });
+      // Check if already syncing (prevent race conditions)
+      const now = Date.now();
+      const SYNC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-    debug.log('🔄 Starting incremental sync...');
-    debug.log('📊 Sync token:', syncMeta.syncToken ? 'Available' : 'None (full sync)');
+      if (syncMeta.status === 'syncing') {
+        const timeSinceLastSync = now - syncMeta.lastSyncTime;
+        if (timeSinceLastSync < SYNC_TIMEOUT_MS) {
+          debug.log('⏭️ Sync already in progress, skipping this calendar');
+          continue;
+        } else {
+          debug.warn('⚠️ Sync lock timeout detected, forcing release');
+        }
+      }
 
-    // Determine sync token
-    const syncToken = options?.forceFullSync ? null : syncMeta.syncToken;
-
-    // Fetch changes from Google
-    const { events: googleEvents, nextSyncToken } = await fetchGoogleCalendarChanges('primary', syncToken);
-
-    debug.log(`📥 Received ${googleEvents.length} changed events from Google`);
-
-    // Process each changed event
-    let addedCount = 0;
-    let updatedCount = 0;
-    let deletedCount = 0;
-
-    for (const googleEvent of googleEvents) {
-      // Debug logging
-      debug.log('📅 Processing event:', {
-        id: googleEvent.id,
-        summary: googleEvent.summary,
-        hasRecurrence: !!googleEvent.recurrence,
-        recurringEventId: googleEvent.recurringEventId,
-        startDate: googleEvent.start.date || googleEvent.start.dateTime
+      // Set status to syncing
+      await db.syncMetadata.update(syncMetaId, {
+        status: 'syncing',
+        lastSyncTime: now,
+        lastError: null
       });
 
-      if (googleEvent.status === 'cancelled') {
-        // Event deleted
-        const existingEvent = await db.events
-          .where('googleEventId')
-          .equals(googleEvent.id)
-          .first();
+      // Determine sync token
+      const syncToken = options?.forceFullSync ? null : syncMeta.syncToken;
 
-        if (existingEvent) {
-          await db.events.delete(existingEvent.id);
-          dispatch(actions.deleteEvent(localCalendarId, existingEvent.id));
-          deletedCount++;
+      try {
+        // Fetch changes from Google
+        const { events: googleEvents, nextSyncToken } = await fetchGoogleCalendarChanges(calendar.id, syncToken);
+
+        debug.log(`📥 Received ${googleEvents.length} changed events from ${calendar.summary}`);
+
+        // Process each changed event
+        let addedCount = 0;
+        let updatedCount = 0;
+        let deletedCount = 0;
+
+        for (const googleEvent of googleEvents) {
+          if (googleEvent.status === 'cancelled') {
+            // Event deleted - find by googleEventId from THIS calendar
+            const existingEvent = await db.events
+              .where('googleEventId')
+              .equals(googleEvent.id)
+              .filter(e => e.sourceCalendarId === calendar.id)
+              .first();
+
+            if (existingEvent) {
+              await db.events.delete(existingEvent.id);
+              dispatch(actions.deleteEvent(localCalendarId, existingEvent.id));
+              deletedCount++;
+            }
+            continue;
+          }
+
+          // Check if event is recurring master
+          if (googleEvent.recurrence) {
+            debug.log('🔁 Expanding recurring event:', googleEvent.summary);
+            const now = new Date();
+            const twoYearsAhead = new Date(now.getFullYear() + 2, 11, 31);
+            const instances = expandRecurringEvent(googleEvent, now, twoYearsAhead);
+            debug.log(`  → Generated ${instances.length} instances`);
+
+            for (const instance of instances) {
+              const result = await processEventInstance(instance, localCalendarId, dispatch, actions, calendar.id);
+              if (result === 'added') addedCount++;
+              if (result === 'updated') updatedCount++;
+            }
+          } else {
+            // Single event or recurring instance
+            const result = await processEventInstance(googleEvent, localCalendarId, dispatch, actions, calendar.id);
+            if (result === 'added') addedCount++;
+            if (result === 'updated') updatedCount++;
+          }
         }
-        continue;
-      }
 
-      // Check if event is recurring master
-      if (googleEvent.recurrence) {
-        debug.log('🔁 Expanding recurring event:', googleEvent.summary);
-        // Expand recurring event into instances
-        const now = new Date();
-        const twoYearsAhead = new Date(now.getFullYear() + 2, 11, 31);
-        const instances = expandRecurringEvent(googleEvent, now, twoYearsAhead);
-        debug.log(`  → Generated ${instances.length} instances`);
+        // Update sync metadata for this calendar
+        const completionTime = Date.now();
+        await db.syncMetadata.update(syncMetaId, {
+          lastSyncTime: completionTime,
+          syncToken: nextSyncToken,
+          status: 'idle',
+          lastError: null,
+          fullSyncCompletedAt: syncToken ? syncMeta.fullSyncCompletedAt : completionTime,
+          eventsCount: await db.events.where('sourceCalendarId').equals(calendar.id).count()
+        });
 
-        for (const instance of instances) {
-          debug.log(`    • Instance: ${instance.id}, date: ${instance.start.date}`);
-          const result = await processEventInstance(instance, localCalendarId, dispatch, actions);
-          if (result === 'added') addedCount++;
-          if (result === 'updated') updatedCount++;
-        }
-      } else {
-        // Single event or recurring instance
-        const result = await processEventInstance(googleEvent, localCalendarId, dispatch, actions);
-        if (result === 'added') addedCount++;
-        if (result === 'updated') updatedCount++;
+        debug.log(`  ✅ ${calendar.summary}: ${addedCount} added, ${updatedCount} updated, ${deletedCount} deleted`);
+
+        totalAdded += addedCount;
+        totalUpdated += updatedCount;
+        totalDeleted += deletedCount;
+      } catch (calendarError) {
+        console.error(`Failed to sync calendar ${calendar.summary}:`, calendarError);
+
+        // Update metadata with error
+        await db.syncMetadata.update(syncMetaId, {
+          status: 'idle',
+          lastError: calendarError instanceof Error ? calendarError.message : 'Unknown error'
+        });
+        // Continue with other calendars
       }
     }
 
-    // Update sync metadata
-    const completionTime = Date.now();
-    await db.syncMetadata.update('google-calendar-primary', {
-      lastSyncTime: completionTime,
-      syncToken: nextSyncToken,
-      status: 'idle',
-      lastError: null,
-      fullSyncCompletedAt: syncToken ? syncMeta.fullSyncCompletedAt : completionTime,
-      eventsCount: await db.events.count()
-    });
-
-    debug.log(`✅ Sync complete: ${addedCount} added, ${updatedCount} updated, ${deletedCount} deleted`);
+    debug.log(`✅ Multi-calendar sync complete: ${totalAdded} added, ${totalUpdated} updated, ${totalDeleted} deleted`);
 
     // Return all events from database
     const allEvents = await db.events.toArray();

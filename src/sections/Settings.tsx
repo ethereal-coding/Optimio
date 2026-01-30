@@ -23,6 +23,7 @@ import { checkDatabaseHealth, db } from '@/lib/db';
 import { SHORTCUTS, getShortcutDisplay } from '@/hooks/useKeyboardShortcuts';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { cn } from '@/lib/utils';
+import { CalendarPreferences } from '@/components/CalendarPreferences';
 
 export function Settings() {
   const { state, dispatch } = useAppState();
@@ -147,6 +148,9 @@ export function Settings() {
               </TabsTrigger>
               <TabsTrigger value="appearance" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
                 Appearance
+              </TabsTrigger>
+              <TabsTrigger value="calendars" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+                Calendars
               </TabsTrigger>
               <TabsTrigger value="shortcuts" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
                 Shortcuts
@@ -333,6 +337,19 @@ export function Settings() {
                     <span className="font-medium text-foreground text-sm">Auto</span>
                   </button>
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* Calendars Tab */}
+            <TabsContent value="calendars">
+              <div className="bg-card rounded-lg p-6 border border-border">
+                <h3 className="text-foreground font-medium mb-4">Google Calendars</h3>
+                <p className="text-muted-foreground text-sm mb-6">
+                  Choose which Google Calendars to display in your app. Your primary calendar and selected calendars are enabled by default.
+                </p>
+
+                {/* Calendar list will be populated here */}
+                <CalendarPreferences />
               </div>
             </TabsContent>
 
