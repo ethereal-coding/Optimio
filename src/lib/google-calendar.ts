@@ -55,6 +55,39 @@ export interface GoogleCalendarEvent {
   etag?: string; // Version identifier for conflict detection
 }
 
+export interface GoogleCalendarListEntry {
+  id: string; // Calendar ID (e.g., 'primary', 'email@gmail.com', 'holiday@group.v.calendar.google.com')
+  summary: string; // Calendar name (e.g., 'Work', 'Personal', 'Holidays')
+  description?: string;
+  timeZone?: string;
+  backgroundColor?: string; // Hex color
+  foregroundColor?: string;
+  selected?: boolean; // Whether visible in Google Calendar UI
+  accessRole?: string; // 'owner', 'writer', 'reader', etc.
+  primary?: boolean; // True for the user's primary calendar
+}
+
+/**
+ * Fetch the list of all calendars accessible to the user
+ */
+export async function fetchCalendarList(): Promise<GoogleCalendarListEntry[]> {
+  try {
+    const response = await googleApiRequest(
+      `${CALENDAR_API_BASE}/users/me/calendarList`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch calendar list: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  } catch (error) {
+    console.error('Failed to fetch calendar list:', error);
+    throw error;
+  }
+}
+
 /**
  * Fetch events from Google Calendar
  */

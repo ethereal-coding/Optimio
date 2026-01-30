@@ -102,6 +102,16 @@ export interface AppSettings {
   syncInterval: number; // minutes
 }
 
+// Calendar Preferences (which Google calendars to show)
+export interface CalendarPreference {
+  id: string; // Calendar ID from Google (e.g., 'primary', 'holiday@group.v.calendar.google.com')
+  summary: string; // Calendar name
+  enabled: boolean; // Whether to show events from this calendar
+  color: string; // Display color
+  accessRole?: string; // 'owner', 'writer', 'reader'
+  primary?: boolean; // True for primary calendar
+}
+
 // Database Interface
 export class OptimioDB extends Dexie {
   events!: Table<SyncableEvent, string>;
@@ -114,6 +124,7 @@ export class OptimioDB extends Dexie {
   users!: Table<User, string>;
   settings!: Table<AppSettings, string>;
   syncMetadata!: Table<SyncMetadata, string>;
+  calendarPreferences!: Table<CalendarPreference, string>;
 
   constructor() {
     super('OptimioDB');
@@ -153,6 +164,28 @@ export class OptimioDB extends Dexie {
       authTokens: 'id, expiresAt',
       users: 'id, email',
       settings: 'id'
+    });
+
+    // Version 4: Add multi-calendar support
+    this.version(4).stores({
+      // Keep all existing tables
+      events: 'id, startTime, endTime, googleEventId, recurringEventId, syncStatus, lastSyncedAt, etag',
+      todos: 'id, dueDate, completed, priority, category, googleTaskId, syncStatus, lastSyncedAt',
+      goals: 'id, deadline, category, syncStatus, lastSyncedAt',
+      notes: 'id, updatedAt, createdAt, folder, *tags, isPinned, isFavorite, syncStatus, lastSyncedAt',
+
+      // Sync infrastructure
+      syncQueue: '++id, entityType, entityId, operation, timestamp, retryCount, conflictResolution',
+      conflicts: '++id, entityType, entityId, detectedAt, resolvedAt',
+      syncMetadata: 'id, calendarId, lastSyncTime, status',
+
+      // Auth and settings
+      authTokens: 'id, expiresAt',
+      users: 'id, email',
+      settings: 'id',
+
+      // New: Calendar preferences for multi-calendar support
+      calendarPreferences: 'id, enabled' // Which calendars to show
     });
   }
 }
