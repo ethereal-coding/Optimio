@@ -6,10 +6,11 @@ import { Toaster } from '@/components/ui/sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { initializeDatabase, migrateFromLocalStorage, checkDatabaseHealth, db } from '@/lib/db';
+import { initializeDatabase, db } from '@/lib/db';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
-import { setupPeriodicSync } from '@/lib/calendar-sync';
 import { getCurrentUser, isAuthenticated } from '@/lib/google-auth';
+import { syncCalendarList } from '@/lib/calendar-storage';
+import { syncAllEvents } from '@/lib/event-sync';
 
 function AppContent() {
   const { state, dispatch } = useAppState();
@@ -107,9 +108,35 @@ function AppContent() {
           }));
         }
 
+        // Initial calendar and event sync
+        debug.log('🔄 Starting initial sync...');
+        (async () => {
+          try {
+            await syncCalendarList();
+            await syncAllEvents();
+            debug.log('✅ Initial sync complete');
+
+            // Reload events from database
+            const events = await db.events.toArray();
+            events.forEach(event => {
+              dispatch(actions.addEvent('1', event));
+            });
+          } catch (error) {
+            console.error('Failed to sync:', error);
+          }
+        })();
+
         // Setup periodic sync (syncs every 5 minutes)
-        debug.log('🔄 Setting up periodic sync...');
-        cleanup = setupPeriodicSync('1', dispatch, actions, 5); // Use calendar ID '1' to match app state
+        const intervalId = setInterval(async () => {
+          debug.log('🔄 Periodic sync...');
+          try {
+            await syncAllEvents();
+          } catch (error) {
+            console.error('Periodic sync failed:', error);
+          }
+        }, 5 * 60 * 1000);
+
+        cleanup = () => clearInterval(intervalId);
       } else {
         debug.log('❌ Not authenticated, skipping sync setup');
       }
