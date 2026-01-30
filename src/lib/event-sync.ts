@@ -1,6 +1,9 @@
 import { db, type SyncableEvent } from './db';
 import { getAccessToken } from './google-auth';
 import { getEnabledCalendars } from './calendar-storage';
+import { logger } from './logger';
+
+const log = logger('event-sync');
 
 /**
  * CLEAN REBUILD - Event syncing from Google Calendar
@@ -11,16 +14,16 @@ import { getEnabledCalendars } from './calendar-storage';
  * Fetch events from a single Google Calendar
  * @param calendarId - Google Calendar ID
  * @param accessToken - Valid access token
- * @param dateRange - Optional date range (default: 7 days past to 30 days future)
+ * @param dateRange - Optional date range (default: 90 days past to 1 year future)
  */
 export async function fetchEventsFromCalendar(
   calendarId: string,
   accessToken: string,
   dateRange?: { start: Date; end: Date }
 ): Promise<any[]> {
-  // Default date range
-  const start = dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const end = dateRange?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  // Default date range: 90 days past to 1 year future
+  const start = dateRange?.start || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const end = dateRange?.end || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
   const params = new URLSearchParams({
     timeMin: start.toISOString(),
@@ -32,6 +35,8 @@ export async function fetchEventsFromCalendar(
 
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
 
+  log.debug(`Fetching: ${url.substring(0, 100)}...`);
+
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -40,7 +45,8 @@ export async function fetchEventsFromCalendar(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch events from ${calendarId}: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch events from ${calendarId}: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -48,15 +54,104 @@ export async function fetchEventsFromCalendar(
 }
 
 /**
+ * Create a unique deduplication key for an event
+ * This helps identify duplicates across calendars
+ */
+function createEventDedupKey(event: any): string {
+  // For recurring instances (like birthdays), use the recurringEventId + start time
+  // This ensures the same birthday from different calendars is deduplicated
+  if (event.recurringEventId) {
+    const startTime = event.start?.dateTime || event.start?.date || '';
+    return `${event.recurringEventId}|${startTime}`;
+  }
+  
+  // For regular events, use title + start time to catch duplicates across calendars
+  // This handles cases where the same event might be in multiple calendars
+  const startTime = event.start?.dateTime || event.start?.date || '';
+  const title = event.summary || '';
+  
+  // For all-day events, just use title + date (ignore calendar-specific IDs)
+  if (event.start?.date && !event.start?.dateTime) {
+    return `${title}|${startTime}`;
+  }
+  
+  // For timed events, use the event ID (more unique)
+  return event.id || `${title}|${startTime}`;
+}
+
+/**
+ * Parse a YYYY-MM-DD date string to local Date (avoiding timezone issues)
+ * All-day events should always display on the correct date regardless of timezone
+ */
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Invalid date format: ${dateStr}`);
+  }
+  const [year, month, day] = parts;
+  // Use local date constructor to avoid UTC conversion issues
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Convert Google Calendar event to our event format
  */
 function convertGoogleEventToAppEvent(googleEvent: any, calendarId: string): SyncableEvent {
   // Handle start/end times (can be date or dateTime)
-  const startTime = googleEvent.start.dateTime || googleEvent.start.date;
-  const endTime = googleEvent.end.dateTime || googleEvent.end.date;
+  const isAllDay = !googleEvent.start?.dateTime;
+  
+  // Convert to Date objects
+  let startTime: Date;
+  let endTime: Date;
+  
+  if (isAllDay) {
+    // All-day events: parse YYYY-MM-DD strings as local dates (not UTC)
+    // to avoid timezone shift issues
+    const startDateStr = googleEvent.start?.date;
+    const endDateStr = googleEvent.end?.date; // Google returns EXCLUSIVE end date
+    
+    if (!startDateStr) {
+      throw new Error('All-day event missing start.date');
+    }
+    
+    startTime = parseLocalDate(startDateStr);
+    startTime.setHours(0, 0, 0, 0);
+    
+    // For multi-day all-day events, Google returns end.date as the day AFTER the last day
+    // e.g., a 3-day event starting March 15 has end.date = "2024-03-18"
+    // We need to subtract one day to get the actual end date
+    if (endDateStr) {
+      endTime = parseLocalDate(endDateStr);
+      // Subtract 1 millisecond to get the last moment of the previous day
+      endTime.setTime(endTime.getTime() - 1);
+    } else {
+      // Single day event - end at end of start day
+      endTime = new Date(startTime.getTime());
+      endTime.setHours(23, 59, 59, 999);
+    }
+  } else {
+    // Timed events: use standard Date parsing with timezone
+    const startStr = googleEvent.start?.dateTime;
+    const endStr = googleEvent.end?.dateTime;
+    startTime = startStr ? new Date(startStr) : new Date();
+    endTime = endStr ? new Date(endStr) : new Date(startTime.getTime() + 60 * 60 * 1000);
+  }
 
   // Generate unique ID combining Google event ID and calendar ID
   const uniqueId = `${calendarId}:${googleEvent.id}`;
+
+  // Map Google color ID to hex color
+  const colorMap: Record<string, string> = {
+    '1': '#a4bdfc', '2': '#7ae7bf', '3': '#dbadff', '4': '#ff887c',
+    '5': '#fbd75b', '6': '#ffb878', '7': '#46d6db', '8': '#e1e1e1',
+    '9': '#5484ed', '10': '#51b749', '11': '#dc2127'
+  };
+
+  const color = colorMap[googleEvent.colorId] || '#5484ed';
+  
+  if (googleEvent.colorId) {
+    console.log(`  🎨 Event "${googleEvent.summary}" - Google colorId: ${googleEvent.colorId} → ${color}`);
+  }
 
   return {
     id: uniqueId,
@@ -65,12 +160,16 @@ function convertGoogleEventToAppEvent(googleEvent: any, calendarId: string): Syn
     startTime,
     endTime,
     location: googleEvent.location,
-    color: googleEvent.colorId || '1', // Default color
-    calendarId: calendarId, // Store which calendar this event belongs to
-    isAllDay: !googleEvent.start.dateTime, // All-day if using 'date' instead of 'dateTime'
-    recurrence: undefined, // We use singleEvents=true, so recurrence is already expanded
+    color,
+    calendarId: '1', // Local calendar ID
+    sourceCalendarId: calendarId, // Which Google calendar this came from
+    isAllDay: !googleEvent.start?.dateTime, // All-day if using 'date' instead of 'dateTime'
+    recurrence: 'none',
     googleEventId: googleEvent.id,
-    lastSyncedAt: new Date().toISOString()
+    lastSyncedAt: new Date().toISOString(),
+    etag: googleEvent.etag,
+    recurringEventId: googleEvent.recurringEventId,
+    isRecurringInstance: !!googleEvent.recurringEventId
   };
 }
 
@@ -78,21 +177,78 @@ function convertGoogleEventToAppEvent(googleEvent: any, calendarId: string): Syn
  * Save events to database for a specific calendar
  * Replaces all events for that calendar
  */
-async function saveEventsForCalendar(calendarId: string, events: SyncableEvent[]): Promise<void> {
-  // Delete old events from this calendar
-  const oldEvents = await db.events.where('calendarId').equals(calendarId).toArray();
-  const oldEventIds = oldEvents.map(e => e.id);
+async function saveEventsForCalendar(sourceCalendarId: string, events: SyncableEvent[]): Promise<{ deleted: number; added: number }> {
+  log.info(`Saving ${events.length} events for calendar ${sourceCalendarId}`);
+  log.debug('New events from Google', { events: events.map(e => ({ id: e.id, googleId: e.googleEventId, title: e.title })) });
 
+  // Collect all event IDs to delete:
+  // 1. Events with matching sourceCalendarId
+  // 2. Events with matching googleEventId (to prevent duplicates from local creation)
+  const eventsToDelete = new Map<string, SyncableEvent>(); // id -> event
+
+  // 1. Find events with matching sourceCalendarId
+  const oldEvents = await db.events
+    .where('sourceCalendarId')
+    .equals(sourceCalendarId)
+    .toArray();
+  
+  log.debug(`Found ${oldEvents.length} existing events`, { sourceCalendarId });
+  
+  for (const event of oldEvents) {
+    eventsToDelete.set(event.id, event);
+  }
+
+  // 2. Find events with matching googleEventId (prevents duplicates from local creation)
+  const googleEventIds = events.map(e => e.googleEventId).filter((id): id is string => !!id);
+  log.debug(`Checking ${googleEventIds.length} events for duplicates`);
+  
+  for (const googleId of googleEventIds) {
+    const existingWithSameGoogleId = await db.events
+      .where('googleEventId')
+      .equals(googleId)
+      .toArray();
+    
+    for (const event of existingWithSameGoogleId) {
+      if (!eventsToDelete.has(event.id)) {
+        eventsToDelete.set(event.id, event);
+        log.info('Duplicate detected', { 
+          eventId: event.id, 
+          title: event.title, 
+          googleEventId: event.googleEventId 
+        });
+      }
+    }
+  }
+
+  const oldEventIds = Array.from(eventsToDelete.keys());
+  log.info(`Total events to delete: ${oldEventIds.length}`);
+
+  let deletedCount = 0;
   if (oldEventIds.length > 0) {
-    await db.events.bulkDelete(oldEventIds);
+    try {
+      await db.events.bulkDelete(oldEventIds);
+      deletedCount = oldEventIds.length;
+      log.info(`Deleted ${deletedCount} old events`);
+    } catch (error) {
+      log.error('Failed to delete old events', error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
   }
 
   // Add new events
+  let addedCount = 0;
   if (events.length > 0) {
-    await db.events.bulkAdd(events);
+    try {
+      await db.events.bulkAdd(events);
+      addedCount = events.length;
+      log.info(`Added ${addedCount} new events`);
+    } catch (error) {
+      log.error('Failed to add new events', error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
   }
 
-  console.log(`  ✅ Saved ${events.length} events for calendar ${calendarId}`);
+  return { deleted: deletedCount, added: addedCount };
 }
 
 /**
@@ -101,14 +257,16 @@ async function saveEventsForCalendar(calendarId: string, events: SyncableEvent[]
  */
 export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Promise<{
   success: boolean;
-  synced: number;
+  added: number;
+  updated: number;
+  removed: number;
   errors: string[];
 }> {
-  console.log('🔄 Starting event sync...');
+  console.log('🚨 EMERGENCY DEBUG: syncAllEvents() STARTED at', new Date().toISOString());
 
   const accessToken = await getAccessToken();
   if (!accessToken) {
-    throw new Error('Not authenticated');
+    throw new Error('Not authenticated - no access token available');
   }
 
   const enabledCalendars = await getEnabledCalendars();
@@ -117,29 +275,106 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
     console.log('⚠️ No enabled calendars found');
     return {
       success: true,
-      synced: 0,
+      added: 0,
+      updated: 0,
+      removed: 0,
       errors: []
     };
   }
 
-  console.log(`📅 Syncing ${enabledCalendars.length} calendar(s)...`);
+  console.log(`📅 Syncing ${enabledCalendars.length} calendar(s): ${enabledCalendars.map(c => c.summary).join(', ')}`);
 
-  let totalSynced = 0;
+  let totalAdded = 0;
+  let totalUpdated = 0;
+  let totalRemoved = 0;
   const errors: string[] = [];
+  
+  // Track all event deduplication keys across calendars to prevent duplicates
+  const seenEventKeys = new Set<string>();
 
   // Sync each calendar sequentially (no parallel requests)
   for (const calendar of enabledCalendars) {
     try {
-      console.log(`  📥 Fetching events from: ${calendar.summary}`);
+      console.log(`  📥 Fetching events from: ${calendar.summary} (${calendar.id})`);
 
       const googleEvents = await fetchEventsFromCalendar(calendar.id, accessToken, dateRange);
-      const appEvents = googleEvents
-        .filter(event => event.status !== 'cancelled') // Skip cancelled events
-        .map(event => convertGoogleEventToAppEvent(event, calendar.id));
+      console.log(`  📥 Received ${googleEvents.length} events from Google`);
 
-      await saveEventsForCalendar(calendar.id, appEvents);
+      // Get existing events for this calendar to track updates vs adds
+      const existingEvents = await db.events
+        .where('sourceCalendarId')
+        .equals(calendar.id)
+        .toArray();
+      console.log(`  📊 Found ${existingEvents.length} existing events in DB for calendar ${calendar.summary}`);
+      
+      const existingEventIds = new Set(existingEvents.map(e => e.googleEventId).filter((id): id is string => !!id));
+      console.log(`  🚨 EMERGENCY DEBUG: ${existingEventIds.size} existing events have googleEventId`);
+      console.log(`  🚨 EMERGENCY DEBUG: existingEventIds =`, Array.from(existingEventIds).slice(0, 10));
+      
+      const newEventIds = new Set<string>();
 
-      totalSynced += appEvents.length;
+      // Filter and deduplicate events
+      const appEvents: SyncableEvent[] = [];
+      let skippedCount = 0;
+      
+      for (const event of googleEvents) {
+        // Skip cancelled events
+        if (event.status === 'cancelled') continue;
+        
+        // Create deduplication key
+        const dedupKey = createEventDedupKey(event);
+        
+        // Skip if we've already seen this event (from another calendar)
+        if (seenEventKeys.has(dedupKey)) {
+          console.log(`    ⏭️ Skipping duplicate: ${event.summary} (${dedupKey})`);
+          skippedCount++;
+          continue;
+        }
+        
+        // Mark as seen
+        seenEventKeys.add(dedupKey);
+        newEventIds.add(event.id);
+        
+        // Track if this is an update or add
+        if (existingEventIds.has(event.id)) {
+          totalUpdated++;
+        } else {
+          totalAdded++;
+        }
+        
+        // Convert and add to list
+        const appEvent = convertGoogleEventToAppEvent(event, calendar.id);
+        appEvents.push(appEvent);
+      }
+
+      // Track removed events (exist locally but not in Google anymore)
+      const removedEventIds: string[] = [];
+      // Check for removed events (exist locally but not in Google anymore)
+
+      for (const existingId of existingEventIds) {
+        const isInNewEvents = newEventIds.has(existingId);
+
+        if (!isInNewEvents) {
+          totalRemoved++;
+          removedEventIds.push(existingId);
+          console.log(`    🗑️🗑️🗑️ EVENT DETECTED AS REMOVED: ${existingId}`);
+        }
+      }
+      if (removedEventIds.length > 0) {
+        console.log(`  🚨 EMERGENCY DEBUG: Total removed events for this calendar: ${removedEventIds.length}`);
+      } else {
+
+      }
+
+      // Calculate per-calendar stats
+      const addedCalendar = appEvents.filter(e => !existingEventIds.has(e.googleEventId || '')).length;
+      const updatedCalendar = appEvents.filter(e => existingEventIds.has(e.googleEventId || '')).length;
+      
+      console.log(`  📝 Processed ${appEvents.length} unique events (${skippedCount} duplicates skipped)`);
+      console.log(`  📊 Stats for this calendar: ${addedCalendar} added, ${updatedCalendar} updated, ${removedEventIds.length} to be removed`);
+      
+      const saveResult = await saveEventsForCalendar(calendar.id, appEvents);
+      console.log(`  💾 Save result: ${saveResult.deleted} deleted, ${saveResult.added} added to DB`);
 
       // Update calendar's lastSyncedAt
       await db.calendars.update(calendar.id, {
@@ -153,7 +388,10 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
     }
   }
 
-  console.log(`✅ Sync complete: ${totalSynced} events synced`);
+  // Get actual DB count at end of sync
+  const finalDbCount = await db.events.count();
+  console.log(`✅ Sync complete: ${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed`);
+  console.log(`🚨 EMERGENCY DEBUG: Total events in DB after sync: ${finalDbCount}`);
 
   if (errors.length > 0) {
     console.warn(`⚠️ ${errors.length} calendar(s) failed to sync`);
@@ -161,7 +399,9 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
 
   return {
     success: errors.length === 0,
-    synced: totalSynced,
+    added: totalAdded,
+    updated: totalUpdated,
+    removed: totalRemoved,
     errors
   };
 }
@@ -170,18 +410,22 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
  * Get events from database (filtered by date range)
  */
 export async function getEvents(dateRange?: { start: Date; end: Date }): Promise<SyncableEvent[]> {
+  const allEvents = await db.events.toArray();
+
   if (!dateRange) {
-    // Return all events
-    return await db.events.toArray();
+    // Convert string dates back to Date objects (in case they were stored as strings)
+    return allEvents.map(event => ({
+      ...event,
+      startTime: event.startTime instanceof Date ? event.startTime : new Date(event.startTime),
+      endTime: event.endTime instanceof Date ? event.endTime : new Date(event.endTime)
+    }));
   }
 
   // Filter by date range
-  const events = await db.events
-    .where('startTime')
-    .between(dateRange.start.toISOString(), dateRange.end.toISOString(), true, true)
-    .toArray();
-
-  return events;
+  return allEvents.filter(event => {
+    const start = event.startTime instanceof Date ? event.startTime : new Date(event.startTime);
+    return start >= dateRange.start && start <= dateRange.end;
+  });
 }
 
 /**
