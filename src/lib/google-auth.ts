@@ -73,6 +73,10 @@ export function initializeGoogleAuth(): void {
 
         console.log('✅ User info stored:', userInfo.email);
 
+        // Fetch and store calendar list
+        await fetchAndStoreCalendarList(userInfo.id);
+        console.log('✅ Calendar list synced');
+
         // Reload the page to show authenticated state
         window.location.reload();
       } catch (error) {
@@ -226,6 +230,41 @@ async function fetchUserInfo(accessToken: string): Promise<GoogleUser> {
     name: data.name,
     picture: data.picture
   };
+}
+
+/**
+ * Fetch and store calendar list from Google
+ * @param userId - User ID to associate calendars with
+ */
+async function fetchAndStoreCalendarList(userId: string): Promise<void> {
+  try {
+    const { fetchCalendarList } = await import('./google-calendar');
+    const calendars = await fetchCalendarList();
+
+    debug.log(`📅 Found ${calendars.length} calendars`);
+
+    // Store each calendar in the database
+    for (const calendar of calendars) {
+      await db.calendars.put({
+        id: calendar.id,
+        summary: calendar.summary,
+        description: calendar.description,
+        backgroundColor: calendar.backgroundColor || '#3b82f6',
+        foregroundColor: calendar.foregroundColor || '#ffffff',
+        accessRole: calendar.accessRole,
+        primary: calendar.primary || false,
+        selected: calendar.selected ?? true,
+        enabled: calendar.primary || calendar.selected || false, // Enable primary and selected by default
+        userId: userId,
+        lastSyncedAt: new Date().toISOString()
+      });
+    }
+
+    debug.log(`✅ Stored ${calendars.length} calendars in database`);
+  } catch (error) {
+    console.error('Failed to fetch calendar list:', error);
+    // Don't throw - calendar list is not critical for initial sign-in
+  }
 }
 
 /**
