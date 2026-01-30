@@ -281,7 +281,7 @@ export async function syncMultipleGoogleCalendars(
     const { db } = await import('./db');
 
     // Get calendar preferences - only fetch from enabled calendars
-    const prefs = await db.calendarPreferences.where('enabled').equals(1).toArray();
+    const prefs = await db.calendarPreferences.where('enabled').equals(true).toArray();
 
     if (prefs.length === 0) {
       debug.log('⚠️ No enabled calendars found, defaulting to primary calendar');

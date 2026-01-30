@@ -198,7 +198,7 @@ export async function syncFromGoogleCalendar(
 
   try {
     // Get all enabled calendars
-    const enabledCalendars = await db.calendarPreferences.where('enabled').equals(1).toArray();
+    const enabledCalendars = await db.calendarPreferences.where('enabled').equals(true).toArray();
 
     if (enabledCalendars.length === 0) {
       debug.log('⚠️ No enabled calendars found, syncing from primary only');
