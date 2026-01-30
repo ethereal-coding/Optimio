@@ -269,6 +269,82 @@ export async function syncGoogleCalendar(
 }
 
 /**
+ * Sync events from multiple Google Calendars
+ * Fetches from all enabled calendars and merges results
+ */
+export async function syncMultipleGoogleCalendars(
+  localCalendarId: string,
+  timeMin?: Date,
+  timeMax?: Date
+): Promise<Event[]> {
+  try {
+    const { db } = await import('./db');
+
+    // Get calendar preferences - only fetch from enabled calendars
+    const prefs = await db.calendarPreferences.where('enabled').equals(1).toArray();
+
+    if (prefs.length === 0) {
+      debug.log('⚠️ No enabled calendars found, defaulting to primary calendar');
+      return syncGoogleCalendar('primary', timeMin, timeMax);
+    }
+
+    debug.log(`🔄 Syncing ${prefs.length} enabled calendar(s)...`);
+
+    const allEvents: Event[] = [];
+    const importedRecurringSeries = new Set<string>();
+
+    // Fetch events from each enabled calendar
+    for (const pref of prefs) {
+      try {
+        debug.log(`📥 Fetching from ${pref.summary} (${pref.id})`);
+
+        const googleEvents = await fetchGoogleCalendarEvents(pref.id, timeMin, timeMax);
+        debug.log(`  ✅ Received ${googleEvents.length} events`);
+
+        const filteredEvents = googleEvents
+          .filter(event => {
+            // Filter out cancelled events
+            if (event.status === 'cancelled') return false;
+
+            // For recurring event instances, only import the first occurrence across ALL calendars
+            if (event.recurringEventId) {
+              const seriesKey = `${pref.id}:${event.recurringEventId}`;
+              if (importedRecurringSeries.has(seriesKey)) {
+                debug.log('⏭️ Skipping duplicate recurring instance:', event.summary);
+                return false;
+              }
+              importedRecurringSeries.add(seriesKey);
+            }
+
+            return true;
+          })
+          .map(event => {
+            const appEvent = convertGoogleEventToAppEvent(event, localCalendarId);
+            // Tag event with source calendar for display/filtering
+            return {
+              ...appEvent,
+              sourceCalendarId: pref.id,
+              sourceCalendarName: pref.summary,
+              sourceCalendarColor: pref.color
+            };
+          });
+
+        allEvents.push(...filteredEvents);
+      } catch (error) {
+        console.error(`❌ Failed to fetch from calendar ${pref.summary}:`, error);
+        // Continue with other calendars even if one fails
+      }
+    }
+
+    debug.log(`✅ Synced ${allEvents.length} total events from ${prefs.length} calendar(s)`);
+    return allEvents;
+  } catch (error) {
+    console.error('❌ Failed to sync multiple calendars:', error);
+    throw error;
+  }
+}
+
+/**
  * Convert app recurrence format to Google Calendar RRULE
  */
 function convertToGoogleRecurrence(recurrence?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'): string[] | undefined {

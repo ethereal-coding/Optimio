@@ -59,6 +59,9 @@ export function initializeGoogleAuth(): void {
       // Fetch and store user info
       await fetchAndStoreUserInfo(response.access_token);
 
+      // Initialize calendar preferences
+      await initializeCalendarPreferences(response.access_token);
+
       debug.log('✅ Google sign-in successful');
       window.location.reload();
     },
@@ -234,4 +237,43 @@ export async function googleApiRequest(
       'Content-Type': 'application/json'
     }
   });
+}
+
+/**
+ * Initialize calendar preferences after sign-in
+ * Fetches all calendars and stores them with primary enabled by default
+ */
+async function initializeCalendarPreferences(accessToken: string): Promise<void> {
+  try {
+    const { fetchCalendarList } = await import('./google-calendar');
+    const calendars = await fetchCalendarList();
+
+    debug.log(`📅 Found ${calendars.length} calendar(s)`);
+
+    // Store each calendar as a preference
+    for (const calendar of calendars) {
+      const existing = await db.calendarPreferences.get(calendar.id);
+
+      if (!existing) {
+        // Enable primary calendar and calendars marked as selected in Google Calendar
+        const shouldEnable = calendar.primary === true || calendar.selected === true;
+
+        await db.calendarPreferences.put({
+          id: calendar.id,
+          summary: calendar.summary,
+          enabled: shouldEnable,
+          color: calendar.backgroundColor || '#3b82f6',
+          accessRole: calendar.accessRole,
+          primary: calendar.primary
+        });
+
+        debug.log(`  ${shouldEnable ? '✅' : '⬜'} ${calendar.summary} (${calendar.id})`);
+      }
+    }
+
+    debug.log('✅ Calendar preferences initialized');
+  } catch (error) {
+    console.error('Failed to initialize calendar preferences:', error);
+    // Don't throw - sign-in should still succeed even if this fails
+  }
 }
