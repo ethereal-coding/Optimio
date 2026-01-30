@@ -11,6 +11,7 @@ import {
 import { isAuthenticated } from './google-auth';
 import { db } from './db';
 import type { CalendarEvent } from '@/types';
+import { debug } from './debug';
 
 /**
  * Calendar Sync Helpers
@@ -48,7 +49,7 @@ export async function addEventWithSync(
       // Update in local state with Google ID
       dispatch(actions.updateEvent(calendarId, syncedEvent));
 
-      console.log('✅ Event created in Google Calendar:', googleEvent.id);
+      debug.log('✅ Event created in Google Calendar:', googleEvent.id);
       return syncedEvent;
     } catch (error) {
       console.error('Failed to sync event to Google Calendar:', error);
@@ -75,7 +76,7 @@ export async function updateEventWithSync(
   if (event.googleEventId && await isAuthenticated()) {
     try {
       await updateGoogleCalendarEvent(event.googleEventId, event, calendarId);
-      console.log('✅ Event updated in Google Calendar:', event.googleEventId);
+      debug.log('✅ Event updated in Google Calendar:', event.googleEventId);
     } catch (error) {
       console.error('Failed to update event in Google Calendar:', error);
       // Local update still succeeds even if Google sync fails
@@ -100,7 +101,7 @@ export async function deleteEventWithSync(
   if (event?.googleEventId && await isAuthenticated()) {
     try {
       await deleteGoogleCalendarEvent(event.googleEventId, calendarId);
-      console.log('✅ Event deleted from Google Calendar:', event.googleEventId);
+      debug.log('✅ Event deleted from Google Calendar:', event.googleEventId);
     } catch (error) {
       console.error('Failed to delete event from Google Calendar:', error);
       // Local deletion still succeeds even if Google sync fails
@@ -119,10 +120,17 @@ async function processEventInstance(
 ): Promise<'added' | 'updated' | 'skipped'> {
   try {
     // Check if event already exists in IndexedDB
-    const existingEvent = await db.events
+    // First try by googleEventId, then fall back to local id for edge cases
+    let existingEvent = await db.events
       .where('googleEventId')
       .equals(googleEvent.id)
       .first();
+
+    // Fallback: check by local ID if not found by googleEventId
+    // This handles cases where an event exists but googleEventId wasn't set yet
+    if (!existingEvent) {
+      existingEvent = await db.events.get(googleEvent.id);
+    }
 
     const appEvent = convertGoogleEventToAppEvent(googleEvent, localCalendarId);
 
@@ -185,7 +193,7 @@ export async function syncFromGoogleCalendar(
   }
 ): Promise<CalendarEvent[]> {
   if (!await isAuthenticated()) {
-    console.log('Not authenticated, skipping Google Calendar sync');
+    debug.log('Not authenticated, skipping Google Calendar sync');
     return [];
   }
 
@@ -198,19 +206,30 @@ export async function syncFromGoogleCalendar(
     }
 
     // Check if already syncing (prevent race conditions)
+    // Use timestamp-based lock with 5-minute timeout
+    const now = Date.now();
+    const SYNC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
     if (syncMeta.status === 'syncing') {
-      console.log('⏭️ Sync already in progress, skipping');
-      return [];
+      const timeSinceLastSync = now - syncMeta.lastSyncTime;
+      if (timeSinceLastSync < SYNC_TIMEOUT_MS) {
+        debug.log('⏭️ Sync already in progress, skipping');
+        return [];
+      } else {
+        debug.warn('⚠️ Sync lock timeout detected, forcing release');
+      }
     }
 
-    // Set status to syncing
+    // Atomically set status to syncing with current timestamp
+    // This reduces (but doesn't eliminate) race window
     await db.syncMetadata.update('google-calendar-primary', {
       status: 'syncing',
+      lastSyncTime: now,
       lastError: null
     });
 
-    console.log('🔄 Starting incremental sync...');
-    console.log('📊 Sync token:', syncMeta.syncToken ? 'Available' : 'None (full sync)');
+    debug.log('🔄 Starting incremental sync...');
+    debug.log('📊 Sync token:', syncMeta.syncToken ? 'Available' : 'None (full sync)');
 
     // Determine sync token
     const syncToken = options?.forceFullSync ? null : syncMeta.syncToken;
@@ -218,7 +237,7 @@ export async function syncFromGoogleCalendar(
     // Fetch changes from Google
     const { events: googleEvents, nextSyncToken } = await fetchGoogleCalendarChanges('primary', syncToken);
 
-    console.log(`📥 Received ${googleEvents.length} changed events from Google`);
+    debug.log(`📥 Received ${googleEvents.length} changed events from Google`);
 
     // Process each changed event
     let addedCount = 0;
@@ -227,7 +246,7 @@ export async function syncFromGoogleCalendar(
 
     for (const googleEvent of googleEvents) {
       // Debug logging
-      console.log('📅 Processing event:', {
+      debug.log('📅 Processing event:', {
         id: googleEvent.id,
         summary: googleEvent.summary,
         hasRecurrence: !!googleEvent.recurrence,
@@ -252,15 +271,15 @@ export async function syncFromGoogleCalendar(
 
       // Check if event is recurring master
       if (googleEvent.recurrence) {
-        console.log('🔁 Expanding recurring event:', googleEvent.summary);
+        debug.log('🔁 Expanding recurring event:', googleEvent.summary);
         // Expand recurring event into instances
         const now = new Date();
         const twoYearsAhead = new Date(now.getFullYear() + 2, 11, 31);
         const instances = expandRecurringEvent(googleEvent, now, twoYearsAhead);
-        console.log(`  → Generated ${instances.length} instances`);
+        debug.log(`  → Generated ${instances.length} instances`);
 
         for (const instance of instances) {
-          console.log(`    • Instance: ${instance.id}, date: ${instance.start.date}`);
+          debug.log(`    • Instance: ${instance.id}, date: ${instance.start.date}`);
           const result = await processEventInstance(instance, localCalendarId, dispatch, actions);
           if (result === 'added') addedCount++;
           if (result === 'updated') updatedCount++;
@@ -274,15 +293,17 @@ export async function syncFromGoogleCalendar(
     }
 
     // Update sync metadata
+    const completionTime = Date.now();
     await db.syncMetadata.update('google-calendar-primary', {
-      lastSyncTime: Date.now(),
+      lastSyncTime: completionTime,
       syncToken: nextSyncToken,
       status: 'idle',
-      fullSyncCompletedAt: syncToken ? syncMeta.fullSyncCompletedAt : Date.now(),
+      lastError: null,
+      fullSyncCompletedAt: syncToken ? syncMeta.fullSyncCompletedAt : completionTime,
       eventsCount: await db.events.count()
     });
 
-    console.log(`✅ Sync complete: ${addedCount} added, ${updatedCount} updated, ${deletedCount} deleted`);
+    debug.log(`✅ Sync complete: ${addedCount} added, ${updatedCount} updated, ${deletedCount} deleted`);
 
     // Return all events from database
     const allEvents = await db.events.toArray();
@@ -290,11 +311,17 @@ export async function syncFromGoogleCalendar(
   } catch (error) {
     console.error('Failed to sync from Google Calendar:', error);
 
-    // Update sync metadata with error
-    await db.syncMetadata.update('google-calendar-primary', {
-      status: 'error',
-      lastError: error instanceof Error ? error.message : 'Unknown error'
-    });
+    // Update sync metadata with error - ALWAYS reset to idle to prevent permanent lock
+    try {
+      await db.syncMetadata.update('google-calendar-primary', {
+        status: 'idle',
+        lastError: error instanceof Error ? error.message : 'Unknown error',
+        lastSyncTime: Date.now()
+      });
+    } catch (metadataError) {
+      console.error('Failed to update sync metadata after error:', metadataError);
+      // Even if metadata update fails, we've logged the original error
+    }
 
     return [];
   }
@@ -312,9 +339,11 @@ export function setupPeriodicSync(
 ): () => void {
   let consecutiveErrors = 0;
   const MAX_CONSECUTIVE_ERRORS = 3;
+  let isActive = true; // Track if sync is still active
 
   // Initial sync
   (async () => {
+    if (!isActive) return; // Check if already stopped
     try {
       await syncFromGoogleCalendar(calendarId, dispatch, actions);
       consecutiveErrors = 0;
@@ -326,9 +355,15 @@ export function setupPeriodicSync(
 
   // Setup periodic sync
   const intervalId = setInterval(async () => {
+    if (!isActive) {
+      clearInterval(intervalId);
+      return;
+    }
+
     // Stop syncing if too many consecutive errors
     if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
       console.error('🛑 Too many consecutive sync errors. Stopping periodic sync.');
+      isActive = false;
       clearInterval(intervalId);
       return;
     }
@@ -345,5 +380,8 @@ export function setupPeriodicSync(
   }, intervalMinutes * 60 * 1000);
 
   // Return cleanup function
-  return () => clearInterval(intervalId);
+  return () => {
+    isActive = false; // Signal that sync should stop
+    clearInterval(intervalId);
+  };
 }

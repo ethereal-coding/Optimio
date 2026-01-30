@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppProvider, useAppState, actions } from '@/hooks/useAppState';
 import { Dashboard } from '@/sections/Dashboard';
+import { debug } from '@/lib/debug';
 import { Toaster } from '@/components/ui/sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -25,7 +26,7 @@ function AppContent() {
 
     async function hydrateFromDatabase() {
       try {
-        console.log('💧 Hydrating events from IndexedDB...');
+        debug.log('💧 Hydrating events from IndexedDB...');
 
         // Load events from IndexedDB
         const storedEvents = await db.events.toArray();
@@ -33,7 +34,7 @@ function AppContent() {
         if (!isMounted) return;
 
         if (storedEvents.length > 0) {
-          console.log(`📥 Loaded ${storedEvents.length} events from cache`);
+          debug.log(`📥 Loaded ${storedEvents.length} events from cache`);
 
           // Group events by calendar
           const eventsByCalendar = new Map<string, any[]>();
@@ -52,9 +53,9 @@ function AppContent() {
             });
           });
 
-          console.log('✅ Hydration complete');
+          debug.log('✅ Hydration complete');
         } else {
-          console.log('📭 No cached events found');
+          debug.log('📭 No cached events found');
         }
       } catch (error) {
         console.error('Failed to hydrate from IndexedDB:', error);
@@ -74,24 +75,24 @@ function AppContent() {
     let isMounted = true;
 
     async function initializeSync() {
-      console.log('🔍 Checking authentication status...');
+      debug.log('🔍 Checking authentication status...');
       const authenticated = await isAuthenticated();
-      console.log('✅ Authenticated:', authenticated);
+      debug.log('✅ Authenticated:', authenticated);
 
       if (!isMounted) return;
 
       if (authenticated) {
-        console.log('🔐 User authenticated, setting up Google Calendar sync...');
+        debug.log('🔐 User authenticated, setting up Google Calendar sync...');
 
         // Load user info if not already in state
         const googleUser = await getCurrentUser();
-        console.log('👤 Google User:', googleUser);
+        debug.log('👤 Google User:', googleUser);
 
         if (!isMounted) return;
 
         if (googleUser && !state.user) {
           // Only set user if not already set
-          console.log('📝 Setting user in app state...');
+          debug.log('📝 Setting user in app state...');
           dispatch(actions.setUser({
             id: googleUser.id,
             name: googleUser.name,
@@ -107,10 +108,10 @@ function AppContent() {
         }
 
         // Setup periodic sync (syncs every 5 minutes)
-        console.log('🔄 Setting up periodic sync...');
+        debug.log('🔄 Setting up periodic sync...');
         cleanup = setupPeriodicSync('1', dispatch, actions, 5); // Use calendar ID '1' to match app state
       } else {
-        console.log('❌ Not authenticated, skipping sync setup');
+        debug.log('❌ Not authenticated, skipping sync setup');
       }
     }
 
@@ -139,7 +140,7 @@ function App() {
   useEffect(() => {
     async function setupDatabase() {
       try {
-        console.log('🚀 Initializing Optimio...');
+        debug.log('🚀 Initializing Optimio...');
 
         // Initialize IndexedDB
         await initializeDatabase();
@@ -147,15 +148,15 @@ function App() {
         // Migrate legacy data if needed
         const migrated = await migrateFromLocalStorage();
         if (migrated) {
-          console.log('✅ Migrated legacy data to IndexedDB');
+          debug.log('✅ Migrated legacy data to IndexedDB');
         }
 
         // Check database health
         const health = await checkDatabaseHealth();
-        console.log('📊 Database health:', health);
+        debug.log('📊 Database health:', health);
 
         setDbReady(true);
-        console.log('✅ Optimio ready!');
+        debug.log('✅ Optimio ready!');
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);
         // Don't block the UI - just skip database features for now

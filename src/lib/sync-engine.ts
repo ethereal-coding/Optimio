@@ -1,10 +1,11 @@
 import { db, type SyncQueueEntry } from './db';
 import { now } from './dates';
+import { debug } from './debug';
 
 /**
  * Sync Engine - Handles 2-way sync with Google APIs
  * This is a skeleton implementation that logs operations
- * Replace console.log with actual API calls when backend is ready
+ * Replace debug.log with actual API calls when backend is ready
  */
 
 export interface SyncResult {
@@ -36,7 +37,7 @@ export async function queueSync(
       conflictResolution: 'pending'
     });
 
-    console.log(`📝 Queued ${operation} for ${entityType}:${entityId}`);
+    debug.log(`📝 Queued ${operation} for ${entityType}:${entityId}`);
   } catch (error) {
     console.error('Failed to queue sync:', error);
   }
@@ -64,7 +65,7 @@ export async function processSyncQueue(): Promise<SyncResult> {
       };
     }
 
-    console.log(`🔄 Processing ${pending.length} pending sync operations`);
+    debug.log(`🔄 Processing ${pending.length} pending sync operations`);
 
     let synced = 0;
     let conflicts = 0;
@@ -135,7 +136,7 @@ async function syncEntityToGoogle(entry: SyncQueueEntry): Promise<{
   // For events: Use Google Calendar API
   // For todos: Use Google Tasks API
 
-  console.log(`🌐 [MOCK] Syncing ${entry.operation} ${entry.entityType}:${entry.entityId}`);
+  debug.log(`🌐 [MOCK] Syncing ${entry.operation} ${entry.entityType}:${entry.entityId}`);
 
   // Placeholder - always succeed for now
   return { success: true };
@@ -156,7 +157,7 @@ async function detectConflict(
     );
 
     if (!localEntity) {
-      console.warn('Local entity not found for conflict detection');
+      debug.warn('Local entity not found for conflict detection');
       return;
     }
 
@@ -170,7 +171,7 @@ async function detectConflict(
       resolution: 'pending'
     });
 
-    console.log(`⚠️ Conflict detected for ${localChange.entityType}:${localChange.entityId}`);
+    debug.log(`⚠️ Conflict detected for ${localChange.entityType}:${localChange.entityId}`);
   } catch (error) {
     console.error('Failed to record conflict:', error);
   }
@@ -246,7 +247,7 @@ export async function resolveConflict(
       resolution
     });
 
-    console.log(`✅ Conflict resolved: ${resolution}`);
+    debug.log(`✅ Conflict resolved: ${resolution}`);
   } catch (error) {
     console.error('Failed to resolve conflict:', error);
     throw error;
@@ -341,14 +342,14 @@ export async function getSyncStatus(): Promise<{
  */
 export async function clearSyncQueue(): Promise<void> {
   await db.syncQueue.clear();
-  console.log('🗑️ Sync queue cleared');
+  debug.log('🗑️ Sync queue cleared');
 }
 
 /**
  * Force full sync (re-sync everything)
  */
 export async function forceFullSync(): Promise<SyncResult> {
-  console.log('🔄 Starting full sync...');
+  debug.log('🔄 Starting full sync...');
 
   // TODO: Implement full sync logic
   // 1. Fetch all remote entities

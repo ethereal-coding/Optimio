@@ -1,6 +1,7 @@
 import { db } from './db';
 import { format } from 'date-fns';
 import { now } from './dates';
+import { debug } from './debug';
 
 export interface ExportData {
   version: number;
@@ -18,7 +19,7 @@ export interface ExportData {
  */
 export async function exportData(): Promise<void> {
   try {
-    console.log('📦 Starting data export...');
+    debug.log('📦 Starting data export...');
 
     // Gather all data
     const [events, todos, goals, notes, settings] = await Promise.all([
@@ -60,7 +61,7 @@ export async function exportData(): Promise<void> {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log(`✅ Exported ${events.length} events, ${todos.length} todos, ${goals.length} goals, ${notes.length} notes`);
+    debug.log(`✅ Exported ${events.length} events, ${todos.length} todos, ${goals.length} goals, ${notes.length} notes`);
   } catch (error) {
     console.error('❌ Export failed:', error);
     throw new Error('Failed to export data. Please try again.');
@@ -81,7 +82,7 @@ export async function importData(file: File): Promise<{
   message: string;
 }> {
   try {
-    console.log('📥 Starting data import...');
+    debug.log('📥 Starting data import...');
 
     // Read file
     const text = await file.text();
@@ -113,7 +114,7 @@ export async function importData(file: File): Promise<{
           db.goals.clear(),
           db.notes.clear()
         ]);
-        console.log('🗑️ Cleared existing data');
+        debug.log('🗑️ Cleared existing data');
       }
 
       // Import events
@@ -174,7 +175,7 @@ export async function importData(file: File): Promise<{
         : 'Data merged successfully'
     };
 
-    console.log('✅ Import complete:', result);
+    debug.log('✅ Import complete:', result);
     return result;
   } catch (error) {
     console.error('❌ Import failed:', error);
@@ -267,7 +268,7 @@ export async function exportToCSV(
     a.click();
     URL.revokeObjectURL(url);
 
-    console.log(`✅ Exported ${data.length} ${entityType} to CSV`);
+    debug.log(`✅ Exported ${data.length} ${entityType} to CSV`);
   } catch (error) {
     console.error('CSV export failed:', error);
     throw error;

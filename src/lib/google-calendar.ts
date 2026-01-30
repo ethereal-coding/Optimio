@@ -1,5 +1,6 @@
 import { googleApiRequest } from './google-auth';
 import type { Event } from '@/types';
+import { debug } from './debug';
 
 /**
  * Google Calendar API Integration
@@ -121,16 +122,31 @@ export function convertGoogleEventToAppEvent(googleEvent: GoogleCalendarEvent, c
   const startTime = googleEvent.start.dateTime
     ? new Date(googleEvent.start.dateTime)
     : (() => {
-        const [year, month, day] = googleEvent.start.date!.split('-').map(Number);
+        if (!googleEvent.start.date) {
+          throw new Error('All-day event missing start.date');
+        }
+        const parts = googleEvent.start.date.split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) {
+          throw new Error(`Invalid date format: ${googleEvent.start.date}`);
+        }
+        const [year, month, day] = parts;
         return new Date(year, month - 1, day, 0, 0, 0, 0); // Start of day
       })();
 
   const endTime = googleEvent.end.dateTime
     ? new Date(googleEvent.end.dateTime)
     : (() => {
-        const [year, month, day] = googleEvent.end.date!.split('-').map(Number);
-        // For all-day events, end should be end of the SAME day, not start of next day
-        return new Date(year, month - 1, day, 23, 59, 59, 999); // End of day
+        // Google Calendar API returns EXCLUSIVE end dates (day after) for all-day events
+        // So we use the start date to get the correct day, then set to end of that day
+        if (!googleEvent.start.date) {
+          throw new Error('All-day event missing start.date');
+        }
+        const parts = googleEvent.start.date.split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) {
+          throw new Error(`Invalid date format: ${googleEvent.start.date}`);
+        }
+        const [year, month, day] = parts;
+        return new Date(year, month - 1, day, 23, 59, 59, 999); // End of the SAME day as start
       })();
 
   // Map Google Calendar colors to hex colors
@@ -178,12 +194,12 @@ export async function syncGoogleCalendar(
   timeMax?: Date
 ): Promise<Event[]> {
   try {
-    console.log('🔄 Syncing Google Calendar events...');
-    console.log('📅 Calendar ID:', calendarId);
-    console.log('📆 Time range:', { timeMin, timeMax });
+    debug.log('🔄 Syncing Google Calendar events...');
+    debug.log('📅 Calendar ID:', calendarId);
+    debug.log('📆 Time range:', { timeMin, timeMax });
 
     const googleEvents = await fetchGoogleCalendarEvents(calendarId, timeMin, timeMax);
-    console.log('📥 Received', googleEvents.length, 'events from Google');
+    debug.log('📥 Received', googleEvents.length, 'events from Google');
 
     // Track recurring event series we've already imported
     const importedRecurringSeries = new Set<string>();
@@ -196,7 +212,7 @@ export async function syncGoogleCalendar(
         // For recurring event instances, only import the first occurrence
         if (event.recurringEventId) {
           if (importedRecurringSeries.has(event.recurringEventId)) {
-            console.log('⏭️ Skipping duplicate recurring instance:', event.summary);
+            debug.log('⏭️ Skipping duplicate recurring instance:', event.summary);
             return false;
           }
           importedRecurringSeries.add(event.recurringEventId);
@@ -206,9 +222,9 @@ export async function syncGoogleCalendar(
       })
       .map(event => convertGoogleEventToAppEvent(event, calendarId));
 
-    console.log(`✅ Synced ${appEvents.length} events from Google Calendar`);
+    debug.log(`✅ Synced ${appEvents.length} events from Google Calendar`);
     if (appEvents.length > 0) {
-      console.log('🎯 Sample event:', appEvents[0]);
+      debug.log('🎯 Sample event:', appEvents[0]);
     }
 
     return appEvents;
@@ -243,16 +259,20 @@ export async function createGoogleCalendarEvent(
   calendarId: string = 'primary'
 ): Promise<GoogleCalendarEvent> {
   try {
+    if (!event.startTime || !event.endTime) {
+      throw new Error('Event must have startTime and endTime');
+    }
+
     const googleEvent: Partial<GoogleCalendarEvent> = {
       summary: event.title,
       description: event.description,
       location: event.location,
       start: event.isAllDay
-        ? { date: event.startTime?.toISOString().split('T')[0] }
-        : { dateTime: event.startTime?.toISOString() },
+        ? { date: event.startTime.toISOString().split('T')[0] }
+        : { dateTime: event.startTime.toISOString() },
       end: event.isAllDay
-        ? { date: event.endTime?.toISOString().split('T')[0] }
-        : { dateTime: event.endTime?.toISOString() },
+        ? { date: event.endTime.toISOString().split('T')[0] }
+        : { dateTime: event.endTime.toISOString() },
       colorId: event.color ? hexToGoogleColorId(event.color) : undefined,
       recurrence: convertToGoogleRecurrence(event.recurrence),
     };
@@ -270,7 +290,7 @@ export async function createGoogleCalendarEvent(
     }
 
     const createdEvent = await response.json();
-    console.log('✅ Created event in Google Calendar:', createdEvent.id);
+    debug.log('✅ Created event in Google Calendar:', createdEvent.id);
 
     return createdEvent;
   } catch (error) {
@@ -288,16 +308,20 @@ export async function updateGoogleCalendarEvent(
   calendarId: string = 'primary'
 ): Promise<GoogleCalendarEvent> {
   try {
+    if (!event.startTime || !event.endTime) {
+      throw new Error('Event must have startTime and endTime');
+    }
+
     const googleEvent: Partial<GoogleCalendarEvent> = {
       summary: event.title,
       description: event.description,
       location: event.location,
       start: event.isAllDay
-        ? { date: event.startTime?.toISOString().split('T')[0] }
-        : { dateTime: event.startTime?.toISOString() },
+        ? { date: event.startTime.toISOString().split('T')[0] }
+        : { dateTime: event.startTime.toISOString() },
       end: event.isAllDay
-        ? { date: event.endTime?.toISOString().split('T')[0] }
-        : { dateTime: event.endTime?.toISOString() },
+        ? { date: event.endTime.toISOString().split('T')[0] }
+        : { dateTime: event.endTime.toISOString() },
       colorId: event.color ? hexToGoogleColorId(event.color) : undefined,
       recurrence: convertToGoogleRecurrence(event.recurrence),
     };
@@ -315,7 +339,7 @@ export async function updateGoogleCalendarEvent(
     }
 
     const updatedEvent = await response.json();
-    console.log('✅ Updated event in Google Calendar:', updatedEvent.id);
+    debug.log('✅ Updated event in Google Calendar:', updatedEvent.id);
 
     return updatedEvent;
   } catch (error) {
@@ -341,7 +365,7 @@ export async function deleteGoogleCalendarEvent(
       throw new Error(`Failed to delete event: ${response.statusText}`);
     }
 
-    console.log('✅ Deleted event from Google Calendar:', eventId);
+    debug.log('✅ Deleted event from Google Calendar:', eventId);
   } catch (error) {
     console.error('Failed to delete Google Calendar event:', error);
     throw error;
@@ -402,7 +426,7 @@ export async function fetchGoogleCalendarChanges(
     if (!response.ok) {
       // Sync token invalid - need full sync
       if (response.status === 410) {
-        console.log('⚠️ Sync token expired, performing full sync');
+        debug.log('⚠️ Sync token expired, performing full sync');
         return fetchGoogleCalendarChanges(calendarId, null);
       }
       throw new Error(`Failed to fetch changes: ${response.statusText}`);
@@ -435,7 +459,7 @@ export function expandRecurringEvent(
   const instances: GoogleCalendarEvent[] = [];
   const recurrence = parseRecurrenceRule(masterEvent.recurrence);
 
-  console.log('🔧 Expanding event:', {
+  debug.log('🔧 Expanding event:', {
     summary: masterEvent.summary,
     recurrence,
     originalDate: masterEvent.start.date,
@@ -446,12 +470,30 @@ export function expandRecurringEvent(
   if (recurrence === 'yearly' && masterEvent.start.date) {
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
-    const [_, month, day] = masterEvent.start.date.split('-');
 
-    console.log(`  → Parsed date parts: year=?, month=${month}, day=${day}`);
+    const parts = masterEvent.start.date.split('-');
+    if (parts.length !== 3) {
+      console.error(`Invalid date format for recurring event: ${masterEvent.start.date}`);
+      return [masterEvent];
+    }
+    const [_, month, day] = parts;
+
+    debug.log(`  → Parsed date parts: year=?, month=${month}, day=${day}`);
 
     for (let year = startYear; year <= endYear; year++) {
       const instanceDate = `${year}-${month}-${day}`;
+
+      // Validate date (handles leap year Feb 29 case)
+      const testDate = new Date(year, parseInt(month) - 1, parseInt(day));
+      if (
+        testDate.getFullYear() !== year ||
+        testDate.getMonth() !== parseInt(month) - 1 ||
+        testDate.getDate() !== parseInt(day)
+      ) {
+        debug.log(`  → Skipping invalid date: ${instanceDate} (e.g., Feb 29 in non-leap year)`);
+        continue;
+      }
+
       const instance: GoogleCalendarEvent = {
         ...masterEvent,
         id: `${masterEvent.id}_${year}`, // Create instance with unique ID
@@ -460,12 +502,12 @@ export function expandRecurringEvent(
         recurringEventId: masterEvent.id // Track master event
       };
 
-      console.log(`  → Created instance for ${instanceDate}`);
+      debug.log(`  → Created instance for ${instanceDate}`);
       instances.push(instance);
     }
   } else {
     // For other recurrence types, return master event as-is
-    console.log(`  → Non-yearly or no date, returning as-is`);
+    debug.log(`  → Non-yearly or no date, returning as-is`);
     instances.push(masterEvent);
   }
 

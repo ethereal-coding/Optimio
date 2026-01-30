@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { debug } from '@/lib/debug';
 import {
   Settings as SettingsIcon,
   Download,
@@ -36,7 +37,7 @@ export function Settings() {
   }, []);
 
   useEffect(() => {
-    console.log('⚙️ Settings: Current theme is:', currentTheme);
+    debug.log('⚙️ Settings: Current theme is:', currentTheme);
   }, [currentTheme]);
 
   async function loadStats() {
@@ -286,7 +287,7 @@ export function Settings() {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => {
-                      console.log('⚙️ Settings: Switching to Light theme');
+                      debug.log('⚙️ Settings: Switching to Light theme');
                       dispatch(actions.setTheme('light'));
                     }}
                     className={cn(
@@ -302,7 +303,7 @@ export function Settings() {
 
                   <button
                     onClick={() => {
-                      console.log('⚙️ Settings: Switching to Dark theme');
+                      debug.log('⚙️ Settings: Switching to Dark theme');
                       dispatch(actions.setTheme('dark'));
                     }}
                     className={cn(
@@ -318,7 +319,7 @@ export function Settings() {
 
                   <button
                     onClick={() => {
-                      console.log('⚙️ Settings: Switching to Auto theme');
+                      debug.log('⚙️ Settings: Switching to Auto theme');
                       dispatch(actions.setTheme('auto'));
                     }}
                     className={cn(

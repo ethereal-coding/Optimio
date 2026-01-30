@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
+import { debug } from '@/lib/debug';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -50,9 +51,9 @@ export function Calendar() {
   const events = calendars[0]?.events || [];
 
   // Debug: Log event count
-  console.log('📊 Calendar component - Total events in state:', events.length);
-  console.log('📊 Calendar ID:', calendars[0]?.id);
-  console.log('📊 First few events:', events.slice(0, 3));
+  debug.log('📊 Calendar component - Total events in state:', events.length);
+  debug.log('📊 Calendar ID:', calendars[0]?.id);
+  debug.log('📊 First few events:', events.slice(0, 3));
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');

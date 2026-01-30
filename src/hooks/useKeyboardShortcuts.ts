@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppState, actions } from './useAppState';
+import { debug } from '@/lib/debug';
 
 export interface ShortcutHandler {
   key: string;
@@ -44,7 +45,7 @@ export function useKeyboardShortcuts(handlers?: {
       if (cmdOrCtrl && e.key === 'k') {
         e.preventDefault();
         handlers?.onSearch?.();
-        console.log('🔍 Search shortcut');
+        debug.log('🔍 Search shortcut');
         return;
       }
 
@@ -52,7 +53,7 @@ export function useKeyboardShortcuts(handlers?: {
       if (cmdOrCtrl && e.key === 'n') {
         e.preventDefault();
         handlers?.onNewItem?.();
-        console.log('➕ New item shortcut');
+        debug.log('➕ New item shortcut');
         return;
       }
 
@@ -60,7 +61,7 @@ export function useKeyboardShortcuts(handlers?: {
       if (cmdOrCtrl && e.key === ',') {
         e.preventDefault();
         handlers?.onSettings?.();
-        console.log('⚙️ Settings shortcut');
+        debug.log('⚙️ Settings shortcut');
         return;
       }
 
@@ -68,7 +69,7 @@ export function useKeyboardShortcuts(handlers?: {
       if (cmdOrCtrl && e.key === 'b') {
         e.preventDefault();
         dispatch(actions.toggleSidebar());
-        console.log('📱 Toggle sidebar');
+        debug.log('📱 Toggle sidebar');
         return;
       }
 
@@ -97,27 +98,27 @@ export function useKeyboardShortcuts(handlers?: {
           case 'd':
             e.preventDefault();
             dispatch(actions.setView('dashboard'));
-            console.log('🏠 Go to Dashboard');
+            debug.log('🏠 Go to Dashboard');
             break;
           case 'c':
             e.preventDefault();
             dispatch(actions.setView('calendar'));
-            console.log('📅 Go to Calendar');
+            debug.log('📅 Go to Calendar');
             break;
           case 't':
             e.preventDefault();
             dispatch(actions.setView('todos'));
-            console.log('✅ Go to Todos');
+            debug.log('✅ Go to Todos');
             break;
           case 'g':
             e.preventDefault();
             dispatch(actions.setView('goals'));
-            console.log('🎯 Go to Goals');
+            debug.log('🎯 Go to Goals');
             break;
           case 'n':
             e.preventDefault();
             dispatch(actions.setView('notes'));
-            console.log('📝 Go to Notes');
+            debug.log('📝 Go to Notes');
             break;
         }
       }
@@ -138,7 +139,7 @@ export function useKeyboardShortcuts(handlers?: {
       // T = Go to today
       if (e.key === 't' && !e.ctrlKey && !e.metaKey && !isInputFocused()) {
         dispatch(actions.setSelectedDate(new Date()));
-        console.log('📅 Go to today');
+        debug.log('📅 Go to today');
       }
     };
 

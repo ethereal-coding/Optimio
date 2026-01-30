@@ -1,4 +1,5 @@
 import { db } from './db';
+import { debug } from './debug';
 
 /**
  * Google OAuth 2.0 Authentication using Google Identity Services
@@ -58,7 +59,7 @@ export function initializeGoogleAuth(): void {
       // Fetch and store user info
       await fetchAndStoreUserInfo(response.access_token);
 
-      console.log('✅ Google sign-in successful');
+      debug.log('✅ Google sign-in successful');
       window.location.reload();
     },
   });
@@ -113,7 +114,7 @@ export async function getValidAccessToken(): Promise<string | null> {
     const bufferMs = 5 * 60 * 1000;
 
     if (tokens.expiresAt < now + bufferMs) {
-      console.log('Access token expired, requesting new token...');
+      debug.log('Access token expired, requesting new token...');
       // For client-side OAuth, we need to request a new token
       // This will be handled by the next sign-in attempt
       await db.authTokens.delete('google');
@@ -178,7 +179,7 @@ export async function signOut(): Promise<void> {
     await db.authTokens.delete('google');
     await db.users.clear();
 
-    console.log('✅ Signed out successfully');
+    debug.log('✅ Signed out successfully');
     window.location.reload();
   } catch (error) {
     console.error('Sign-out failed:', error);

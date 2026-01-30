@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { CalendarEvent, Todo, Goal, Note } from '@/types';
+import { debug } from './debug';
 
 // Extend types with sync fields
 export interface SyncableEvent extends CalendarEvent {
@@ -182,7 +183,7 @@ export async function initializeDatabase() {
     // Migrate to v3 schema if needed
     await migrateEventsToV3();
 
-    console.log('✅ Optimio Database initialized');
+    debug.log('✅ Optimio Database initialized');
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);
     throw error;
@@ -195,7 +196,7 @@ export async function migrateFromLocalStorage() {
     const migrationFlag = localStorage.getItem('optimio-migrated-to-indexeddb');
 
     if (migrationFlag) {
-      console.log('✅ Already migrated to IndexedDB');
+      debug.log('✅ Already migrated to IndexedDB');
       return false;
     }
 
@@ -213,7 +214,7 @@ export async function migrateFromLocalStorage() {
             syncStatus: 'pending' as const
           }))
         );
-        console.log(`✅ Migrated ${data.events.length} events`);
+        debug.log(`✅ Migrated ${data.events.length} events`);
       }
 
       // Migrate todos
@@ -224,7 +225,7 @@ export async function migrateFromLocalStorage() {
             syncStatus: 'pending' as const
           }))
         );
-        console.log(`✅ Migrated ${data.todos.length} todos`);
+        debug.log(`✅ Migrated ${data.todos.length} todos`);
       }
 
       // Migrate goals
@@ -235,7 +236,7 @@ export async function migrateFromLocalStorage() {
             syncStatus: 'pending' as const
           }))
         );
-        console.log(`✅ Migrated ${data.goals.length} goals`);
+        debug.log(`✅ Migrated ${data.goals.length} goals`);
       }
 
       // Migrate notes
@@ -246,11 +247,11 @@ export async function migrateFromLocalStorage() {
             syncStatus: 'pending' as const
           }))
         );
-        console.log(`✅ Migrated ${data.notes.length} notes`);
+        debug.log(`✅ Migrated ${data.notes.length} notes`);
       }
 
       localStorage.setItem('optimio-migrated-to-indexeddb', 'true');
-      console.log('✅ Migration complete!');
+      debug.log('✅ Migration complete!');
       return true;
     }
 
@@ -281,7 +282,7 @@ export async function migrateSyncMetadata() {
         fullSyncCompletedAt: null,
         eventsCount: 0
       });
-      console.log('✅ Initialized sync metadata');
+      debug.log('✅ Initialized sync metadata');
     }
   } catch (error) {
     console.error('Failed to initialize sync metadata:', error);
@@ -294,13 +295,31 @@ export async function migrateSyncMetadata() {
 export async function migrateEventsToV3() {
   try {
     const migrationFlag = localStorage.getItem('optimio-migrated-to-v3');
+    const migrationLock = localStorage.getItem('optimio-migration-lock');
 
-    if (migrationFlag) {
-      console.log('✅ Already migrated to v3');
+    if (migrationFlag === 'true') {
+      debug.log('✅ Already migrated to v3');
       return false;
     }
 
-    console.log('🔄 Migrating events to v3 schema...');
+    // Check for in-progress migration with timeout (5 minutes)
+    if (migrationLock) {
+      const lockTime = parseInt(migrationLock);
+      const now = Date.now();
+      const MIGRATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+      if (now - lockTime < MIGRATION_TIMEOUT_MS) {
+        debug.log('⏭️ Migration already in progress in another tab, skipping');
+        return false;
+      } else {
+        debug.warn('⚠️ Migration lock timeout detected, forcing migration');
+      }
+    }
+
+    // Acquire migration lock
+    localStorage.setItem('optimio-migration-lock', Date.now().toString());
+
+    debug.log('🔄 Migrating events to v3 schema...');
 
     // Get all existing events
     const events = await db.events.toArray();
@@ -316,19 +335,22 @@ export async function migrateEventsToV3() {
         }))
       );
 
-      console.log(`✅ Migrated ${events.length} events`);
+      debug.log(`✅ Migrated ${events.length} events`);
     }
 
     // Initialize sync metadata
     await migrateSyncMetadata();
 
-    // Mark migration as complete
+    // Mark migration as complete and release lock
     localStorage.setItem('optimio-migrated-to-v3', 'true');
-    console.log('✅ Migration to v3 complete!');
+    localStorage.removeItem('optimio-migration-lock');
+    debug.log('✅ Migration to v3 complete!');
 
     return true;
   } catch (error) {
     console.error('❌ Migration to v3 failed:', error);
+    // Release lock on error so migration can be retried
+    localStorage.removeItem('optimio-migration-lock');
     throw error;
   }
 }
