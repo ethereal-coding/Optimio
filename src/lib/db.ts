@@ -168,8 +168,8 @@ export class OptimioDB extends Dexie {
 
     // Version 4: Add multi-calendar support
     this.version(4).stores({
-      // Keep all existing tables
-      events: 'id, startTime, endTime, googleEventId, recurringEventId, syncStatus, lastSyncedAt, etag',
+      // Enhanced events table with source calendar tracking
+      events: 'id, startTime, endTime, googleEventId, recurringEventId, syncStatus, lastSyncedAt, etag, sourceCalendarId',
       todos: 'id, dueDate, completed, priority, category, googleTaskId, syncStatus, lastSyncedAt',
       goals: 'id, deadline, category, syncStatus, lastSyncedAt',
       notes: 'id, updatedAt, createdAt, folder, *tags, isPinned, isFavorite, syncStatus, lastSyncedAt',
@@ -186,6 +186,28 @@ export class OptimioDB extends Dexie {
 
       // New: Calendar preferences for multi-calendar support
       calendarPreferences: 'id, enabled' // Which calendars to show
+    });
+
+    // Version 5: Add sourceCalendarId to events for multi-calendar support
+    this.version(5).stores({
+      // Add sourceCalendarId index to events table
+      events: 'id, startTime, endTime, googleEventId, recurringEventId, syncStatus, lastSyncedAt, etag, sourceCalendarId',
+      todos: 'id, dueDate, completed, priority, category, googleTaskId, syncStatus, lastSyncedAt',
+      goals: 'id, deadline, category, syncStatus, lastSyncedAt',
+      notes: 'id, updatedAt, createdAt, folder, *tags, isPinned, isFavorite, syncStatus, lastSyncedAt',
+
+      // Sync infrastructure
+      syncQueue: '++id, entityType, entityId, operation, timestamp, retryCount, conflictResolution',
+      conflicts: '++id, entityType, entityId, detectedAt, resolvedAt',
+      syncMetadata: 'id, calendarId, lastSyncTime, status',
+
+      // Auth and settings
+      authTokens: 'id, expiresAt',
+      users: 'id, email',
+      settings: 'id',
+
+      // Calendar preferences
+      calendarPreferences: 'id, enabled'
     });
   }
 }

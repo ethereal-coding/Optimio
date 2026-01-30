@@ -245,10 +245,23 @@ export async function googleApiRequest(
  */
 async function initializeCalendarPreferences(accessToken: string): Promise<void> {
   try {
-    const { fetchCalendarList } = await import('./google-calendar');
-    const calendars = await fetchCalendarList();
+    // Fetch calendar list directly using the access token (avoid race condition with IndexedDB)
+    const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch calendar list: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const calendars = data.items || [];
 
     debug.log(`📅 Found ${calendars.length} calendar(s)`);
+    console.log('📅 Calendars found:', calendars); // Always log this
 
     // Store each calendar as a preference
     for (const calendar of calendars) {
@@ -267,13 +280,14 @@ async function initializeCalendarPreferences(accessToken: string): Promise<void>
           primary: calendar.primary
         });
 
-        debug.log(`  ${shouldEnable ? '✅' : '⬜'} ${calendar.summary} (${calendar.id})`);
+        console.log(`  ${shouldEnable ? '✅' : '⬜'} ${calendar.summary} (${calendar.id})`);
       }
     }
 
+    console.log('✅ Calendar preferences initialized');
     debug.log('✅ Calendar preferences initialized');
   } catch (error) {
-    console.error('Failed to initialize calendar preferences:', error);
+    console.error('❌ Failed to initialize calendar preferences:', error);
     // Don't throw - sign-in should still succeed even if this fails
   }
 }
