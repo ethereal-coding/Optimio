@@ -2,8 +2,7 @@ import {
   createGoogleCalendarEvent,
   updateGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
-  syncGoogleCalendar,
-  fetchGoogleCalendarChanges,
+  fetchGoogleCalendarEvents,
   expandRecurringEvent,
   convertGoogleEventToAppEvent,
   type GoogleCalendarEvent
@@ -12,6 +11,8 @@ import { isAuthenticated } from './google-auth';
 import { db } from './db';
 import type { CalendarEvent } from '@/types';
 import { debug } from './debug';
+import { notify } from './notifications';
+import { analytics } from './analytics';
 
 /**
  * Calendar Sync Helpers
@@ -33,26 +34,58 @@ export async function addEventWithSync(
   // Add to local state immediately
   dispatch(actions.addEvent(calendarId, localEvent));
 
+  // Also save to IndexedDB so it persists after refresh
+  try {
+    await db.events.put({
+      ...localEvent,
+      lastSyncedAt: new Date().toISOString()
+    });
+    debug.log('💾 Event saved to IndexedDB:', localEvent.id);
+  } catch (dbError) {
+    console.error('Failed to save event to IndexedDB:', dbError);
+  }
+
   // Try to sync with Google Calendar if signed in
   if (await isAuthenticated()) {
     try {
+      debug.log('🎨 Creating event with color:', event.color);
+      
       // Always use 'primary' for Google Calendar API
       const googleEvent = await createGoogleCalendarEvent(event, 'primary');
 
-      // Update local event with Google ID
+      // Update local event with Google ID and color from Google
       const syncedEvent: CalendarEvent = {
         ...localEvent,
         googleEventId: googleEvent.id,
-        syncedFromGoogle: true
+        syncedFromGoogle: true,
+        sourceCalendarId: 'primary', // Mark as synced from primary calendar
+        // Preserve the color we sent (Google should return the same)
+        color: event.color
       };
 
       // Update in local state with Google ID
       dispatch(actions.updateEvent(calendarId, syncedEvent));
 
-      debug.log('✅ Event created in Google Calendar:', googleEvent.id);
+      // Also update IndexedDB with the Google ID
+      try {
+        await db.events.update(syncedEvent.id, {
+          ...syncedEvent,
+          lastSyncedAt: new Date().toISOString()
+        });
+        debug.log('💾 Synced event updated in IndexedDB:', syncedEvent.id);
+      } catch (dbError) {
+        console.error('Failed to update synced event in IndexedDB:', dbError);
+      }
+
+      debug.log('✅ Event created in Google Calendar:', googleEvent.id, 'with color:', googleEvent.colorId);
+      notify.eventCreated(event.title);
+      analytics.eventCreated({ calendarId: 'primary' });
       return syncedEvent;
     } catch (error) {
       console.error('Failed to sync event to Google Calendar:', error);
+      notify.error('Failed to sync to Google Calendar', {
+        description: 'Event saved locally',
+      });
       // Event is still saved locally even if Google sync fails
     }
   }
@@ -72,13 +105,33 @@ export async function updateEventWithSync(
   // Update local state immediately
   dispatch(actions.updateEvent(calendarId, event));
 
+  // Also update in IndexedDB so changes persist after refresh
+  try {
+    await db.events.update(event.id, {
+      ...event,
+      lastSyncedAt: new Date().toISOString()
+    });
+    debug.log('💾 Event updated in IndexedDB:', event.id);
+  } catch (dbError) {
+    console.error('Failed to update event in IndexedDB:', dbError);
+  }
+
   // Sync with Google Calendar if this event was synced
   if (event.googleEventId && await isAuthenticated()) {
     try {
-      await updateGoogleCalendarEvent(event.googleEventId, event, calendarId);
-      debug.log('✅ Event updated in Google Calendar:', event.googleEventId);
+      debug.log('🎨 Updating event with color:', event.color);
+      
+      // Use the source calendar ID if available, otherwise default to 'primary'
+      const googleCalendarId = event.sourceCalendarId || 'primary';
+      const updatedGoogleEvent = await updateGoogleCalendarEvent(event.googleEventId, event, googleCalendarId);
+      debug.log('✅ Event updated in Google Calendar:', event.googleEventId, 'with color:', updatedGoogleEvent.colorId);
+      notify.eventUpdated(event.title);
+      analytics.eventUpdated({ calendarId: googleCalendarId });
     } catch (error) {
       console.error('Failed to update event in Google Calendar:', error);
+      notify.error('Failed to update in Google Calendar', {
+        description: 'Local changes saved',
+      });
       // Local update still succeeds even if Google sync fails
     }
   }
@@ -97,13 +150,28 @@ export async function deleteEventWithSync(
   // Delete from local state immediately
   dispatch(actions.deleteEvent(calendarId, eventId));
 
+  // Also delete from IndexedDB
+  try {
+    await db.events.delete(eventId);
+    debug.log('🗑️ Event deleted from IndexedDB:', eventId);
+  } catch (dbError) {
+    console.error('Failed to delete event from IndexedDB:', dbError);
+  }
+
   // Delete from Google Calendar if this event was synced
   if (event?.googleEventId && await isAuthenticated()) {
     try {
-      await deleteGoogleCalendarEvent(event.googleEventId, calendarId);
+      // Use the source calendar ID if available, otherwise default to 'primary'
+      const googleCalendarId = event.sourceCalendarId || 'primary';
+      await deleteGoogleCalendarEvent(event.googleEventId, googleCalendarId);
       debug.log('✅ Event deleted from Google Calendar:', event.googleEventId);
+      notify.eventDeleted(event.title);
+      analytics.eventDeleted({ calendarId: googleCalendarId });
     } catch (error) {
       console.error('Failed to delete event from Google Calendar:', error);
+      notify.error('Failed to delete from Google Calendar', {
+        description: 'Event removed locally',
+      });
       // Local deletion still succeeds even if Google sync fails
     }
   }
@@ -140,7 +208,6 @@ async function processEventInstance(
       // Update in IndexedDB
       await db.events.update(existingEvent.id, {
         ...appEvent,
-        syncStatus: 'synced',
         lastSyncedAt: new Date().toISOString(),
         etag: googleEvent.etag,
         sourceCalendarId: sourceCalendarId
@@ -158,7 +225,6 @@ async function processEventInstance(
       // Add new event
       const newEvent = {
         ...appEvent,
-        syncStatus: 'synced' as const,
         lastSyncedAt: new Date().toISOString(),
         etag: googleEvent.etag,
         sourceCalendarId: sourceCalendarId // Tag with source calendar
@@ -186,10 +252,7 @@ async function processEventInstance(
 export async function syncFromGoogleCalendar(
   localCalendarId: string,
   dispatch: (action: any) => void,
-  actions: any,
-  options?: {
-    forceFullSync?: boolean;
-  }
+  actions: any
 ): Promise<CalendarEvent[]> {
   if (!await isAuthenticated()) {
     debug.log('Not authenticated, skipping Google Calendar sync');

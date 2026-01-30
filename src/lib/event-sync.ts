@@ -2,6 +2,8 @@ import { db, type SyncableEvent } from './db';
 import { getAccessToken } from './google-auth';
 import { getEnabledCalendars } from './calendar-storage';
 import { logger } from './logger';
+import { notify } from './notifications';
+import { analytics } from './analytics';
 
 const log = logger('event-sync');
 
@@ -390,12 +392,16 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
 
   // Get actual DB count at end of sync
   const finalDbCount = await db.events.count();
-  console.log(`✅ Sync complete: ${totalAdded} added, ${totalUpdated} updated, ${totalRemoved} removed`);
-  console.log(`🚨 EMERGENCY DEBUG: Total events in DB after sync: ${finalDbCount}`);
+  const duration = Date.now() - syncStartTime;
+  
+  log.info('Sync complete', { totalAdded, totalUpdated, totalRemoved, duration });
 
   if (errors.length > 0) {
-    console.warn(`⚠️ ${errors.length} calendar(s) failed to sync`);
+    log.warn(`${errors.length} calendar(s) failed to sync`);
   }
+
+  // Track analytics
+  analytics.syncCompleted({ duration, added: totalAdded, updated: totalUpdated, removed: totalRemoved });
 
   return {
     success: errors.length === 0,
