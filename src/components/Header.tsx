@@ -217,8 +217,8 @@ export function Header({ onSearchOpen }: HeaderProps) {
               className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg flex items-center justify-center gap-3"
               onClick={async () => {
                 try {
-                  const { signInWithGoogle } = await import('@/lib/google-auth');
-                  await signInWithGoogle();
+                  const { signIn } = await import('@/lib/google-auth');
+                  signIn(); // signIn is not async
                   setShowSignIn(false);
                 } catch (error) {
                   console.error('Sign-in error:', error);
