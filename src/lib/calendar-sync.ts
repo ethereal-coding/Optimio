@@ -197,99 +197,41 @@ export async function syncFromGoogleCalendar(
   }
 
   try {
-    // Get all enabled calendars
-    const enabledCalendars = await db.calendarPreferences.where('enabled').equals(true).toArray();
+    // Get all enabled calendars from the database
+    const enabledCalendars = await db.calendars.where('enabled').equals(1).toArray();
 
     if (enabledCalendars.length === 0) {
-      debug.log('⚠️ No enabled calendars found, syncing from primary only');
-      enabledCalendars.push({
-        id: 'primary',
-        summary: 'Primary Calendar',
-        enabled: true,
-        color: '#3b82f6',
-        primary: true
-      });
+      debug.log('⚠️ No enabled calendars found');
+      return [];
     }
 
     debug.log(`🔄 Syncing ${enabledCalendars.length} calendar(s)...`);
 
     let totalAdded = 0;
     let totalUpdated = 0;
-    let totalDeleted = 0;
 
     // Sync each enabled calendar
     for (const calendar of enabledCalendars) {
       debug.log(`📅 Syncing calendar: ${calendar.summary} (${calendar.id})`);
 
-      // Get sync metadata for this calendar
-      const syncMetaId = `google-calendar-${calendar.id}`;
-      let syncMeta = await db.syncMetadata.get(syncMetaId);
-
-      // Initialize metadata if not exists
-      if (!syncMeta) {
-        syncMeta = {
-          id: syncMetaId,
-          calendarId: calendar.id,
-          lastSyncTime: 0,
-          syncToken: null,
-          pageToken: null,
-          status: 'idle',
-          lastError: null,
-          fullSyncCompletedAt: null,
-          eventsCount: 0
-        };
-        await db.syncMetadata.add(syncMeta);
-      }
-
-      // Check if already syncing (prevent race conditions)
-      const now = Date.now();
-      const SYNC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-
-      if (syncMeta.status === 'syncing') {
-        const timeSinceLastSync = now - syncMeta.lastSyncTime;
-        if (timeSinceLastSync < SYNC_TIMEOUT_MS) {
-          debug.log('⏭️ Sync already in progress, skipping this calendar');
-          continue;
-        } else {
-          debug.warn('⚠️ Sync lock timeout detected, forcing release');
-        }
-      }
-
-      // Set status to syncing
-      await db.syncMetadata.update(syncMetaId, {
-        status: 'syncing',
-        lastSyncTime: now,
-        lastError: null
-      });
-
-      // Determine sync token
-      const syncToken = options?.forceFullSync ? null : syncMeta.syncToken;
-
       try {
-        // Fetch changes from Google
-        const { events: googleEvents, nextSyncToken } = await fetchGoogleCalendarChanges(calendar.id, syncToken);
+        // Simple time-based sync: last 90 days to 1 year ahead
+        const timeMin = new Date();
+        timeMin.setDate(timeMin.getDate() - 90);
+        const timeMax = new Date();
+        timeMax.setFullYear(timeMax.getFullYear() + 1);
 
-        debug.log(`📥 Received ${googleEvents.length} changed events from ${calendar.summary}`);
+        // Fetch events from this calendar
+        const googleEvents = await fetchGoogleCalendarEvents(calendar.id, timeMin, timeMax);
+        debug.log(`📥 Received ${googleEvents.length} events from ${calendar.summary}`);
 
-        // Process each changed event
+        // Process each event
         let addedCount = 0;
         let updatedCount = 0;
-        let deletedCount = 0;
 
         for (const googleEvent of googleEvents) {
+          // Skip cancelled events
           if (googleEvent.status === 'cancelled') {
-            // Event deleted - find by googleEventId from THIS calendar
-            const existingEvent = await db.events
-              .where('googleEventId')
-              .equals(googleEvent.id)
-              .filter(e => e.sourceCalendarId === calendar.id)
-              .first();
-
-            if (existingEvent) {
-              await db.events.delete(existingEvent.id);
-              dispatch(actions.deleteEvent(localCalendarId, existingEvent.id));
-              deletedCount++;
-            }
             continue;
           }
 
@@ -314,54 +256,28 @@ export async function syncFromGoogleCalendar(
           }
         }
 
-        // Update sync metadata for this calendar
-        const completionTime = Date.now();
-        await db.syncMetadata.update(syncMetaId, {
-          lastSyncTime: completionTime,
-          syncToken: nextSyncToken,
-          status: 'idle',
-          lastError: null,
-          fullSyncCompletedAt: syncToken ? syncMeta.fullSyncCompletedAt : completionTime,
-          eventsCount: await db.events.where('sourceCalendarId').equals(calendar.id).count()
+        // Update calendar's last sync time
+        await db.calendars.update(calendar.id, {
+          lastSyncedAt: new Date().toISOString()
         });
 
-        debug.log(`  ✅ ${calendar.summary}: ${addedCount} added, ${updatedCount} updated, ${deletedCount} deleted`);
+        debug.log(`  ✅ ${calendar.summary}: ${addedCount} added, ${updatedCount} updated`);
 
         totalAdded += addedCount;
         totalUpdated += updatedCount;
-        totalDeleted += deletedCount;
       } catch (calendarError) {
         console.error(`Failed to sync calendar ${calendar.summary}:`, calendarError);
-
-        // Update metadata with error
-        await db.syncMetadata.update(syncMetaId, {
-          status: 'idle',
-          lastError: calendarError instanceof Error ? calendarError.message : 'Unknown error'
-        });
         // Continue with other calendars
       }
     }
 
-    debug.log(`✅ Multi-calendar sync complete: ${totalAdded} added, ${totalUpdated} updated, ${totalDeleted} deleted`);
+    debug.log(`✅ Multi-calendar sync complete: ${totalAdded} added, ${totalUpdated} updated`);
 
     // Return all events from database
     const allEvents = await db.events.toArray();
     return allEvents;
   } catch (error) {
     console.error('Failed to sync from Google Calendar:', error);
-
-    // Update sync metadata with error - ALWAYS reset to idle to prevent permanent lock
-    try {
-      await db.syncMetadata.update('google-calendar-primary', {
-        status: 'idle',
-        lastError: error instanceof Error ? error.message : 'Unknown error',
-        lastSyncTime: Date.now()
-      });
-    } catch (metadataError) {
-      console.error('Failed to update sync metadata after error:', metadataError);
-      // Even if metadata update fails, we've logged the original error
-    }
-
     return [];
   }
 }

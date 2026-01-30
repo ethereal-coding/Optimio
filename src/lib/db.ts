@@ -14,8 +14,10 @@ import { debug } from './debug';
 // Events with Google Calendar sync support
 export interface SyncableEvent extends CalendarEvent {
   googleEventId?: string;
-  calendarId: string; // Which Google Calendar this event belongs to
+  calendarId: string; // Local calendar ID (always '1' for now)
+  sourceCalendarId?: string; // Which Google Calendar this event came from (e.g., 'primary', 'user@gmail.com')
   lastSyncedAt?: string;
+  etag?: string; // Google's version identifier
 }
 
 // Todos (keep for future use)
@@ -109,8 +111,8 @@ export class OptimioDB extends Dexie {
 
     // Single, clean schema version
     this.version(1).stores({
-      // Events indexed by: id, startTime, endTime, googleEventId, and calendarId
-      events: 'id, startTime, endTime, googleEventId, calendarId',
+      // Events indexed by: id, startTime, endTime, googleEventId, calendarId, and sourceCalendarId
+      events: 'id, startTime, endTime, googleEventId, calendarId, sourceCalendarId',
 
       // Todos, goals, notes (for future use)
       todos: 'id, dueDate, completed, priority, category, googleTaskId',
