@@ -406,7 +406,7 @@ export function Notes() {
       }}>
         <DialogContent 
           className="border-border max-w-3xl max-h-[80vh]"
-          style={selectedNote?.color ? { backgroundColor: selectedNote.color } : undefined}
+          style={{ backgroundColor: editingNote?.color || selectedNote?.color || 'hsl(var(--card))' }}
         >
           {selectedNote && !editingNote && (
             <ViewNoteContent
@@ -834,7 +834,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
       content: content.trim(),
       tags,
       folder: folder.trim() || undefined,
-      color: color || undefined,
+      color: color === 'hsl(var(--card))' ? undefined : color, // Don't save graphite as explicit color
       images: images.length > 0 ? images : undefined,
       updatedAt: new Date(),
     });
