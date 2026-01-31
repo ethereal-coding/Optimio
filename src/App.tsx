@@ -293,12 +293,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark" storageKey="optimio-theme">
-        <AppProvider>
+      <AppProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="optimio-theme">
           <AppContent />
           <Toaster />
-        </AppProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AppProvider>
     </ErrorBoundary>
   );
 }
