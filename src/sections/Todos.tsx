@@ -11,38 +11,64 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+
+import {
   CheckSquare,
   Search,
   Plus,
   Calendar as CalendarIcon,
-  Grid3x3,
-  List,
   Edit2,
-  TrendingUp,
-  Trophy,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Circle,
+  PlayCircle,
+  CheckCircle2,
+  Target,
+  X,
+  Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, addDays, formatDistanceToNow } from 'date-fns';
 import { AddTodoForm } from '@/components/AddTodoForm';
-import type { Todo } from '@/types';
+import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 
-type ViewMode = 'grid' | 'list';
-type FilterMode = 'all' | 'active' | 'completed';
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low';
 
 export function Todos() {
   const { state, dispatch } = useAppState();
-  const { todos, todosViewMode } = state;
+  const { todos, goals } = state;
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [showAddTodo, setShowAddTodo] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // Auto-open todo from search
   useEffect(() => {
@@ -55,6 +81,25 @@ export function Todos() {
     }
   }, [state.selectedItemToOpen, state.todos, dispatch]);
 
+  // Add/remove dragging class to body
+  useEffect(() => {
+    if (isDragging) {
+      document.body.classList.add('dragging');
+    } else {
+      document.body.classList.remove('dragging');
+    }
+    return () => {
+      document.body.classList.remove('dragging');
+    };
+  }, [isDragging]);
+
+  // Helper to determine todo status
+  const getTodoStatus = (todo: Todo) => {
+    if (todo.completed) return 'completed';
+    if (todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate)) return 'in-progress';
+    return 'not-started';
+  };
+
   // Filter todos
   const filteredTodos = todos.filter(todo => {
     const matchesSearch =
@@ -64,13 +109,15 @@ export function Todos() {
 
     if (!matchesSearch) return false;
 
-    if (filterMode === 'active' && todo.completed) return false;
-    if (filterMode === 'completed' && !todo.completed) return false;
-
     if (priorityFilter !== 'all' && todo.priority !== priorityFilter) return false;
 
     return true;
   });
+
+  // Group todos by status
+  const notStartedTodos = filteredTodos.filter(t => getTodoStatus(t) === 'not-started');
+  const inProgressTodos = filteredTodos.filter(t => getTodoStatus(t) === 'in-progress');
+  const completedTodos = filteredTodos.filter(t => getTodoStatus(t) === 'completed');
 
   const handleAddTodo = async (todo: Todo) => {
     await addTodoWithSync(todo, dispatch, actions);
@@ -93,6 +140,50 @@ export function Todos() {
     const updatedTodo = todos.find(t => t.id === todoId);
     if (updatedTodo && selectedTodo?.id === todoId) {
       setSelectedTodo({ ...updatedTodo, completed: !updatedTodo.completed });
+    }
+  };
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    // Check if dropped over a column (column IDs are strings like 'not-started', 'in-progress', 'completed')
+    const columnIds = ['not-started', 'in-progress', 'completed'];
+    const isOverColumn = columnIds.includes(overId);
+    
+    // Find the todo being dragged
+    const todo = todos.find(t => t.id === activeId);
+    if (!todo) return;
+
+    let updatedTodo = { ...todo };
+
+    if (isOverColumn) {
+      // Dropped over a column - move to that status
+      switch (overId) {
+        case 'completed':
+          updatedTodo.completed = true;
+          break;
+        case 'not-started':
+          updatedTodo.completed = false;
+          // Set due date to tomorrow if it's overdue or not set
+          if (!todo.dueDate || isPast(todo.dueDate)) {
+            updatedTodo.dueDate = addDays(new Date(), 1);
+          }
+          break;
+        case 'in-progress':
+          updatedTodo.completed = false;
+          // Set due date to yesterday to mark as overdue/in-progress
+          updatedTodo.dueDate = addDays(new Date(), -1);
+          break;
+      }
+    }
+
+    // Only update if something changed
+    if (JSON.stringify(updatedTodo) !== JSON.stringify(todo)) {
+      await updateTodoWithSync(updatedTodo, dispatch, actions);
     }
   };
 
@@ -139,51 +230,6 @@ export function Todos() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
             />
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('all')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'all'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('active')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'active'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Active
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('completed')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'completed'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Trophy className="h-3 w-3 mr-1" />
-              Completed
-            </Button>
           </div>
 
           {/* Priority Filter */}
@@ -244,41 +290,11 @@ export function Todos() {
               Low
             </Button>
           </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setTodosViewMode('grid'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                todosViewMode === 'grid'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setTodosViewMode('list'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                todosViewMode === 'list'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Todos Grid/List */}
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+      {/* Tasks Board */}
+      <div className="flex-1 p-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
         {filteredTodos.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[400px] text-center">
             <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
@@ -299,28 +315,117 @@ export function Todos() {
             )}
           </div>
         ) : (
-          <div className={cn(
-            todosViewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-2 max-w-3xl'
-          )}>
-            {filteredTodos.map((todo) => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                viewMode={todosViewMode}
-                onClick={() => setSelectedTodo(todo)}
-                onToggle={() => handleToggleTodo(todo.id)}
-                getPriorityColor={getPriorityColor}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={(e) => {
+              setIsDragging(true);
+              setActiveId(e.active.id as string);
+            }}
+            onDragEnd={(e) => {
+              setIsDragging(false);
+              setActiveId(null);
+              handleDragEnd(e);
+            }}
+            autoScroll={false}
+          >
+            <div className="flex h-full min-w-[900px] divide-x divide-border">
+              {/* Not Started Column */}
+              <DroppableColumn 
+                id="not-started" 
+                title="Not Started" 
+                icon={<Circle className="h-4 w-4" />}
+                count={notStartedTodos.length}
+              >
+                <SortableContext 
+                  items={notStartedTodos.map(t => t.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {notStartedTodos.map((todo) => (
+                      <SortableTodoCard
+                        key={todo.id}
+                        todo={todo}
+                        goals={goals}
+                        onClick={() => setSelectedTodo(todo)}
+                        onToggle={() => handleToggleTodo(todo.id)}
+                        getPriorityColor={getPriorityColor}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DroppableColumn>
+
+              {/* In Progress Column */}
+              <DroppableColumn 
+                id="in-progress" 
+                title="In Progress" 
+                icon={<PlayCircle className="h-4 w-4 text-blue-400" />}
+                count={inProgressTodos.length}
+              >
+                <SortableContext 
+                  items={inProgressTodos.map(t => t.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {inProgressTodos.map((todo) => (
+                      <SortableTodoCard
+                        key={todo.id}
+                        todo={todo}
+                        goals={goals}
+                        onClick={() => setSelectedTodo(todo)}
+                        onToggle={() => handleToggleTodo(todo.id)}
+                        getPriorityColor={getPriorityColor}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DroppableColumn>
+
+              {/* Completed Column */}
+              <DroppableColumn 
+                id="completed" 
+                title="Completed" 
+                icon={<CheckCircle2 className="h-4 w-4 text-green-400" />}
+                count={completedTodos.length}
+              >
+                <SortableContext 
+                  items={completedTodos.map(t => t.id)} 
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {completedTodos.map((todo) => (
+                      <SortableTodoCard
+                        key={todo.id}
+                        todo={todo}
+                        goals={goals}
+                        onClick={() => setSelectedTodo(todo)}
+                        onToggle={() => handleToggleTodo(todo.id)}
+                        getPriorityColor={getPriorityColor}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DroppableColumn>
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {activeId ? (
+                <TodoCard
+                  todo={todos.find(t => t.id === activeId)!}
+                  goals={goals}
+                  onClick={() => {}}
+                  onToggle={() => {}}
+                  getPriorityColor={getPriorityColor}
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
 
       {/* Add Todo Dialog */}
       <Dialog open={showAddTodo} onOpenChange={setShowAddTodo}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Create New Task</DialogTitle>
           </DialogHeader>
@@ -335,10 +440,11 @@ export function Todos() {
           setEditingTodo(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {selectedTodo && (
             <ViewTodoContent
               todo={selectedTodo}
+              goals={goals}
               onEdit={() => setEditingTodo(selectedTodo)}
               onDelete={() => handleDeleteTodo(selectedTodo.id)}
               onToggle={() => handleToggleTodo(selectedTodo.id)}
@@ -347,6 +453,7 @@ export function Todos() {
                 setEditingTodo(null);
               }}
               getPriorityColor={getPriorityColor}
+              dispatch={dispatch}
             />
           )}
         </DialogContent>
@@ -358,7 +465,7 @@ export function Todos() {
           setEditingTodo(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {editingTodo && (
             <>
               <DialogHeader>
@@ -377,17 +484,92 @@ export function Todos() {
   );
 }
 
-// Todo Card Component
-interface TodoCardProps {
+// Droppable Column Component
+interface DroppableColumnProps {
+  id: string;
+  title: string;
+  icon: React.ReactNode;
+  count: number;
+  children: React.ReactNode;
+}
+
+function DroppableColumn({ id, title, icon, count, children }: DroppableColumnProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex-1 flex flex-col min-w-[280px] bg-background",
+        isOver && "bg-accent/30"
+      )}
+    >
+      <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
+        {icon}
+        <span>{title}</span>
+        <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
+          {count}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Sortable Todo Card Component
+interface SortableTodoCardProps {
   todo: Todo;
-  viewMode: ViewMode;
+  goals: Goal[];
   onClick: () => void;
   onToggle: (e: React.MouseEvent) => void;
   getPriorityColor: (priority: string) => string;
 }
 
-function TodoCard({ todo, viewMode, onClick, onToggle, getPriorityColor }: TodoCardProps) {
+function SortableTodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: SortableTodoCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: todo.id });
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
+      <TodoCard
+        todo={todo}
+        goals={goals}
+        onClick={onClick}
+        onToggle={onToggle}
+        getPriorityColor={getPriorityColor}
+      />
+    </div>
+  );
+}
+
+// Todo Card Component
+interface TodoCardProps {
+  todo: Todo;
+  goals: Goal[];
+  onClick: () => void;
+  onToggle: (e: React.MouseEvent) => void;
+  getPriorityColor: (priority: string) => string;
+}
+
+function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCardProps) {
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
+  const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
 
   const getDueDateText = () => {
     if (!todo.dueDate) return null;
@@ -397,103 +579,83 @@ function TodoCard({ todo, viewMode, onClick, onToggle, getPriorityColor }: TodoC
     return format(todo.dueDate, 'MMM d');
   };
 
-  if (viewMode === 'list') {
-    return (
-      <Card
-        onClick={onClick}
-        className="p-3 bg-card border-border hover:border-border transition-all cursor-pointer group"
-      >
-        <div className="flex items-center gap-3">
-          <Checkbox
-            checked={todo.completed}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(e);
-            }}
-            className="border-muted-foreground/40"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={cn('h-2 w-2 rounded-full flex-shrink-0', getPriorityColor(todo.priority))} />
-              <h3 className={cn(
-                "text-sm text-foreground truncate",
-                todo.completed && "line-through text-muted-foreground"
-              )}>
-                {todo.title}
-              </h3>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {todo.category && (
-                <span className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
-                  {todo.category}
-                </span>
-              )}
-              {todo.dueDate && (
-                <span className={cn(
-                  "flex items-center gap-1",
-                  isOverdue && "text-red-400"
-                )}>
-                  <CalendarIcon className="h-3 w-3" />
-                  {getDueDateText()}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <Card
       onClick={onClick}
-      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[160px]"
+      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
     >
-      <div className="flex items-start gap-3 mb-3">
+      <div className="flex items-center gap-3">
         <Checkbox
           checked={todo.completed}
           onClick={(e) => {
             e.stopPropagation();
             onToggle(e);
           }}
-          className="mt-0.5 border-muted-foreground/40"
+          className="border-muted-foreground/40"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2">
             <span className={cn('h-2 w-2 rounded-full flex-shrink-0', getPriorityColor(todo.priority))} />
             <h3 className={cn(
-              "text-base font-medium text-foreground truncate",
+              "text-sm text-foreground truncate",
               todo.completed && "line-through text-muted-foreground"
             )}>
               {todo.title}
             </h3>
           </div>
-          {todo.description && (
-            <p className={cn(
-              "text-sm text-foreground/50 line-clamp-2",
-              todo.completed && "text-muted-foreground"
-            )}>
-              {todo.description}
-            </p>
-          )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
-        {todo.category && (
-          <span className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground">
-            {todo.category}
+      {/* Bottom section: Due date on left; Priority, Goal, Category, Tags on right */}
+      <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-2 border-t border-border mt-auto">
+        <div className="flex items-center gap-2 min-w-0">
+          {todo.dueDate && (
+            <span className={cn(
+              "flex items-center gap-1",
+              isOverdue && "text-red-400"
+            )}>
+              <CalendarIcon className="h-3 w-3" />
+              {getDueDateText()}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Priority badge */}
+          <span className={cn('px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize', getPriorityColor(todo.priority))}>
+            {todo.priority}
           </span>
-        )}
-        {todo.dueDate && (
-          <span className={cn(
-            "flex items-center gap-1 text-[10px]",
-            isOverdue ? "text-red-400" : "text-muted-foreground"
-          )}>
-            <CalendarIcon className="h-3 w-3" />
-            {getDueDateText()}
-          </span>
-        )}
+          {/* Goal badge */}
+          {linkedGoal && (
+            <span
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white/80 text-[10px]"
+              style={{ backgroundColor: linkedGoal.color }}
+            >
+              <Target className="h-3 w-3" />
+              <span className="truncate max-w-[80px]">{linkedGoal.title}</span>
+            </span>
+          )}
+          {/* Category */}
+          {todo.category && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+              <Tag className="h-3 w-3" />
+              {todo.category}
+            </span>
+          )}
+          {/* Tags */}
+          {todo.tags && todo.tags.length > 0 && (
+            <>
+              {todo.tags.slice(0, 1).map((tag) => (
+                <span key={tag} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                  <Tag className="h-3 w-3" />
+                  {tag}
+                </span>
+              ))}
+              {todo.tags.length > 1 && (
+                <span className="text-[10px]">+{todo.tags.length - 1}</span>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -502,15 +664,18 @@ function TodoCard({ todo, viewMode, onClick, onToggle, getPriorityColor }: TodoC
 // View Todo Content
 interface ViewTodoContentProps {
   todo: Todo;
+  goals: Goal[];
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
   onClose: () => void;
   getPriorityColor: (priority: string) => string;
+  dispatch: (action: any) => void;
 }
 
-function ViewTodoContent({ todo, onEdit, onDelete, onToggle, getPriorityColor }: ViewTodoContentProps) {
+function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, getPriorityColor, dispatch }: ViewTodoContentProps) {
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
+  const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
 
   return (
     <>
@@ -550,55 +715,86 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, getPriorityColor }:
         </div>
       </DialogHeader>
 
-      <div className="border-t border-border -mt-4"></div>
-
-      <div className="space-y-4 pt-3">
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <span className={cn('h-2.5 w-2.5 rounded-full', getPriorityColor(todo.priority))} />
-            <span className="text-muted-foreground capitalize">{todo.priority} Priority</span>
-          </div>
-          {todo.category && (
-            <span className="px-2 py-1 rounded bg-secondary text-muted-foreground">
-              {todo.category}
-            </span>
+      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2">
+          {todo.description && (
+            <div className="prose prose-invert max-w-none">
+              <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{todo.description}</p>
+            </div>
           )}
-        </div>
 
-        {todo.description && (
-          <div>
-            <label className="text-sm text-muted-foreground block mb-1">Description</label>
-            <p className="text-sm text-foreground/70 leading-relaxed">{todo.description}</p>
-          </div>
-        )}
+          {/* Bottom section: Dates on left; Category, Priority and Goal on right */}
+          <div className="flex items-center justify-between text-xs pt-3 text-muted-foreground border-t border-border">
+            {/* Left side: Dates */}
+            <div className="flex items-center gap-2 min-w-0">
+              <span>Created {format(todo.createdAt, 'MMM d, yyyy')}</span>
+              {todo.dueDate && (
+                <>
+                  <span>•</span>
+                  <span className={cn(isOverdue && "text-red-400")}>
+                    Due {format(todo.dueDate, 'MMM d, yyyy')}
+                  </span>
+                </>
+              )}
+              {todo.completedAt && (
+                <>
+                  <span>•</span>
+                  <span className="text-green-400">Completed {format(todo.completedAt, 'MMM d, yyyy')}</span>
+                </>
+              )}
+            </div>
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <label className="text-muted-foreground block mb-1">Created</label>
-            <span className="text-foreground/70">{format(todo.createdAt, 'MMM d, yyyy')}</span>
-          </div>
-          {todo.dueDate && (
-            <div>
-              <label className="text-muted-foreground block mb-1">Due Date</label>
-              <span className={cn(
-                "text-foreground/70 flex items-center gap-1",
-                isOverdue && "text-red-400"
-              )}>
-                {isOverdue && <AlertCircle className="h-3 w-3" />}
-                {format(todo.dueDate, 'MMM d, yyyy')}
+            {/* Right side: Priority, Goal and Category */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Priority tag */}
+              <span
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90 capitalize",
+                  todo.priority === 'high' && "bg-red-500",
+                  todo.priority === 'medium' && "bg-yellow-500",
+                  todo.priority === 'low' && "bg-blue-500"
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+                {todo.priority}
               </span>
-            </div>
-          )}
-        </div>
 
-        {todo.completedAt && (
-          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-            <div className="flex items-center gap-2 text-sm text-green-400">
-              <CheckSquare className="h-4 w-4" />
-              <span>Completed {formatDistanceToNow(todo.completedAt, { addSuffix: true })}</span>
+              {/* Goal tag */}
+              {linkedGoal && (
+                <span
+                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90"
+                  style={{ backgroundColor: linkedGoal.color }}
+                >
+                  <Target className="h-3 w-3" />
+                  {linkedGoal.title}
+                </span>
+              )}
+
+              {/* Category tag */}
+              {todo.category && (
+                <span className="flex items-center gap-1 px-2 py-1 rounded bg-secondary text-foreground/50 text-[10px]">
+                  <Tag className="h-3 w-3" />
+                  {todo.category}
+                </span>
+              )}
+
+              {/* Tags */}
+              {todo.tags && todo.tags.length > 0 && (
+                <>
+                  {todo.tags.slice(0, 2).map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 px-2 py-1 rounded bg-secondary text-foreground/50 text-[10px]">
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </span>
+                  ))}
+                  {todo.tags.length > 2 && (
+                    <span className="text-[10px]">+{todo.tags.length - 2}</span>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );

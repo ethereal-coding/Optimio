@@ -152,7 +152,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
                   Add Task
                 </TooltipContent>
               </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl">
+              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Task</DialogTitle>
                 </DialogHeader>
@@ -182,7 +182,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
                   Add Event
                 </TooltipContent>
               </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl">
+              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Event</DialogTitle>
                 </DialogHeader>
@@ -212,7 +212,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
                   Add Goal
                 </TooltipContent>
               </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl">
+              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Goal</DialogTitle>
                 </DialogHeader>
@@ -242,7 +242,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
                   Add Note
                 </TooltipContent>
               </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl">
+              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Note</DialogTitle>
                 </DialogHeader>

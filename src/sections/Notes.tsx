@@ -15,10 +15,9 @@ import {
 import {
   SortableContext,
   rectSortingStrategy,
-  verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
 import {
   Dialog,
   DialogContent,
@@ -35,8 +34,6 @@ import {
   X,
   Tag,
   Folder,
-  Grid3x3,
-  List,
   Image
 } from 'lucide-react';
 import { PinIcon } from '@/components/icons/PinIcon';
@@ -47,18 +44,18 @@ import type { Note } from '@/types';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
-type ViewMode = 'grid' | 'list';
 type FilterMode = 'all' | 'pinned' | 'favorites';
 
 export function Notes() {
   const { state, dispatch } = useAppState();
-  const { notes, notesViewMode } = state;
+  const { notes } = state;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [showAddNote, setShowAddNote] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Auto-open note from search
   useEffect(() => {
@@ -70,6 +67,18 @@ export function Notes() {
       }
     }
   }, [state.selectedItemToOpen, state.notes, dispatch]);
+
+  // Add/remove dragging class to body
+  useEffect(() => {
+    if (isDragging) {
+      document.body.classList.add('dragging');
+    } else {
+      document.body.classList.remove('dragging');
+    }
+    return () => {
+      document.body.classList.remove('dragging');
+    };
+  }, [isDragging]);
 
   // Filter notes based on search and filter mode
   const filteredNotes = notes.filter(note => {
@@ -178,9 +187,9 @@ export function Notes() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background">
+    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border bg-background px-6 py-4">
+      <div className="flex-shrink-0 h-auto min-h-[100px] border-b border-border bg-background px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
@@ -258,40 +267,11 @@ export function Notes() {
             </Button>
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setNotesViewMode('grid'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                notesViewMode === 'grid'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setNotesViewMode('list'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                notesViewMode === 'list'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
       {/* Notes Grid/List */}
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 p-6 pb-10 overflow-y-auto custom-scrollbar">
         {pinnedNotes.length === 0 && unpinnedNotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[400px] text-center">
             <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
@@ -315,7 +295,12 @@ export function Notes() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={(e) => {
+              setIsDragging(false);
+              handleDragEnd(e);
+            }}
+            autoScroll={false}
           >
             <div className="space-y-6">
               {/* Pinned Notes */}
@@ -328,18 +313,13 @@ export function Notes() {
                   )}
                   <SortableContext
                     items={pinnedNotes.map(n => n.id)}
-                    strategy={notesViewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+                    strategy={rectSortingStrategy}
                   >
-                    <div className={cn(
-                      notesViewMode === 'grid'
-                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-                        : 'space-y-2 max-w-3xl'
-                    )}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {pinnedNotes.map((note) => (
                         <SortableNoteCard
                           key={note.id}
                           note={note}
-                          viewMode={notesViewMode}
                           onClick={() => setSelectedNote(note)}
                           onTogglePin={handleTogglePin}
                           onToggleFavorite={handleToggleFavorite}
@@ -360,18 +340,13 @@ export function Notes() {
                   )}
                   <SortableContext
                     items={unpinnedNotes.map(n => n.id)}
-                    strategy={notesViewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
+                    strategy={rectSortingStrategy}
                   >
-                    <div className={cn(
-                      notesViewMode === 'grid'
-                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-                        : 'space-y-2 max-w-3xl'
-                    )}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {unpinnedNotes.map((note) => (
                         <SortableNoteCard
                           key={note.id}
                           note={note}
-                          viewMode={notesViewMode}
                           onClick={() => setSelectedNote(note)}
                           onTogglePin={handleTogglePin}
                           onToggleFavorite={handleToggleFavorite}
@@ -404,8 +379,20 @@ export function Notes() {
         }
       }}>
         <DialogContent 
-          className="border-border max-w-3xl max-h-[80vh]"
-          style={{ backgroundColor: editingNote?.color || selectedNote?.color || 'hsl(var(--card))' }}
+          className={cn(
+            "max-w-3xl max-h-[80vh]",
+            ((editingNote?.color && editingNote?.color !== 'hsl(var(--card))') || 
+             (selectedNote?.color && selectedNote?.color !== 'hsl(var(--card))'))
+              ? "border-2"
+              : "border border-border"
+          )}
+          style={{ 
+            backgroundColor: editingNote?.color || selectedNote?.color || 'hsl(var(--card))',
+            borderColor: ((editingNote?.color && editingNote?.color !== 'hsl(var(--card))') || 
+             (selectedNote?.color && selectedNote?.color !== 'hsl(var(--card))')) 
+              ? editingNote?.color || selectedNote?.color 
+              : undefined
+          }}
           showCloseButton={false}
         >
           {selectedNote && !editingNote && (
@@ -437,7 +424,6 @@ export function Notes() {
 // Sortable Note Card Component
 interface NoteCardProps {
   note: Note;
-  viewMode: ViewMode;
   onClick: () => void;
   onTogglePin: (note: Note, e: React.MouseEvent) => void;
   onToggleFavorite: (note: Note, e: React.MouseEvent) => void;
@@ -454,19 +440,19 @@ function SortableNoteCard(props: NoteCardProps) {
   } = useSortable({ id: props.note.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none h-fit">
       <NoteCard {...props} />
     </div>
   );
 }
 
-function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
+function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
   // Get color style for the note
   const colorStyle = note.color ? { backgroundColor: note.color } : {};
   const hasCustomColor = !!note.color;
@@ -476,75 +462,36 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
   const textClass = useWhiteText ? 'text-white' : 'text-foreground';
   const mutedTextClass = useWhiteText ? 'text-white/70' : 'text-muted-foreground';
   
-  if (viewMode === 'list') {
-    return (
-      <Card
-        onClick={onClick}
-        style={colorStyle}
-        className={cn(
-          "p-4 border-border hover:border-border transition-all cursor-pointer group",
-          hasCustomColor ? "bg-opacity-20" : "bg-card"
-        )}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-white/60" />}
-              <h3 className="text-base font-medium text-foreground truncate">{note.title}</h3>
-            </div>
-            {note.content && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
-                {note.content}
-              </p>
-            )}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{format(note.updatedAt, 'MMM d, yyyy')}</span>
-              {note.tags.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {note.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
-                      {tag}
-                    </span>
-                  ))}
-                  {note.tags.length > 3 && <span>+{note.tags.length - 3}</span>}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={(e) => onTogglePin(note, e)}
-            >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
-              onClick={(e) => onToggleFavorite(note, e)}
-            >
-              <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
-            </Button>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
+  // Check if content overflows 8 lines
+  const contentRef = useRef<HTMLParagraphElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (contentRef.current) {
+        setIsOverflowing(contentRef.current.scrollHeight > 154); // detect if more than 8 lines
+      }
+    };
+    requestAnimationFrame(checkOverflow);
+  }, [note.content]);
+  
   return (
     <Card
       onClick={onClick}
-      style={colorStyle}
+      style={{
+        ...colorStyle,
+        borderColor: hasCustomColor ? note.color : undefined
+      }}
       className={cn(
-        "p-4 border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[260px]",
+        "p-4 transition-all cursor-pointer group flex flex-col shadow-none gap-1 h-[280px]",
+        hasCustomColor 
+          ? "border-2 hover:brightness-110" 
+          : "border border-border hover:bg-accent/50",
         hasCustomColor ? "bg-opacity-20" : "bg-card"
       )}
     >
       {/* Top: Title only */}
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h3 className={cn("text-base font-semibold line-clamp-1", textClass)}>
             {note.title}
@@ -560,7 +507,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             )}
             onClick={(e) => onTogglePin(note, e)}
           >
-            <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white")} />
+            <PinIcon className={cn("h-4 w-4 transition-transform duration-200", note.isPinned ? "fill-white rotate-0" : "-rotate-45")} />
           </Button>
           <Button
             variant="ghost"
@@ -571,70 +518,80 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             )}
             onClick={(e) => onToggleFavorite(note, e)}
           >
-            <Star className={cn("h-4 w-4", note.isFavorite ? "fill-yellow-500 text-yellow-500" : "text-white/80")} />
+            <Star className={cn("h-4 w-4 transition-colors", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
           </Button>
         </div>
       </div>
 
-      {/* Content Preview with Fade */}
-      {note.content && (
-        <div className="relative mb-auto">
-          <p className={cn("text-xs line-clamp-4 leading-relaxed", mutedTextClass)}>
-            {note.content}
-          </p>
-          <div className={cn(
-            "absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t pointer-events-none",
-            hasCustomColor ? "from-transparent" : "from-card to-transparent"
-          )} />
-        </div>
-      )}
-
-      {/* Date - below content body with separator */}
-      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
-        <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
-        <span>•</span>
-        <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+      {/* Content Preview */}
+      <div className="flex-1 min-h-0">
+        {note.content && (
+          <div>
+            <p 
+              ref={contentRef}
+              className={cn("text-xs leading-relaxed whitespace-pre-wrap overflow-hidden", mutedTextClass)}
+              style={{ maxHeight: '154px' }} // 8 lines + 10px padding to show 8th line fully
+            >
+              {note.content}
+            </p>
+            {isOverflowing && (
+              <p className={cn("text-xs mt-0.5", mutedTextClass)}>...</p>
+            )}
+          </div>
+        )}
+        
+        {/* Image Preview Thumbnail */}
+        {note.images && note.images.length > 0 && (
+          <div className="mt-2">
+            <img 
+              src={note.images[0]} 
+              alt="Note attachment" 
+              className="h-16 w-full object-cover rounded-md"
+            />
+            {note.images.length > 1 && (
+              <span className={cn("text-[10px] mt-1 block", mutedTextClass)}>+{note.images.length - 1} more</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Bottom: Folder, Tags, and Image indicator */}
-      {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-        <div className={cn("flex items-center gap-2 pt-2 mt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
+      {/* Bottom section: Updated, Folder, Images on left; Tags on right */}
+      <div className={cn("flex items-center justify-between gap-2 pt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
+        <div className="flex items-center gap-2 text-[10px] min-w-0">
+          <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
           {note.folder && (
             <>
-              <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
+              <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>•</span>
+              <span className={cn("flex items-center gap-1", mutedTextClass)}>
                 <Folder className="h-3 w-3" />
                 {note.folder}
               </span>
-              {(note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-                <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>|</span>
-              )}
-            </>
-          )}
-          {note.tags.length > 0 && (
-            <>
-              <div className="flex items-center gap-1 flex-wrap">
-                {note.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className={cn("px-1.5 py-0.5 rounded text-[10px]", useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground")}>
-                    {tag}
-                  </span>
-                ))}
-                {note.tags.length > 2 && (
-                  <span className={cn("text-[10px]", mutedTextClass)}>+{note.tags.length - 2}</span>
-                )}
-              </div>
-              {note.images && note.images.length > 0 && (
-                <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>|</span>
-              )}
             </>
           )}
           {note.images && note.images.length > 0 && (
-            <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
-              <Image className="h-3 w-3" />
-              {note.images.length}
-            </span>
+            <>
+              <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>•</span>
+              <span className={cn("flex items-center gap-1", mutedTextClass)}>
+                <Image className="h-3 w-3" />
+                {note.images.length}
+              </span>
+            </>
           )}
         </div>
-      )}
+        {note.tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {note.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px]", useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground")}>
+                <Tag className="h-3 w-3" />
+                {tag}
+              </span>
+            ))}
+            {note.tags.length > 2 && (
+              <span className={cn("text-[10px]", mutedTextClass)}>+{note.tags.length - 2}</span>
+            )}
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
@@ -654,7 +611,10 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
   const hasColor = !!note.color;
   const isGraphite = note.color === 'hsl(var(--card))';
   const useWhiteText = hasColor && !isGraphite;
-  
+
+  // Lightbox state for viewing images
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
   return (
     <>
       <DialogHeader>
@@ -669,7 +629,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
               onClick={onTogglePin}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground")} />
+              <PinIcon className={cn("h-4 w-4 transition-transform duration-200", note.isPinned ? "fill-foreground rotate-0" : "-rotate-45")} />
             </Button>
             <Button
               variant="ghost"
@@ -677,7 +637,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               className="h-8 w-8 text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10"
               onClick={onToggleFavorite}
             >
-              <Star className={cn("h-4 w-4", note.isFavorite ? "fill-yellow-500 text-yellow-500" : "text-white/80")} />
+              <Star className={cn("h-4 w-4 transition-colors", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
             </Button>
             <Button
               variant="ghost"
@@ -699,32 +659,8 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
         </div>
       </DialogHeader>
 
-      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-2">
-        <div className="space-y-3">
-          {note.folder && (
-            <div className="flex items-center gap-2 text-sm">
-              <Folder className={cn("h-4 w-4", useWhiteText ? "text-white/70" : "text-muted-foreground")} />
-              <span className={cn(useWhiteText ? "text-white/70" : "text-muted-foreground")}>{note.folder}</span>
-            </div>
-          )}
-
-          {note.tags.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <Tag className={cn("h-4 w-4", useWhiteText ? "text-white/70" : "text-muted-foreground")} />
-              {note.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md text-xs",
-                    useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground"
-                  )}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
+      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2">
           {/* Images */}
           {note.images && note.images.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
@@ -734,27 +670,80 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
                   src={img}
                   alt={`Note image ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => window.open(img, '_blank')}
+                  onClick={() => setLightboxImage(img)}
                   style={{ borderColor: useWhiteText ? 'rgba(255,255,255,0.2)' : undefined }}
                 />
               ))}
             </div>
           )}
 
-          <div className="prose prose-invert max-w-none pt-2">
-            <p className={cn("text-base whitespace-pre-wrap leading-relaxed", useWhiteText ? "text-white/90" : "text-foreground/80")}>
+          <div className="prose prose-invert max-w-none">
+            <p className={cn("text-sm whitespace-pre-wrap leading-relaxed", useWhiteText ? "text-white/90" : "text-foreground/80")}>
               {note.content}
             </p>
           </div>
 
-          {/* Dates - below content body */}
-          <div className={cn("flex items-center gap-4 text-xs pt-3 border-t", useWhiteText ? "text-white/70 border-white/10" : "text-muted-foreground border-border")}>
-            <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
-            <span>•</span>
-            <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+          {/* Bottom section: Created, Updated, Folder, Images on left; Tags on right */}
+          <div className={cn("flex items-center justify-between gap-2 text-xs pt-3", useWhiteText ? "text-white/80 border-t-2 border-white/40" : "text-muted-foreground border-t border-border")}>
+            <div className="flex items-center gap-2 min-w-0">
+              <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
+              <span>•</span>
+              <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+              {note.folder && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Folder className="h-3 w-3" />
+                    {note.folder}
+                  </span>
+                </>
+              )}
+              {note.images && note.images.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Image className="h-3 w-3" />
+                    {note.images.length}
+                  </span>
+                </>
+              )}
+            </div>
+            {note.tags.length > 0 && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {note.tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-0.5 rounded text-[10px]",
+                      useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground"
+                    )}
+                  >
+                    <Tag className="h-3 w-3" />
+                    {tag}
+                  </span>
+                ))}
+                {note.tags.length > 2 && (
+                  <span className={cn("text-[10px]", useWhiteText ? "text-white/70" : "text-muted-foreground")}>+{note.tags.length - 2}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center cursor-pointer"
+          onClick={() => setLightboxImage(null)}
+        >
+          <img
+            src={lightboxImage}
+            alt="Full size"
+            className="max-w-[95vw] max-h-[95vh] object-contain"
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -846,18 +835,29 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
         <DialogTitle className={cn(useWhiteText ? "text-white" : "text-foreground")}>Edit Note</DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
             className={cn(
-              "text-lg font-medium focus:border-border focus:ring-0",
-              useWhiteText 
-                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+              "text-lg font-medium focus:ring-0 transition-colors",
+              useWhiteText
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 : "bg-background border-border text-foreground placeholder:text-muted-foreground"
             )}
+            style={{
+              ['--tw-ring-color' as any]: color
+            }}
+            onFocus={(e) => {
+              if (color && color !== 'hsl(var(--card))') {
+                e.target.style.borderColor = color;
+              }
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '';
+            }}
           />
         </div>
 
@@ -868,11 +868,22 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             placeholder="Write your note..."
             rows={8}
             className={cn(
-              "focus:border-border focus:ring-0 resize-none",
-              useWhiteText 
-                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+              "focus:ring-0 resize-none transition-colors custom-scrollbar",
+              useWhiteText
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 : "bg-background border-border text-foreground placeholder:text-muted-foreground"
             )}
+            style={useWhiteText ? {
+              scrollbarColor: 'rgba(255,255,255,0.2) transparent'
+            } : undefined}
+            onFocus={(e) => {
+              if (color && color !== 'hsl(var(--card))') {
+                e.target.style.borderColor = color;
+              }
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '';
+            }}
           />
         </div>
 
@@ -947,11 +958,19 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             onChange={(e) => setFolder(e.target.value)}
             placeholder="Folder (optional)"
             className={cn(
-              "focus:border-border focus:ring-0",
-              useWhiteText 
-                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+              "focus:ring-0",
+              useWhiteText
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 : "bg-background border-border text-foreground placeholder:text-muted-foreground"
             )}
+            onFocus={(e) => {
+              if (color && color !== 'hsl(var(--card))') {
+                e.target.style.borderColor = color;
+              }
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '';
+            }}
           />
         </div>
 
@@ -963,11 +982,19 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               placeholder="Add tag and press Enter"
               className={cn(
-                "flex-1 focus:border-border focus:ring-0",
-                useWhiteText 
-                  ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                "flex-1 focus:ring-0",
+                useWhiteText
+                  ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
                   : "bg-background border-border text-foreground placeholder:text-muted-foreground"
               )}
+              onFocus={(e) => {
+                if (color && color !== 'hsl(var(--card))') {
+                  e.target.style.borderColor = color;
+                }
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '';
+              }}
             />
             <button 
               type="button" 

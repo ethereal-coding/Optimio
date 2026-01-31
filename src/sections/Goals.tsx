@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
+
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -16,30 +15,31 @@ import {
   Search,
   Plus,
   Trophy,
-  TrendingUp,
   Calendar as CalendarIcon,
-  Grid3x3,
-  List,
   Edit2,
   Trash2,
   CheckCircle2,
-  Tag
+  Tag,
+  Circle,
+  PlayCircle,
+  ListTodo
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
+import { Input } from '@/components/ui/input';
 import { AddGoalForm } from '@/components/AddGoalForm';
 import type { Goal } from '@/types';
-import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, updateGoalProgressWithSync, toggleMilestoneWithSync } from '@/lib/goal-sync';
+import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, addTaskToGoalWithSync, removeTaskFromGoalWithSync } from '@/lib/goal-sync';
+import { toggleTodoWithSync, addTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import type { Todo } from '@/types';
 
-type ViewMode = 'grid' | 'list';
-type FilterMode = 'all' | 'active' | 'completed';
+
 
 export function Goals() {
   const { state, dispatch } = useAppState();
-  const { goals, goalsViewMode } = state;
+  const { goals, todos } = state;
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -55,21 +55,35 @@ export function Goals() {
     }
   }, [state.selectedItemToOpen, state.goals, dispatch]);
 
-  // Filter goals based on search and filter mode
+  // Helper function to calculate goal progress based on tasks
+  const getGoalProgress = (goal: Goal) => {
+    const goalTasks = todos.filter(t => goal.taskIds?.includes(t.id));
+    if (goalTasks.length === 0) return 0;
+    const completedTasks = goalTasks.filter(t => t.completed).length;
+    return Math.round((completedTasks / goalTasks.length) * 100);
+  };
+
+  // Helper function to get goal status
+  const getGoalStatus = (goal: Goal) => {
+    const progress = getGoalProgress(goal);
+    if (progress === 0) return 'not-started';
+    if (progress >= 100) return 'completed';
+    return 'in-progress';
+  };
+
+  // Filter goals based on search
   const filteredGoals = goals.filter(goal => {
     const matchesSearch =
       goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       goal.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       goal.category?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    const progress = (goal.currentValue / goal.targetValue) * 100;
-
-    if (filterMode === 'completed') return progress >= 100;
-    if (filterMode === 'active') return progress < 100;
-    return true;
+    return matchesSearch;
   });
+
+  // Group goals by status
+  const notStartedGoals = filteredGoals.filter(g => getGoalStatus(g) === 'not-started');
+  const inProgressGoals = filteredGoals.filter(g => getGoalStatus(g) === 'in-progress');
+  const completedGoals = filteredGoals.filter(g => getGoalStatus(g) === 'completed');
 
   const handleAddGoal = async (goal: Goal) => {
     await addGoalWithSync(goal, dispatch, actions);
@@ -87,20 +101,31 @@ export function Goals() {
     setSelectedGoal(null);
   };
 
-  const handleUpdateProgress = async (goalId: string, value: number) => {
-    await updateGoalProgressWithSync(goalId, value, dispatch, actions);
-    const updatedGoal = goals.find(g => g.id === goalId);
-    if (updatedGoal && selectedGoal?.id === goalId) {
-      setSelectedGoal({ ...updatedGoal, currentValue: value });
-    }
+  const handleToggleTodo = async (todoId: string) => {
+    await toggleTodoWithSync(todoId, dispatch, actions);
   };
 
-  const handleToggleMilestone = async (goalId: string, milestoneId: string) => {
-    await toggleMilestoneWithSync(goalId, milestoneId, dispatch, actions);
-    const updatedGoal = goals.find(g => g.id === goalId);
-    if (updatedGoal && selectedGoal?.id === goalId) {
-      setSelectedGoal(updatedGoal);
-    }
+  const handleCreateTask = async (title: string) => {
+    if (!selectedGoal) return;
+    
+    // Create new task
+    const { v4: uuidv4 } = await import('uuid');
+    const newTask = {
+      id: uuidv4(),
+      title,
+      completed: false,
+      priority: 'medium' as const,
+      createdAt: new Date(),
+      goalId: selectedGoal.id
+    };
+    
+    // Add task and link to goal
+    await addTodoWithSync(newTask, dispatch, actions);
+    await addTaskToGoalWithSync(selectedGoal.id, newTask.id, dispatch, actions);
+  };
+
+  const handleDeleteTask = async (todoId: string) => {
+    await deleteTodoWithSync(todoId, dispatch, actions);
   };
 
   return (
@@ -138,86 +163,11 @@ export function Goals() {
               className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
-
-          {/* Filter Buttons */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('all')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'all'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('active')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'active'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Active
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('completed')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'completed'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Trophy className="h-3 w-3 mr-1" />
-              Completed
-            </Button>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setGoalsViewMode('grid'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                goalsViewMode === 'grid'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => dispatch(actions.setGoalsViewMode('list'))}
-              className={cn(
-                "h-8 w-8 transition-colors",
-                goalsViewMode === 'list'
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Goals Grid/List */}
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+      {/* Goals Board */}
+      <div className="flex-1 p-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
         {filteredGoals.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[400px] text-center">
             <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
@@ -238,26 +188,76 @@ export function Goals() {
             )}
           </div>
         ) : (
-          <div className={cn(
-            goalsViewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-              : 'space-y-3 max-w-5xl'
-          )}>
-            {filteredGoals.map((goal) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                viewMode={goalsViewMode}
-                onClick={() => setSelectedGoal(goal)}
-              />
-            ))}
+          <div className="flex h-full min-w-[900px] divide-x divide-border">
+            {/* Not Started Column */}
+            <div className="flex-1 flex flex-col min-w-[280px]">
+              <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
+                <Circle className="h-4 w-4" />
+                <span>Not Started</span>
+                <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
+                  {notStartedGoals.length}
+                </span>
+              </div>
+              <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar p-4">
+                {notStartedGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    todos={todos}
+                    onClick={() => setSelectedGoal(goal)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* In Progress Column */}
+            <div className="flex-1 flex flex-col min-w-[280px]">
+              <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
+                <PlayCircle className="h-4 w-4 text-blue-400" />
+                <span>In Progress</span>
+                <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
+                  {inProgressGoals.length}
+                </span>
+              </div>
+              <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar p-4">
+                {inProgressGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    todos={todos}
+                    onClick={() => setSelectedGoal(goal)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Completed Column */}
+            <div className="flex-1 flex flex-col min-w-[280px]">
+              <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                <span>Completed</span>
+                <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
+                  {completedGoals.length}
+                </span>
+              </div>
+              <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar p-4">
+                {completedGoals.map((goal) => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    todos={todos}
+                    onClick={() => setSelectedGoal(goal)}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       {/* Add Goal Dialog */}
       <Dialog open={showAddGoal} onOpenChange={setShowAddGoal}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Create New Goal</DialogTitle>
           </DialogHeader>
@@ -272,14 +272,18 @@ export function Goals() {
           setEditingGoal(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl max-h-[85vh]">
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[85vh]" showCloseButton={false}>
           {selectedGoal && (
             <ViewGoalContent
               goal={selectedGoal}
+              todos={todos}
               onEdit={() => setEditingGoal(selectedGoal)}
               onDelete={() => handleDeleteGoal(selectedGoal.id)}
-              onUpdateProgress={(value) => handleUpdateProgress(selectedGoal.id, value)}
-              onToggleMilestone={(milestoneId) => handleToggleMilestone(selectedGoal.id, milestoneId)}
+              onToggleTodo={(todoId) => handleToggleTodo(todoId)}
+              onAddTask={(todoId) => addTaskToGoalWithSync(selectedGoal.id, todoId, dispatch, actions)}
+              onRemoveTask={(todoId) => removeTaskFromGoalWithSync(selectedGoal.id, todoId, dispatch, actions)}
+              onCreateTask={handleCreateTask}
+              onDeleteTask={handleDeleteTask}
               onClose={() => {
                 setSelectedGoal(null);
                 setEditingGoal(null);
@@ -295,7 +299,7 @@ export function Goals() {
           setEditingGoal(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {editingGoal && (
             <>
               <DialogHeader>
@@ -317,164 +321,84 @@ export function Goals() {
 // Goal Card Component
 interface GoalCardProps {
   goal: Goal;
-  viewMode: ViewMode;
+  todos: Todo[];
   onClick: () => void;
 }
 
-function GoalCard({ goal, viewMode, onClick }: GoalCardProps) {
-  const progress = Math.round((goal.currentValue / goal.targetValue) * 100);
+function GoalCard({ goal, todos, onClick }: GoalCardProps) {
+  const goalTasks = todos.filter(t => goal.taskIds?.includes(t.id));
+  const totalTasks = goalTasks.length;
+  const completedTasks = goalTasks.filter(t => t.completed).length;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const daysLeft = goal.deadline ? differenceInDays(goal.deadline, new Date()) : null;
-  const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
   const isCompleted = progress >= 100;
-
-  if (viewMode === 'list') {
-    return (
-      <Card
-        onClick={onClick}
-        className="p-5 bg-card border-border hover:border-border transition-all cursor-pointer group"
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-3">
-              <div
-                className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: goal.color }}
-              />
-              <h3 className="text-sm font-medium text-foreground truncate">{goal.title}</h3>
-              {isCompleted && <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />}
-            </div>
-
-            {goal.description && (
-              <p className="text-xs text-foreground/50 line-clamp-1 mb-3 ml-5">{goal.description}</p>
-            )}
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-foreground/50 text-xs">
-                    {goal.currentValue.toLocaleString()} / {goal.targetValue.toLocaleString()} {goal.unit}
-                  </span>
-                  <span className="font-semibold text-sm" style={{ color: goal.color }}>
-                    {progress}%
-                  </span>
-                </div>
-                <div className="relative h-2.5 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min(progress, 100)}%`,
-                      backgroundColor: goal.color
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
-              {goal.milestones.length > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  {completedMilestones}/{goal.milestones.length} milestones
-                </span>
-              )}
-              {goal.category && (
-                <span className="flex items-center gap-1.5">
-                  <Tag className="h-3.5 w-3.5" />
-                  {goal.category}
-                </span>
-              )}
-              {daysLeft !== null && (
-                <span className={cn(
-                  "flex items-center gap-1.5",
-                  daysLeft < 7 && 'text-red-400',
-                  daysLeft >= 7 && daysLeft < 30 && 'text-yellow-400'
-                )}>
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <Card
       onClick={onClick}
-      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[260px]"
+      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group"
     >
-      {/* Top: Title and Progress */}
-      <div className="flex items-start justify-between gap-2 mb-3">
+      <div className="flex items-center gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-foreground line-clamp-1 mb-1">
-            {goal.title}
-          </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 mb-3">
             <div
-              className="h-1.5 w-1.5 rounded-full"
+              className="h-1.5 w-1.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: goal.color }}
             />
-            <span className="text-[10px] text-muted-foreground">
-              {goal.currentValue.toLocaleString()} / {goal.targetValue.toLocaleString()} {goal.unit}
-            </span>
+            <h3 className="text-sm font-medium text-foreground truncate">{goal.title}</h3>
+            {isCompleted && <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />}
           </div>
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {isCompleted && <Trophy className="h-4 w-4 text-yellow-500" />}
-          <span className="text-2xl font-bold tracking-tight" style={{ color: goal.color }}>
-            {progress}%
-          </span>
-        </div>
-      </div>
 
-      {/* Description with Fade */}
-      {goal.description && (
-        <div className="relative mb-auto">
-          <p className="text-xs text-foreground/50 line-clamp-3 leading-relaxed">
-            {goal.description}
-          </p>
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-card to-transparent pointer-events-none" />
-        </div>
-      )}
+          {goal.description && (
+            <p className="text-xs text-foreground/50 line-clamp-1 mb-3 ml-5">{goal.description}</p>
+          )}
 
-      {/* Progress Bar and Metadata */}
-      <div className="mt-auto space-y-3 pt-3 border-t border-border">
-        <div className="relative h-2.5 bg-secondary rounded-full overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-            style={{
-              width: `${Math.min(progress, 100)}%`,
-              backgroundColor: goal.color
-            }}
-          />
-        </div>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-foreground/50 text-xs">
+                  {totalTasks === 0 ? 'No tasks' : `${completedTasks} / ${totalTasks} tasks`}
+                </span>
+                <span className="font-semibold text-sm" style={{ color: goal.color }}>
+                  {progress}%
+                </span>
+              </div>
+              <div className="relative h-2.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min(progress, 100)}%`,
+                    backgroundColor: goal.color
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
-        <div className="flex items-center justify-between text-xs">
-          {goal.milestones.length > 0 && (
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>{completedMilestones}/{goal.milestones.length}</span>
-            </span>
-          )}
-          {daysLeft !== null && (
-            <span className={cn(
-              "flex items-center gap-1.5 ml-auto",
-              daysLeft < 7 && 'text-red-400',
-              daysLeft >= 7 && daysLeft < 30 && 'text-yellow-400',
-              daysLeft >= 30 && 'text-muted-foreground'
-            )}>
-              <CalendarIcon className="h-3.5 w-3.5" />
-              <span>{daysLeft > 0 ? `${daysLeft}d` : 'Overdue'}</span>
-            </span>
-          )}
-          {!goal.milestones.length && !daysLeft && goal.category && (
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Tag className="h-3.5 w-3.5" />
-              {goal.category}
-            </span>
-          )}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
+            {totalTasks > 0 && (
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {completedTasks}/{totalTasks} tasks
+              </span>
+            )}
+            {goal.category && (
+              <span className="flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5" />
+                {goal.category}
+              </span>
+            )}
+            {daysLeft !== null && (
+              <span className={cn(
+                "flex items-center gap-1.5",
+                daysLeft < 7 && 'text-red-400',
+                daysLeft >= 7 && daysLeft < 30 && 'text-yellow-400'
+              )}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Card>
@@ -484,17 +408,27 @@ function GoalCard({ goal, viewMode, onClick }: GoalCardProps) {
 // View Goal Content
 interface ViewGoalContentProps {
   goal: Goal;
+  todos: Todo[];
   onEdit: () => void;
   onDelete: () => void;
-  onUpdateProgress: (value: number) => void;
-  onToggleMilestone: (milestoneId: string) => void;
+  onToggleTodo: (todoId: string) => void;
+  onAddTask: (todoId: string) => void;
+  onRemoveTask: (todoId: string) => void;
+  onCreateTask: (title: string) => void;
+  onDeleteTask: (todoId: string) => void;
   onClose: () => void;
 }
 
-function ViewGoalContent({ goal, onEdit, onDelete, onUpdateProgress, onToggleMilestone }: ViewGoalContentProps) {
-  const progress = Math.round((goal.currentValue / goal.targetValue) * 100);
-  const [sliderValue, setSliderValue] = useState([goal.currentValue]);
+function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTask, onRemoveTask, onCreateTask, onDeleteTask }: ViewGoalContentProps) {
+  const goalTasks = todos.filter(t => goal.taskIds?.includes(t.id));
+  const availableTasks = todos.filter(t => !goal.taskIds?.includes(t.id) && !t.completed);
+  const totalTasks = goalTasks.length;
+  const completedTasks = goalTasks.filter(t => t.completed).length;
+  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const daysLeft = goal.deadline ? differenceInDays(goal.deadline, new Date()) : null;
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   return (
     <>
@@ -530,9 +464,7 @@ function ViewGoalContent({ goal, onEdit, onDelete, onUpdateProgress, onToggleMil
         </div>
       </DialogHeader>
 
-      <div className="border-t border-border -mt-4"></div>
-
-      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
+      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar">
         <div className="space-y-6">
           {/* Progress Overview */}
           <div className="p-4 rounded-lg bg-background border border-border">
@@ -552,102 +484,207 @@ function ViewGoalContent({ goal, onEdit, onDelete, onUpdateProgress, onToggleMil
               />
             </div>
             <div className="text-sm text-muted-foreground">
-              {goal.currentValue.toLocaleString()} / {goal.targetValue.toLocaleString()} {goal.unit}
+              {totalTasks === 0 ? 'No tasks assigned' : `${completedTasks} of ${totalTasks} tasks completed`}
             </div>
           </div>
 
-          {/* Update Progress */}
-          <div className="space-y-3">
-            <label className="text-sm text-muted-foreground">Update Progress</label>
-            <div className="flex items-center gap-3">
-              <Slider
-                value={sliderValue}
-                onValueChange={setSliderValue}
-                max={goal.targetValue}
-                step={goal.targetValue / 100}
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                value={sliderValue[0]}
-                onChange={(e) => setSliderValue([parseFloat(e.target.value) || 0])}
-                className="w-24 bg-input border-border text-foreground h-9"
-              />
-              <Button
-                onClick={() => onUpdateProgress(sliderValue[0])}
-                disabled={sliderValue[0] === goal.currentValue}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-9"
-              >
-                Save
-              </Button>
+          {/* Description */}
+          {goal.description && (
+            <div className="prose prose-invert max-w-none">
+              <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{goal.description}</p>
             </div>
-          </div>
+          )}
 
-          {/* Details */}
+          {/* Associated Tasks */}
           <div className="space-y-3">
-            {goal.description && (
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Description</label>
-                <p className="text-sm text-foreground/70 leading-relaxed">{goal.description}</p>
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-muted-foreground">Associated Tasks</label>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateTask(!showCreateTask);
+                    setShowAddTask(false);
+                  }}
+                  className="h-7 text-xs"
+                >
+                  {showCreateTask ? 'Cancel' : 'New Task'}
+                </Button>
+                {availableTasks.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowAddTask(!showAddTask);
+                      setShowCreateTask(false);
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    {showAddTask ? 'Cancel' : 'Add Existing'}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Create New Task Form */}
+            {showCreateTask && (
+              <div className="p-3 rounded-lg bg-background border border-border space-y-2">
+                <Input
+                  placeholder="Enter task title..."
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="bg-input border-border text-foreground h-9"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newTaskTitle.trim()) {
+                      onCreateTask(newTaskTitle.trim());
+                      setNewTaskTitle('');
+                      setShowCreateTask(false);
+                    }
+                  }}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreateTask(false);
+                      setNewTaskTitle('');
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (newTaskTitle.trim()) {
+                        onCreateTask(newTaskTitle.trim());
+                        setNewTaskTitle('');
+                        setShowCreateTask(false);
+                      }
+                    }}
+                    disabled={!newTaskTitle.trim()}
+                    className="h-7 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    Create
+                  </Button>
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <label className="text-muted-foreground block mb-1">Created</label>
-                <span className="text-foreground/70">{format(goal.createdAt, 'MMM d, yyyy')}</span>
+            {/* Add Task Dropdown */}
+            {showAddTask && availableTasks.length > 0 && (
+              <div className="p-2 rounded-lg bg-background border border-border">
+                <select
+                  className="w-full bg-transparent text-sm text-foreground outline-none"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onAddTask(e.target.value);
+                      setShowAddTask(false);
+                      e.target.value = '';
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select a task to add...</option>
+                  {availableTasks.map(task => (
+                    <option key={task.id} value={task.id}>{task.title}</option>
+                  ))}
+                </select>
               </div>
-              {goal.deadline && (
-                <div>
-                  <label className="text-muted-foreground block mb-1">Deadline</label>
-                  <span className={cn(
-                    "text-foreground/70",
-                    daysLeft !== null && daysLeft < 7 && "text-red-400",
-                    daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-yellow-400"
-                  )}>
-                    {format(goal.deadline, 'MMM d, yyyy')}
-                    {daysLeft !== null && ` (${daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'})`}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+            )}
 
-          {/* Milestones */}
-          {goal.milestones.length > 0 && (
-            <div className="space-y-3">
-              <label className="text-sm text-muted-foreground">Milestones</label>
+            {/* Task List */}
+            {goalTasks.length > 0 ? (
               <div className="space-y-2">
-                {goal.milestones.map((milestone) => (
+                {goalTasks.map((task) => (
                   <div
-                    key={milestone.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border hover:border-border transition-colors cursor-pointer"
-                    onClick={() => onToggleMilestone(milestone.id)}
+                    key={task.id}
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border hover:border-border transition-colors group"
                   >
                     <Checkbox
-                      checked={milestone.isCompleted}
+                      checked={task.completed}
+                      onClick={() => onToggleTodo(task.id)}
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <span className={cn(
-                        "text-sm text-foreground",
-                        milestone.isCompleted && "line-through text-muted-foreground"
+                        "text-sm text-foreground truncate block",
+                        task.completed && "line-through text-muted-foreground"
                       )}>
-                        {milestone.title}
+                        {task.title}
                       </span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        ({milestone.targetValue} {goal.unit})
-                      </span>
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground mt-1">
+                        <span>Created {format(task.createdAt, 'MMM d, yyyy')}</span>
+                        {task.dueDate && (
+                          <span>Due {format(task.dueDate, 'MMM d, yyyy')}</span>
+                        )}
+                      </div>
                     </div>
-                    {milestone.isCompleted && milestone.completedAt && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(milestone.completedAt, { addSuffix: true })}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onRemoveTask(task.id)}
+                        title="Unlink from goal"
+                      >
+                        <Target className="h-3 w-3 text-muted-foreground hover:text-yellow-500" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onDeleteTask(task.id)}
+                        title="Delete task"
+                      >
+                        <Trash2 className="h-3 w-3 text-muted-foreground hover:text-red-500" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No tasks associated with this goal
+              </p>
+            )}
+          </div>
+
+          {/* Bottom section: Dates and category on left; Task count on right */}
+          <div className="flex items-center justify-between gap-2 text-[10px] pt-2 text-muted-foreground border-t border-border">
+            <div className="flex items-center gap-2 min-w-0">
+              <span>Created {format(goal.createdAt, 'MMM d, yyyy')}</span>
+              {goal.deadline && (
+                <>
+                  <span>•</span>
+                  <span className={cn(
+                    daysLeft !== null && daysLeft < 7 && "text-red-400",
+                    daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-yellow-400"
+                  )}>
+                    Due {format(goal.deadline, 'MMM d, yyyy')}
+                  </span>
+                </>
+              )}
+              {goal.category && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                    <Tag className="h-3 w-3" />
+                    {goal.category}
+                  </span>
+                </>
+              )}
             </div>
-          )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span
+                className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] bg-secondary text-muted-foreground"
+              >
+                <ListTodo className="h-3 w-3" />
+                {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </>

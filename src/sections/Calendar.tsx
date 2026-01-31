@@ -262,7 +262,7 @@ export function Calendar() {
         setShowAddEvent(open);
         if (!open) setSelectedDate(null);
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Create New Event</DialogTitle>
           </DialogHeader>
@@ -284,7 +284,7 @@ export function Calendar() {
           setEditingEvent(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {selectedEvent && !editingEvent && (
             <ViewEventContent
               event={selectedEvent}
