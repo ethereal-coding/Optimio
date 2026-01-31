@@ -515,7 +515,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
               onClick={(e) => onTogglePin(note, e)}
             >
               <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
@@ -668,18 +668,15 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                "h-8 w-8 hover:bg-white/20",
-                useWhiteText ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
               onClick={onTogglePin}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground")} />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:text-yellow-500 hover:bg-yellow-500/10 text-muted-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
               onClick={onToggleFavorite}
             >
               <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
@@ -687,10 +684,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                "h-8 w-8",
-                useWhiteText ? "text-white/80 hover:text-white hover:bg-white/20" : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
               onClick={onEdit}
             >
               <Edit2 className="h-4 w-4" />
@@ -1048,3 +1042,4 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
     </>
   );
 }
+
