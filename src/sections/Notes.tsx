@@ -590,7 +590,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       )}
 
       {/* Date - below content body with separator */}
-      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/10" : "border-border")}>
+      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
         <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
         <span>•</span>
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
@@ -598,7 +598,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
 
       {/* Bottom: Folder, Tags, and Image indicator */}
       {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-        <div className={cn("flex items-center gap-2 pt-2 mt-2 border-t", useWhiteText ? "border-white/10" : "border-border")}>
+        <div className={cn("flex items-center gap-2 pt-2 mt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
           {note.folder && (
             <>
               <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
