@@ -467,6 +467,11 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
   // Get color style for the note
   const colorStyle = note.color ? { backgroundColor: note.color } : {};
   const hasCustomColor = !!note.color;
+  // Check if this is the light Graphite color - if not, use white text
+  const isGraphite = note.color === '#e1e1e1';
+  const useWhiteText = hasCustomColor && !isGraphite;
+  const textClass = useWhiteText ? 'text-white' : 'text-foreground';
+  const mutedTextClass = useWhiteText ? 'text-white/70' : 'text-muted-foreground';
   
   if (viewMode === 'list') {
     return (
@@ -481,7 +486,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-foreground/60" />}
+              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-white/60" />}
               <h3 className="text-base font-medium text-foreground truncate">{note.title}</h3>
             </div>
             {note.content && (
@@ -510,7 +515,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={(e) => onTogglePin(note, e)}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground text-foreground")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
             </Button>
             <Button
               variant="ghost"
@@ -538,7 +543,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       {/* Top: Title only */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1">
+          <h3 className={cn("text-base font-semibold line-clamp-1", textClass)}>
             {note.title}
           </h3>
         </div>
@@ -547,18 +552,20 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent transition-opacity",
+              "h-8 w-8 hover:bg-white/20 transition-opacity",
+              useWhiteText ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent",
               note.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
             onClick={(e) => onTogglePin(note, e)}
           >
-            <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+            <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white")} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10 transition-opacity",
+              "h-8 w-8 transition-opacity",
+              useWhiteText ? "text-white/80 hover:text-yellow-300 hover:bg-yellow-500/20" : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10",
               note.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
             onClick={(e) => onToggleFavorite(note, e)}
@@ -571,7 +578,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       {/* Content Preview with Fade */}
       {note.content && (
         <div className="relative mb-auto">
-          <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
+          <p className={cn("text-xs line-clamp-4 leading-relaxed", mutedTextClass)}>
             {note.content}
           </p>
           <div className={cn(
@@ -582,7 +589,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       )}
 
       {/* Date - below content body */}
-      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-auto pt-2">
+      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2", mutedTextClass)}>
         <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
         <span>•</span>
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
@@ -590,15 +597,15 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
 
       {/* Bottom: Folder, Tags, and Image indicator */}
       {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border">
+        <div className={cn("flex items-center gap-2 pt-3 mt-3 border-t", useWhiteText ? "border-white/20" : "border-border")}>
           {note.folder && (
             <>
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
                 <Folder className="h-3 w-3" />
                 {note.folder}
               </span>
               {(note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-                <span className="text-muted-foreground/50">|</span>
+                <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>|</span>
               )}
             </>
           )}
@@ -606,21 +613,21 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             <>
               <div className="flex items-center gap-1 flex-wrap">
                 {note.tags.slice(0, 2).map((tag) => (
-                  <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground">
+                  <span key={tag} className={cn("px-1.5 py-0.5 rounded text-[10px]", useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground")}>
                     {tag}
                   </span>
                 ))}
                 {note.tags.length > 2 && (
-                  <span className="text-[10px] text-muted-foreground">+{note.tags.length - 2}</span>
+                  <span className={cn("text-[10px]", mutedTextClass)}>+{note.tags.length - 2}</span>
                 )}
               </div>
               {note.images && note.images.length > 0 && (
-                <span className="text-muted-foreground/50">|</span>
+                <span className={useWhiteText ? "text-white/30" : "text-muted-foreground/50"}>|</span>
               )}
             </>
           )}
           {note.images && note.images.length > 0 && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
               <Image className="h-3 w-3" />
               {note.images.length}
             </span>
@@ -654,7 +661,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={onTogglePin}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground text-foreground")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
             </Button>
             <Button
               variant="ghost"
@@ -749,10 +756,8 @@ interface EditNoteContentProps {
   onCancel: () => void;
 }
 
-// Use Google Calendar colors for consistency (excluding Graphite/white)
-const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS)
-  .filter(({ name }) => name !== 'Graphite')
-  .map(({ hex, name }) => ({ name, value: hex }));
+// Use Google Calendar colors for consistency
+const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex }));
 
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [title, setTitle] = useState(note.title);

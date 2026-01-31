@@ -14,10 +14,8 @@ interface AddNoteFormProps {
   initialNote?: any;
 }
 
-// Use Google Calendar colors for consistency (excluding Graphite/white)
-const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS)
-  .filter(({ name }) => name !== 'Graphite')
-  .map(({ hex, name }) => ({ name, value: hex }));
+// Use Google Calendar colors for consistency
+const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex }));
 
 export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProps) {
   const [title, setTitle] = useState(initialNote?.title || '');
