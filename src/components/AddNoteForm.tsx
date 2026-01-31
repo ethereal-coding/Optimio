@@ -14,8 +14,13 @@ interface AddNoteFormProps {
   initialNote?: any;
 }
 
-// Use Google Calendar colors for consistency
-const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex }));
+// Use Google Calendar colors for consistency, with Graphite (matching bg-card) first
+const NOTE_COLORS = [
+  { name: 'Graphite', value: 'hsl(var(--card))' }, // Matches card background
+  ...Object.values(GOOGLE_CALENDAR_COLORS)
+    .filter(({ name }) => name !== 'Graphite')
+    .map(({ hex, name }) => ({ name, value: hex })),
+];
 
 export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProps) {
   const [title, setTitle] = useState(initialNote?.title || '');
@@ -23,7 +28,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
   const [folder, setFolder] = useState(initialNote?.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialNote?.tags || []);
-  const [color, setColor] = useState(initialNote?.color || '#e1e1e1'); // Default to Graphite
+  const [color, setColor] = useState(initialNote?.color || 'hsl(var(--card))'); // Default to Graphite
   const [images, setImages] = useState<string[]>(initialNote?.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

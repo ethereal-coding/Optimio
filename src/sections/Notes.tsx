@@ -471,7 +471,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
   const colorStyle = note.color ? { backgroundColor: note.color } : {};
   const hasCustomColor = !!note.color;
   // Check if this is the light Graphite color - if not, use white text
-  const isGraphite = note.color === '#e1e1e1';
+  const isGraphite = note.color === 'hsl(var(--card))';
   const useWhiteText = hasCustomColor && !isGraphite;
   const textClass = useWhiteText ? 'text-white' : 'text-foreground';
   const mutedTextClass = useWhiteText ? 'text-white/70' : 'text-muted-foreground';
@@ -654,7 +654,7 @@ interface ViewNoteContentProps {
 function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite }: ViewNoteContentProps) {
   // Check if note has a custom color (not graphite)
   const hasColor = !!note.color;
-  const isGraphite = note.color === '#e1e1e1';
+  const isGraphite = note.color === 'hsl(var(--card))';
   const useWhiteText = hasColor && !isGraphite;
   
   return (
@@ -776,8 +776,13 @@ interface EditNoteContentProps {
   onCancel: () => void;
 }
 
-// Use Google Calendar colors for consistency
-const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex }));
+// Use Google Calendar colors for consistency, with Graphite (matching bg-card) first
+const NOTE_COLORS = [
+  { name: 'Graphite', value: 'hsl(var(--card))' }, // Matches card background
+  ...Object.values(GOOGLE_CALENDAR_COLORS)
+    .filter(({ name }) => name !== 'Graphite')
+    .map(({ hex, name }) => ({ name, value: hex })),
+];
 
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [title, setTitle] = useState(note.title);
@@ -785,13 +790,13 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [folder, setFolder] = useState(note.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(note.tags);
-  const [color, setColor] = useState(note.color || '#e1e1e1'); // Default to Graphite
+  const [color, setColor] = useState(note.color || 'hsl(var(--card))'); // Default to Graphite
   const [images, setImages] = useState<string[]>(note.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Check if note has a custom color (not graphite)
   const hasColor = !!note.color;
-  const isGraphite = note.color === '#e1e1e1';
+  const isGraphite = note.color === 'hsl(var(--card))';
   const useWhiteText = hasColor && !isGraphite;
 
   const addTag = () => {
