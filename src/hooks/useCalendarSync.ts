@@ -9,6 +9,7 @@ import { syncAllEvents } from '@/lib/event-sync';
 import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { useAppState } from './useAppState';
+import { isAuthenticated } from '@/lib/google-auth';
 
 const log = logger('useCalendarSync');
 
@@ -81,6 +82,21 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
   const queryClient = useQueryClient();
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
+  // Check if user is authenticated
+  const [isAuth, setIsAuth] = useState(false);
+  
+  useEffect(() => {
+    const checkAuth = async () => {
+      const auth = await isAuthenticated();
+      setIsAuth(auth);
+    };
+    checkAuth();
+    
+    // Check auth status periodically
+    const interval = setInterval(checkAuth, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Main sync query with automatic background refetch
   const {
     data: syncResult,
@@ -89,8 +105,11 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['calendarSync'],
+    queryKey: ['calendarSync', isAuth],
     queryFn: async () => {
+      if (!isAuth) {
+        throw new Error('Not authenticated');
+      }
       log.info('Starting sync');
       const startTime = Date.now();
       
@@ -113,7 +132,8 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
         throw error;
       }
     },
-    refetchInterval: enabled ? interval : false,
+    enabled: isAuth, // Only run when authenticated
+    refetchInterval: enabled && isAuth ? interval : false,
     retry: maxRetries,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff, max 30s
     staleTime: interval / 2, // Consider data stale halfway through interval
