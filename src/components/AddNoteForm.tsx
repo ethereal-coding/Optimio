@@ -14,11 +14,10 @@ interface AddNoteFormProps {
   initialNote?: any;
 }
 
-// Use Google Calendar colors for consistency
-const NOTE_COLORS = [
-  { name: 'None', value: '' },
-  ...Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex })),
-];
+// Use Google Calendar colors for consistency (excluding Graphite/white)
+const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS)
+  .filter(({ name }) => name !== 'Graphite')
+  .map(({ hex, name }) => ({ name, value: hex }));
 
 export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProps) {
   const [title, setTitle] = useState(initialNote?.title || '');
@@ -26,7 +25,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
   const [folder, setFolder] = useState(initialNote?.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialNote?.tags || []);
-  const [color, setColor] = useState(initialNote?.color || ''); // Default to no color
+  const [color, setColor] = useState(initialNote?.color || '#5484ed'); // Default to Blueberry
   const [images, setImages] = useState<string[]>(initialNote?.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -481,7 +481,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-white/60" />}
+              {note.isPinned && <PinIcon className="h-3 w-3 text-muted-foreground fill-foreground/60" />}
               <h3 className="text-base font-medium text-foreground truncate">{note.title}</h3>
             </div>
             {note.content && (
@@ -510,7 +510,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={(e) => onTogglePin(note, e)}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground text-foreground")} />
             </Button>
             <Button
               variant="ghost"
@@ -535,17 +535,12 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
         hasCustomColor ? "bg-opacity-20" : "bg-card"
       )}
     >
-      {/* Top: Title and Date */}
+      {/* Top: Title only */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1 mb-1">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1">
             {note.title}
           </h3>
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
-            <span>•</span>
-            <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
-          </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button
@@ -585,6 +580,13 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
           )} />
         </div>
       )}
+
+      {/* Date - below content body */}
+      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-auto pt-2">
+        <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
+        <span>•</span>
+        <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+      </div>
 
       {/* Bottom: Folder, Tags, and Image indicator */}
       {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
@@ -652,7 +654,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={onTogglePin}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-foreground text-foreground")} />
             </Button>
             <Button
               variant="ghost"
@@ -686,12 +688,6 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
 
       <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
         <div className="space-y-4">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
-            <span>•</span>
-            <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
-          </div>
-
           {note.folder && (
             <div className="flex items-center gap-2 text-sm">
               <Folder className="h-4 w-4 text-muted-foreground" />
@@ -733,6 +729,13 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               {note.content}
             </p>
           </div>
+
+          {/* Dates - below content body */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border">
+            <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
+            <span>•</span>
+            <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+          </div>
         </div>
       </div>
     </>
@@ -746,11 +749,10 @@ interface EditNoteContentProps {
   onCancel: () => void;
 }
 
-// Use Google Calendar colors for consistency
-const NOTE_COLORS = [
-  { name: 'None', value: '' },
-  ...Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex })),
-];
+// Use Google Calendar colors for consistency (excluding Graphite/white)
+const NOTE_COLORS = Object.values(GOOGLE_CALENDAR_COLORS)
+  .filter(({ name }) => name !== 'Graphite')
+  .map(({ hex, name }) => ({ name, value: hex }));
 
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [title, setTitle] = useState(note.title);
