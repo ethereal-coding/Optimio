@@ -404,7 +404,10 @@ export function Notes() {
           setEditingNote(null);
         }
       }}>
-        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
+        <DialogContent 
+          className="border-border max-w-3xl max-h-[80vh]"
+          style={selectedNote?.color ? { backgroundColor: selectedNote.color } : undefined}
+        >
           {selectedNote && !editingNote && (
             <ViewNoteContent
               note={selectedNote}
@@ -564,8 +567,8 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 transition-opacity",
-              useWhiteText ? "text-white/80 hover:text-yellow-300 hover:bg-yellow-500/20" : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10",
+              "h-8 w-8 transition-opacity hover:text-yellow-500 hover:bg-yellow-500/10",
+              useWhiteText ? "text-white/80" : "text-muted-foreground",
               note.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
             onClick={(e) => onToggleFavorite(note, e)}
@@ -649,24 +652,34 @@ interface ViewNoteContentProps {
 }
 
 function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite }: ViewNoteContentProps) {
+  // Check if note has a custom color (not graphite)
+  const hasColor = !!note.color;
+  const isGraphite = note.color === '#e1e1e1';
+  const useWhiteText = hasColor && !isGraphite;
+  
   return (
     <>
       <DialogHeader>
         <div className="flex items-start justify-between gap-4 pt-4">
-          <DialogTitle className="text-xl text-foreground flex-1">{note.title}</DialogTitle>
+          <DialogTitle className={cn("text-xl flex-1", useWhiteText ? "text-white" : "text-foreground")}>
+            {note.title}
+          </DialogTitle>
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className={cn(
+                "h-8 w-8 hover:bg-white/20",
+                useWhiteText ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
               onClick={onTogglePin}
             >
-              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white text-foreground")} />
+              <PinIcon className={cn("h-4 w-4", note.isPinned && "fill-white")} />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+              className="h-8 w-8 hover:text-yellow-500 hover:bg-yellow-500/10 text-muted-foreground"
               onClick={onToggleFavorite}
             >
               <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
@@ -674,7 +687,10 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className={cn(
+                "h-8 w-8",
+                useWhiteText ? "text-white/80 hover:text-white hover:bg-white/20" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
               onClick={onEdit}
             >
               <Edit2 className="h-4 w-4" />
@@ -691,24 +707,27 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
         </div>
       </DialogHeader>
 
-      <div className="border-t border-border -mt-4"></div>
+      <div className={cn("border-t -mt-4", useWhiteText ? "border-white/20" : "border-border")}></div>
 
       <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
         <div className="space-y-4">
           {note.folder && (
             <div className="flex items-center gap-2 text-sm">
-              <Folder className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{note.folder}</span>
+              <Folder className={cn("h-4 w-4", useWhiteText ? "text-white/70" : "text-muted-foreground")} />
+              <span className={cn(useWhiteText ? "text-white/70" : "text-muted-foreground")}>{note.folder}</span>
             </div>
           )}
 
           {note.tags.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <Tag className="h-4 w-4 text-muted-foreground" />
+              <Tag className={cn("h-4 w-4", useWhiteText ? "text-white/70" : "text-muted-foreground")} />
               {note.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-xs",
+                    useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-muted-foreground"
+                  )}
                 >
                   {tag}
                 </span>
@@ -724,21 +743,22 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
                   key={index}
                   src={img}
                   alt={`Note image ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                  className="w-full h-32 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => window.open(img, '_blank')}
+                  style={{ borderColor: useWhiteText ? 'rgba(255,255,255,0.2)' : undefined }}
                 />
               ))}
             </div>
           )}
 
           <div className="prose prose-invert max-w-none pt-4">
-            <p className="text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">
+            <p className={cn("text-base whitespace-pre-wrap leading-relaxed", useWhiteText ? "text-white/90" : "text-foreground/80")}>
               {note.content}
             </p>
           </div>
 
           {/* Dates - below content body */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border">
+          <div className={cn("flex items-center gap-4 text-xs pt-4 border-t", useWhiteText ? "text-white/70 border-white/20" : "text-muted-foreground border-border")}>
             <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
             <span>•</span>
             <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
@@ -768,6 +788,11 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [color, setColor] = useState(note.color || '');
   const [images, setImages] = useState<string[]>(note.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Check if note has a custom color (not graphite)
+  const hasColor = !!note.color;
+  const isGraphite = note.color === '#e1e1e1';
+  const useWhiteText = hasColor && !isGraphite;
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -823,7 +848,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="text-foreground">Edit Note</DialogTitle>
+        <DialogTitle className={cn(useWhiteText ? "text-white" : "text-foreground")}>Edit Note</DialogTitle>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -832,7 +857,12 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
-            className="bg-background border-border text-foreground text-lg font-medium placeholder:text-muted-foreground focus:border-border focus:ring-0"
+            className={cn(
+              "text-lg font-medium focus:border-border focus:ring-0",
+              useWhiteText 
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+            )}
           />
         </div>
 
@@ -842,13 +872,18 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write your note..."
             rows={8}
-            className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 resize-none"
+            className={cn(
+              "focus:border-border focus:ring-0 resize-none",
+              useWhiteText 
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+            )}
           />
         </div>
 
         {/* Color Picker */}
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-sm flex items-center gap-1">
+          <Label className={cn("text-sm flex items-center gap-1", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
             <Palette className="h-4 w-4" />
             Note Color
           </Label>
@@ -871,7 +906,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
 
         {/* Image Upload */}
         <div className="space-y-2">
-          <Label className="text-muted-foreground text-sm flex items-center gap-1">
+          <Label className={cn("text-sm flex items-center gap-1", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
             <Image className="h-4 w-4" />
             Images
           </Label>
@@ -888,7 +923,11 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             variant="outline"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="border-border text-foreground/70 hover:text-foreground hover:bg-accent"
+            className={cn(
+              useWhiteText 
+                ? "border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
+                : "border-border text-foreground/70 hover:text-foreground hover:bg-accent"
+            )}
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Images
@@ -921,7 +960,12 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             value={folder}
             onChange={(e) => setFolder(e.target.value)}
             placeholder="Folder (optional)"
-            className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0"
+            className={cn(
+              "focus:border-border focus:ring-0",
+              useWhiteText 
+                ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+            )}
           />
         </div>
 
@@ -932,9 +976,23 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               placeholder="Add tag and press Enter"
-              className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0"
+              className={cn(
+                "flex-1 focus:border-border focus:ring-0",
+                useWhiteText 
+                  ? "bg-white/10 border-white/20 text-white placeholder:text-white/50" 
+                  : "bg-background border-border text-foreground placeholder:text-muted-foreground"
+              )}
             />
-            <Button type="button" variant="outline" onClick={addTag} className="border-border text-muted-foreground hover:text-foreground hover:bg-accent">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={addTag} 
+              className={cn(
+                useWhiteText 
+                  ? "border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -943,13 +1001,18 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs",
+                    useWhiteText 
+                      ? "bg-white/20 text-white/80" 
+                      : "bg-secondary text-muted-foreground"
+                  )}
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="hover:text-red-400 transition-colors"
+                    className={cn("transition-colors", useWhiteText ? "hover:text-red-300" : "hover:text-red-400")}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -960,7 +1023,16 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-accent">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onCancel} 
+            className={cn(
+              useWhiteText 
+                ? "text-white/80 hover:text-white hover:bg-white/20" 
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={!title.trim()} className="bg-white text-black hover:bg-white/90">
