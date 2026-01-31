@@ -12,6 +12,7 @@ import {
 import { CalendarIcon, X, Target, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 interface AddGoalFormProps {
   onSubmit: (goal: any) => void;
@@ -19,14 +20,11 @@ interface AddGoalFormProps {
   initialGoal?: any;
 }
 
-const colors = [
-  { value: 'rgb(139, 92, 246)', label: 'Purple' },
-  { value: 'rgb(59, 130, 246)', label: 'Blue' },
-  { value: 'rgb(34, 197, 94)', label: 'Green' },
-  { value: 'rgb(245, 158, 11)', label: 'Orange' },
-  { value: 'rgb(239, 68, 68)', label: 'Red' },
-  { value: 'rgb(236, 72, 153)', label: 'Pink' },
-];
+// Use Google Calendar colors for consistency
+const colors = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({
+  value: hex,
+  label: name,
+}));
 
 export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProps) {
   const [title, setTitle] = useState(initialGoal?.title || '');
@@ -35,7 +33,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
   const [currentValue, setCurrentValue] = useState(initialGoal?.currentValue?.toString() || '0');
   const [unit, setUnit] = useState(initialGoal?.unit || '');
   const [deadline, setDeadline] = useState<Date | undefined>(initialGoal?.deadline ? new Date(initialGoal.deadline) : undefined);
-  const [color, setColor] = useState(initialGoal?.color || 'rgb(139, 92, 246)');
+  const [color, setColor] = useState(initialGoal?.color || '#5484ed'); // Default to Blueberry
   const [category, setCategory] = useState(initialGoal?.category || '');
   const [milestones, setMilestones] = useState<{ id: string; title: string; targetValue: string }[]>(
     initialGoal?.milestones?.map((m: any) => ({

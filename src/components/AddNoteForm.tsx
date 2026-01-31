@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, FileText, Plus, Tag, Image, Palette } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 interface AddNoteFormProps {
   onSubmit: (note: any) => void;
@@ -13,16 +14,10 @@ interface AddNoteFormProps {
   initialNote?: any;
 }
 
+// Use Google Calendar colors for consistency
 const NOTE_COLORS = [
-  { name: 'Default', value: '' },
-  { name: 'Red', value: '#fef2f2' },
-  { name: 'Orange', value: '#fff7ed' },
-  { name: 'Yellow', value: '#fefce8' },
-  { name: 'Green', value: '#f0fdf4' },
-  { name: 'Blue', value: '#eff6ff' },
-  { name: 'Purple', value: '#faf5ff' },
-  { name: 'Pink', value: '#fdf2f8' },
-  { name: 'Gray', value: '#f9fafb' },
+  { name: 'None', value: '' },
+  ...Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex })),
 ];
 
 export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProps) {
@@ -31,7 +26,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
   const [folder, setFolder] = useState(initialNote?.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialNote?.tags || []);
-  const [color, setColor] = useState(initialNote?.color || '');
+  const [color, setColor] = useState(initialNote?.color || ''); // Default to no color
   const [images, setImages] = useState<string[]>(initialNote?.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

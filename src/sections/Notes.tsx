@@ -46,6 +46,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { AddNoteForm } from '@/components/AddNoteForm';
 import type { Note } from '@/types';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
+import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 type ViewMode = 'grid' | 'list';
 type FilterMode = 'all' | 'pinned' | 'favorites';
@@ -745,16 +746,10 @@ interface EditNoteContentProps {
   onCancel: () => void;
 }
 
+// Use Google Calendar colors for consistency
 const NOTE_COLORS = [
-  { name: 'Default', value: '' },
-  { name: 'Red', value: '#fef2f2' },
-  { name: 'Orange', value: '#fff7ed' },
-  { name: 'Yellow', value: '#fefce8' },
-  { name: 'Green', value: '#f0fdf4' },
-  { name: 'Blue', value: '#eff6ff' },
-  { name: 'Purple', value: '#faf5ff' },
-  { name: 'Pink', value: '#fdf2f8' },
-  { name: 'Gray', value: '#f9fafb' },
+  { name: 'None', value: '' },
+  ...Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({ name, value: hex })),
 ];
 
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
