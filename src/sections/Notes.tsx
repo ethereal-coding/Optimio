@@ -555,8 +555,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 hover:bg-white/20 transition-opacity",
-              useWhiteText ? "text-white/80 hover:text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+              "h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 transition-opacity",
               note.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
             onClick={(e) => onTogglePin(note, e)}
@@ -567,8 +566,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             variant="ghost"
             size="icon"
             className={cn(
-              "h-8 w-8 transition-opacity hover:text-yellow-500 hover:bg-yellow-500/10",
-              useWhiteText ? "text-white/80" : "text-muted-foreground",
+              "h-8 w-8 text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10 transition-opacity",
               note.isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
             onClick={(e) => onToggleFavorite(note, e)}
