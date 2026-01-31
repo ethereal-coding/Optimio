@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    # Limit open pull requests
+    open-pull-requests-limit: 10
+    # Labels on pull requests
+    labels:
+      - "dependencies"
+      - "automated"
+    # Reviewers
+    reviewers:
+      - "ethereal-coding"
+    # Commit message
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore(dev)"
+      include: "scope"
+    # Ignore certain updates
+    ignore:
+      # Ignore patch updates (only update minor/major)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+      # Ignore specific packages that need manual testing
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "chore(ci)"

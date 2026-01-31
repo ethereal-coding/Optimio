@@ -1,66 +1,79 @@
-# Optimio - Personal Workspace & Calendar Manager
+<div align="center">
 
-A sleek, functional CRM/personal workspace application built with React, TypeScript, and Vite. Features Google Calendar integration with full 2-way sync.
+# 🚀 Optimio
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/react-18.3-blue.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.5-blue.svg)
+### Your Personal Workspace
+
+**Calendar · Tasks · Goals · Notes**
+
+[![CI](https://github.com/ethereal-coding/Optimio/actions/workflows/ci.yml/badge.svg)](https://github.com/ethereal-coding/Optimio/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ethereal-coding/Optimio/releases)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
+
+[Demo](https://optimio.app) · [Documentation](https://docs.optimio.app) · [Report Bug](https://github.com/ethereal-coding/Optimio/issues)
+
+</div>
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+  <img src="docs/screenshot-dashboard.png" alt="Dashboard" width="800">
+</div>
+
+---
 
 ## ✨ Features
 
-### 📅 Calendar Management
-- Month, Week, and Day views
-- Create, edit, and delete events
-- Color-coded events
-- All-day event support
-- Location and description fields
+| Feature | Description | Status |
+|---------|-------------|--------|
+| 📅 **Calendar** | Google Calendar integration with offline support | ✅ |
+| ✅ **Tasks** | Smart todo management with priorities | ✅ |
+| 🎯 **Goals** | Track progress with milestones | ✅ |
+| 📝 **Notes** | Rich text notes with search | ✅ |
+| 🔍 **Search** | Global search across all content | ✅ |
+| ☁️ **Sync** | Automatic background sync | ✅ |
+| 📱 **PWA** | Install as app, works offline | ✅ |
+| 🌙 **Dark Mode** | Beautiful dark theme | ✅ |
 
-### 🔄 Google Calendar Sync
-- **Full 2-way sync** with Google Calendar
-- Automatic sync every 5 minutes
-- Create events in app → Syncs to Google Calendar
-- Update/delete synced events → Changes reflect in Google Calendar
-- Pull events from Google Calendar → Appear in app
+---
 
-### ✅ Task Management
-- Create and organize tasks
-- Priority levels (High, Medium, Low)
-- Due dates and categories
-- Completion tracking
-- Filter by status
+## 🛠 Tech Stack
 
-### 🎯 Goal Tracking
-- Set targets with milestones
-- Track progress with visual indicators
-- Deadline management
-- Category organization
-- Grid and list views
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss)
+![Dexie](https://img.shields.io/badge/Dexie-4-FF1493)
+![Zod](https://img.shields.io/badge/Zod-4-3068B7)
 
-### 📝 Notes
-- Create and organize notes
-- Tagging system
-- Pinning and favorites
-- Search functionality
-- Folder organization
+- **Frontend:** React 19 + TypeScript + Vite
+- **Styling:** Tailwind CSS + Radix UI
+- **State:** React Context + TanStack Query
+- **Storage:** IndexedDB (Dexie) + LocalStorage
+- **Sync:** Google Calendar API
+- **Validation:** Zod
+- **Testing:** Vitest + React Testing Library
+- **CI/CD:** GitHub Actions
 
-### 🎨 Theme System
-- Dark mode (default)
-- Light mode
-- Auto theme switching
-- Custom color schemes
+---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
-- Google Cloud Project (for Calendar sync)
+
+- Node.js 20+
+- npm or yarn
+- Google OAuth credentials
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd app
+   git clone https://github.com/ethereal-coding/Optimio.git
+   cd Optimio
    ```
 
 2. **Install dependencies**
@@ -68,14 +81,14 @@ A sleek, functional CRM/personal workspace application built with React, TypeScr
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Configure environment variables**
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
-
-   Add your Google OAuth Client ID to `.env`:
-   ```
-   VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   
+   Edit `.env.local`:
+   ```env
+   VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
    ```
 
 4. **Start development server**
@@ -84,154 +97,187 @@ A sleek, functional CRM/personal workspace application built with React, TypeScr
    ```
 
 5. **Open in browser**
-   ```
-   http://localhost:5173
-   ```
-
-## 🔧 Google Calendar Setup
-
-To enable Google Calendar sync, follow the detailed guide:
-
-📖 **[Google Calendar Setup Guide](./GOOGLE_CALENDAR_SETUP.md)**
-
-Quick summary:
-1. Create a Google Cloud Project
-2. Enable Google Calendar API
-3. Create OAuth 2.0 credentials
-4. Add Client ID to `.env`
-5. Restart dev server
-
-## 📚 Documentation
-
-- **[2-Way Sync Guide](./2WAY_SYNC_GUIDE.md)** - How to use Google Calendar sync
-- **[Google Sync Implementation](./README_GOOGLE_SYNC.md)** - Technical details
-- **[Setup Instructions](./GOOGLE_CALENDAR_SETUP.md)** - OAuth configuration
-
-## 🛠️ Tech Stack
-
-- **Framework:** React 18.3
-- **Language:** TypeScript 5.5
-- **Build Tool:** Vite 5.4
-- **Styling:** Tailwind CSS
-- **UI Components:** Radix UI
-- **Date Handling:** date-fns
-- **Storage:** IndexedDB (Dexie.js)
-- **Icons:** Lucide React
-- **Authentication:** Google Identity Services
-- **API Integration:** Google Calendar API v3
-
-## 📁 Project Structure
-
-```
-app/
-├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── ui/           # shadcn/ui components
-│   │   ├── AddEventForm.tsx
-│   │   ├── CalendarWidget.tsx
-│   │   ├── Header.tsx
-│   │   └── ...
-│   ├── sections/         # Main app sections
-│   │   ├── Calendar.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── Goals.tsx
-│   │   ├── Notes.tsx
-│   │   ├── Settings.tsx
-│   │   └── Todos.tsx
-│   ├── lib/              # Utilities and services
-│   │   ├── calendar-sync.ts    # 2-way sync helpers
-│   │   ├── google-auth.ts      # OAuth authentication
-│   │   ├── google-calendar.ts  # Calendar API
-│   │   ├── db.ts              # IndexedDB setup
-│   │   └── utils.ts
-│   ├── hooks/            # Custom React hooks
-│   │   ├── useAppState.tsx
-│   │   └── useKeyboardShortcuts.tsx
-│   ├── types/            # TypeScript definitions
-│   │   ├── index.ts
-│   │   └── google.d.ts
-│   ├── contexts/         # React contexts
-│   │   └── ThemeProvider.tsx
-│   ├── App.tsx           # Main app component
-│   └── main.tsx          # Entry point
-├── public/               # Static assets
-├── index.html
-├── package.json
-└── README.md
-```
-
-## 🎮 Usage
-
-### Creating Events
-1. Click the `+` button (bottom right)
-2. Select the Calendar icon
-3. Fill in event details
-4. Click "Create Event"
-5. Event syncs to Google Calendar automatically!
-
-### Managing Tasks
-1. Navigate to Tasks section
-2. Click "New Task"
-3. Set priority, due date, and category
-4. Track completion
-
-### Setting Goals
-1. Go to Goals section
-2. Click "New Goal"
-3. Set target value and milestones
-4. Track progress visually
-
-### Taking Notes
-1. Open Notes section
-2. Click "New Note"
-3. Add tags and content
-4. Organize in folders
-
-## 🔑 Keyboard Shortcuts
-
-- `Ctrl/Cmd + K` - Open search
-- `Ctrl/Cmd + ,` - Open settings
-
-## 🔒 Security
-
-- OAuth tokens stored securely in IndexedDB
-- No tokens in localStorage or cookies
-- Automatic token refresh
-- Token revocation on sign-out
-- Client-side OAuth (no backend required)
-
-## 🐛 Troubleshooting
-
-### Google Calendar not syncing
-1. Check if signed in
-2. Verify `.env` has correct Client ID
-3. Check browser console for errors
-4. Try signing out and back in
-
-### Build errors
-1. Delete `node_modules` and reinstall
-2. Clear Vite cache: `rm -rf node_modules/.vite`
-3. Check Node.js version (18+)
-
-## 📄 License
-
-MIT License - feel free to use this project for personal or commercial purposes.
-
-## 🤝 Contributing
-
-Contributions welcome! Please feel free to submit a Pull Request.
-
-## 🙏 Acknowledgments
-
-- [shadcn/ui](https://ui.shadcn.com/) - UI component library
-- [Radix UI](https://www.radix-ui.com/) - Primitives
-- [Lucide](https://lucide.dev/) - Icons
-- [Google Calendar API](https://developers.google.com/calendar) - Calendar integration
-
-## 📧 Support
-
-For issues or questions, please open a GitHub issue.
+   Navigate to `http://localhost:5173`
 
 ---
 
-Built with ❤️ using React + TypeScript + Vite
+## 🏗 Architecture
+
+```
+optimio/
+├── .github/              # GitHub Actions workflows
+├── public/               # Static assets
+│   ├── manifest.json     # PWA manifest
+│   ├── sw.js            # Service worker
+│   └── _headers         # Security headers
+├── src/
+│   ├── components/       # React components
+│   │   ├── ui/          # Reusable UI components
+│   │   └── *.tsx        # Feature components
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utilities and services
+│   │   ├── api/         # API clients
+│   │   ├── sync/        # Sync logic
+│   │   └── *.ts         # Utilities
+│   ├── schemas/         # Zod validation schemas
+│   ├── sections/        # Page sections
+│   ├── providers/       # React context providers
+│   └── types/           # TypeScript types
+├── tests/               # Test files
+└── docs/                # Documentation
+```
+
+### Data Flow
+
+```
+User Action → React Component → Hook → Service → IndexedDB
+                                    ↓
+                              Google Calendar API (if online)
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Coverage Thresholds
+
+| Metric | Threshold |
+|--------|-----------|
+| Statements | 70% |
+| Branches | 60% |
+| Functions | 70% |
+| Lines | 70% |
+
+---
+
+## 📦 Deployment
+
+### Vercel (Recommended)
+
+1. Install Vercel CLI
+   ```bash
+   npm i -g vercel
+   ```
+
+2. Deploy
+   ```bash
+   vercel --prod
+   ```
+
+### Netlify
+
+1. Connect repository to Netlify
+2. Build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+3. Add environment variables
+
+### Manual
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## 🤝 Contributing
+
+### Branch Naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature | `feature/description` | `feature/dark-mode` |
+| Bugfix | `bugfix/description` | `bugfix/sync-error` |
+| Hotfix | `hotfix/description` | `hotfix/auth-bug` |
+| Docs | `docs/description` | `docs/api-reference` |
+| Refactor | `refactor/description` | `refactor/state-management` |
+
+### Commit Convention
+
+We use [Conventional Commits](https://conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+Types:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `style`: Formatting
+- `refactor`: Code change
+- `test`: Tests
+- `chore`: Maintenance
+
+Example:
+```
+feat(calendar): add recurring events support
+
+- Implement RRULE parsing
+- Add weekly/monthly options
+- Store recurrence in IndexedDB
+
+Closes #123
+```
+
+### Pull Request Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation
+
+## Checklist
+- [ ] Tests pass
+- [ ] Code follows style guide
+- [ ] Self-review completed
+- [ ] Documentation updated
+```
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [LICENSE](./LICENSE) for more information.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Radix UI](https://radix-ui.com/) for accessible components
+- [Lucide](https://lucide.dev/) for beautiful icons
+- [Google Calendar API](https://developers.google.com/calendar) for sync capabilities
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#-optimio)**
+
+Made with ❤️ by the Optimio team
+
+</div>
