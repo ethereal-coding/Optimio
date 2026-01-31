@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
 import { initializeGoogleAuth, signOut } from '@/lib/google-auth';
-import { SyncIndicator } from './SyncIndicator';
 
 interface HeaderProps {
   onSearchOpen?: () => void;
@@ -138,9 +137,6 @@ export function Header({ onSearchOpen }: HeaderProps) {
             </div>
           </button>
         </div>
-
-        {/* Sync Status */}
-        <SyncIndicator />
 
         {/* Separator */}
         <div className="h-6 w-px bg-border" />

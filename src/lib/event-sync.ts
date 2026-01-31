@@ -264,6 +264,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
   removed: number;
   errors: string[];
 }> {
+  const syncStartTime = Date.now();
   console.log('🚨 EMERGENCY DEBUG: syncAllEvents() STARTED at', new Date().toISOString());
 
   const accessToken = await getAccessToken();
