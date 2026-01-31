@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, type ReactNode } from 'react';
 import type { 
   Calendar, CalendarEvent, Todo, Goal, Note, User, 
   UserPreferences, AppState 

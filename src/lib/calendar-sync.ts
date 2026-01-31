@@ -11,8 +11,6 @@ import { isAuthenticated } from './google-auth';
 import { db } from './db';
 import type { CalendarEvent } from '@/types';
 import { debug } from './debug';
-import { notify } from './notifications';
-import { analytics } from './analytics';
 
 /**
  * Calendar Sync Helpers
@@ -78,14 +76,9 @@ export async function addEventWithSync(
       }
 
       debug.log('✅ Event created in Google Calendar:', googleEvent.id, 'with color:', googleEvent.colorId);
-      notify.eventCreated(event.title);
-      analytics.eventCreated({ calendarId: 'primary' });
       return syncedEvent;
     } catch (error) {
       console.error('Failed to sync event to Google Calendar:', error);
-      notify.error('Failed to sync to Google Calendar', {
-        description: 'Event saved locally',
-      });
       // Event is still saved locally even if Google sync fails
     }
   }
@@ -125,13 +118,8 @@ export async function updateEventWithSync(
       const googleCalendarId = event.sourceCalendarId || 'primary';
       const updatedGoogleEvent = await updateGoogleCalendarEvent(event.googleEventId, event, googleCalendarId);
       debug.log('✅ Event updated in Google Calendar:', event.googleEventId, 'with color:', updatedGoogleEvent.colorId);
-      notify.eventUpdated(event.title);
-      analytics.eventUpdated({ calendarId: googleCalendarId });
     } catch (error) {
       console.error('Failed to update event in Google Calendar:', error);
-      notify.error('Failed to update in Google Calendar', {
-        description: 'Local changes saved',
-      });
       // Local update still succeeds even if Google sync fails
     }
   }
@@ -165,13 +153,8 @@ export async function deleteEventWithSync(
       const googleCalendarId = event.sourceCalendarId || 'primary';
       await deleteGoogleCalendarEvent(event.googleEventId, googleCalendarId);
       debug.log('✅ Event deleted from Google Calendar:', event.googleEventId);
-      notify.eventDeleted(event.title);
-      analytics.eventDeleted({ calendarId: googleCalendarId });
     } catch (error) {
       console.error('Failed to delete event from Google Calendar:', error);
-      notify.error('Failed to delete from Google Calendar', {
-        description: 'Event removed locally',
-      });
       // Local deletion still succeeds even if Google sync fails
     }
   }

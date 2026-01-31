@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppProvider, useAppState, actions } from '@/hooks/useAppState';
 import { Dashboard } from '@/sections/Dashboard';
 import { debug } from '@/lib/debug';
-import { Toaster } from '@/components/ui/sonner';
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -292,7 +292,7 @@ function App() {
       <AppProvider>
         <ThemeProvider>
           <AppContent />
-          <Toaster />
+
         </ThemeProvider>
       </AppProvider>
     </ErrorBoundary>
