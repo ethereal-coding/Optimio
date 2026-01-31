@@ -77,7 +77,12 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
       endTime: endDateTime,
       color,
       isAllDay,
-      recurrence
+      recurrence,
+      // Preserve Google Calendar sync fields when editing
+      googleEventId: initialEvent?.googleEventId,
+      sourceCalendarId: initialEvent?.sourceCalendarId,
+      syncedFromGoogle: initialEvent?.syncedFromGoogle,
+      calendarId: initialEvent?.calendarId || '1'
     });
   };
 

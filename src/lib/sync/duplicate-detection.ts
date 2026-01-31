@@ -3,7 +3,7 @@
  * Google Calendar is the source of truth - incoming events take precedence
  */
 
-import type { SyncableEvent } from '@/types';
+import type { SyncableEvent } from '@/lib/db';
 
 export interface DuplicateDetectionResult {
   /** Events to keep (incoming events from Google) */

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAllCalendars, toggleCalendar, syncCalendarList } from '@/lib/calendar-storage';
 import { syncAllEvents } from '@/lib/event-sync';
+import { db } from '@/lib/db';
 import type { GoogleCalendar } from '@/lib/db';
 import { CheckCircle2, Circle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -59,22 +60,38 @@ export function CalendarPreferences() {
     }
   }
 
-  async function handleToggle(calendarId: string, currentEnabled: boolean) {
+  async function handleToggle(calendarId: string, currentEnabled: number) {
     try {
+      const newEnabled = currentEnabled === 0 ? 1 : 0;
       // Update in database
-      await toggleCalendar(calendarId, !currentEnabled);
+      await toggleCalendar(calendarId, newEnabled === 1);
 
       // Update local state
       setCalendars(cals =>
         cals.map(cal =>
-          cal.id === calendarId ? { ...cal, enabled: !currentEnabled } : cal
+          cal.id === calendarId ? { ...cal, enabled: newEnabled } : cal
         )
       );
 
-      // If enabling a calendar, sync its events
-      if (!currentEnabled) {
+      if (newEnabled === 1) {
+        // If enabling a calendar, sync its events
         console.log('🔄 Syncing events for newly enabled calendar...');
         await syncAllEvents();
+      } else {
+        // If disabling a calendar, delete its events
+        console.log('🗑️ Removing events for disabled calendar...');
+        const eventsToDelete = await db.events
+          .where('sourceCalendarId')
+          .equals(calendarId)
+          .toArray();
+        
+        if (eventsToDelete.length > 0) {
+          await db.events.bulkDelete(eventsToDelete.map(e => e.id));
+          console.log(`  ✅ Deleted ${eventsToDelete.length} events from disabled calendar`);
+          
+          // Reload page to refresh events in UI
+          window.location.reload();
+        }
       }
     } catch (err) {
       console.error('Failed to toggle calendar:', err);
@@ -115,7 +132,7 @@ export function CalendarPreferences() {
     );
   }
 
-  const enabledCount = calendars.filter(c => c.enabled).length;
+  const enabledCount = calendars.filter(c => c.enabled === 1).length;
 
   return (
     <div className="space-y-4">
@@ -173,9 +190,10 @@ export function CalendarPreferences() {
               variant="ghost"
               size="sm"
               onClick={() => handleToggle(calendar.id, calendar.enabled)}
+              title={calendar.enabled === 1 ? 'Click to disable' : 'Click to enable'}
               className="h-8 w-8 p-0 flex-shrink-0"
             >
-              {calendar.enabled ? (
+              {calendar.enabled === 1 ? (
                 <CheckCircle2 className="h-5 w-5 text-primary" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground" />

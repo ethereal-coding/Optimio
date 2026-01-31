@@ -23,13 +23,13 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
-  Circle,
   Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
 import { AddGoalForm } from '@/components/AddGoalForm';
 import type { Goal } from '@/types';
+import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, updateGoalProgressWithSync, toggleMilestoneWithSync } from '@/lib/goal-sync';
 
 type ViewMode = 'grid' | 'list';
 type FilterMode = 'all' | 'active' | 'completed';
@@ -47,7 +47,7 @@ export function Goals() {
   // Auto-open goal from search
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'goal') {
-      const goal = state.goals.find(g => g.id === state.selectedItemToOpen.id);
+      const goal = state.goals.find(g => g.id === state.selectedItemToOpen!.id);
       if (goal) {
         setSelectedGoal(goal);
         dispatch(actions.setSelectedItemToOpen(null));
@@ -71,32 +71,32 @@ export function Goals() {
     return true;
   });
 
-  const handleAddGoal = (goal: Goal) => {
-    dispatch(actions.addGoal(goal));
+  const handleAddGoal = async (goal: Goal) => {
+    await addGoalWithSync(goal, dispatch, actions);
     setShowAddGoal(false);
   };
 
-  const handleUpdateGoal = (goal: Goal) => {
-    dispatch(actions.updateGoal(goal));
+  const handleUpdateGoal = async (goal: Goal) => {
+    await updateGoalWithSync(goal, dispatch, actions);
     setEditingGoal(null);
     setSelectedGoal(goal);
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    dispatch(actions.deleteGoal(goalId));
+  const handleDeleteGoal = async (goalId: string) => {
+    await deleteGoalWithSync(goalId, dispatch, actions);
     setSelectedGoal(null);
   };
 
-  const handleUpdateProgress = (goalId: string, value: number) => {
-    dispatch(actions.updateGoalProgress(goalId, value));
+  const handleUpdateProgress = async (goalId: string, value: number) => {
+    await updateGoalProgressWithSync(goalId, value, dispatch, actions);
     const updatedGoal = goals.find(g => g.id === goalId);
     if (updatedGoal && selectedGoal?.id === goalId) {
       setSelectedGoal({ ...updatedGoal, currentValue: value });
     }
   };
 
-  const handleToggleMilestone = (goalId: string, milestoneId: string) => {
-    dispatch(actions.toggleMilestone(goalId, milestoneId));
+  const handleToggleMilestone = async (goalId: string, milestoneId: string) => {
+    await toggleMilestoneWithSync(goalId, milestoneId, dispatch, actions);
     const updatedGoal = goals.find(g => g.id === goalId);
     if (updatedGoal && selectedGoal?.id === goalId) {
       setSelectedGoal(updatedGoal);

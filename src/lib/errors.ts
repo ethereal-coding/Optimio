@@ -6,13 +6,18 @@
 import { debug } from './debug';
 
 export class AppError extends Error {
+  code: string;
+  recoverable: boolean;
+  
   constructor(
     message: string,
-    public code: string,
-    public recoverable: boolean = true
+    code: string,
+    recoverable: boolean = true
   ) {
     super(message);
     this.name = 'AppError';
+    this.code = code;
+    this.recoverable = recoverable;
   }
 }
 

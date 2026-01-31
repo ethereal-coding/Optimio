@@ -32,6 +32,10 @@ import { AddEventForm } from '@/components/AddEventForm';
 import { AddGoalForm } from '@/components/AddGoalForm';
 import { AddNoteForm } from '@/components/AddNoteForm';
 import { addEventWithSync } from '@/lib/calendar-sync';
+import { addTodoWithSync } from '@/lib/todo-sync';
+import { addGoalWithSync } from '@/lib/goal-sync';
+import { addNoteWithSync } from '@/lib/note-sync';
+
 
 interface DashboardProps {
   onSearchOpen?: () => void;
@@ -42,8 +46,8 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
   const [activeDialog, setActiveDialog] = useState<'todo' | 'event' | 'goal' | 'note' | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
-  const handleAddTodo = (todo: any) => {
-    dispatch(actions.addTodo(todo));
+  const handleAddTodo = async (todo: any) => {
+    await addTodoWithSync(todo, dispatch, actions);
     setActiveDialog(null);
   };
 
@@ -52,13 +56,13 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
     setActiveDialog(null);
   };
 
-  const handleAddGoal = (goal: any) => {
-    dispatch(actions.addGoal(goal));
+  const handleAddGoal = async (goal: any) => {
+    await addGoalWithSync(goal, dispatch, actions);
     setActiveDialog(null);
   };
 
-  const handleAddNote = (note: any) => {
-    dispatch(actions.addNote(note));
+  const handleAddNote = async (note: any) => {
+    await addNoteWithSync(note, dispatch, actions);
     setActiveDialog(null);
   };
 

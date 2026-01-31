@@ -18,22 +18,26 @@ export interface SyncableEvent extends CalendarEvent {
   sourceCalendarId?: string; // Which Google Calendar this event came from (e.g., 'primary', 'user@gmail.com')
   lastSyncedAt?: string;
   etag?: string; // Google's version identifier
+  syncStatus?: 'pending' | 'synced' | 'error';
 }
 
 // Todos (keep for future use)
 export interface SyncableTodo extends Todo {
   googleTaskId?: string;
   lastSyncedAt?: string;
+  syncStatus?: 'pending' | 'synced' | 'error';
 }
 
 // Goals (keep for future use)
 export interface SyncableGoal extends Goal {
   lastSyncedAt?: string;
+  syncStatus?: 'pending' | 'synced' | 'error';
 }
 
 // Notes (keep for future use)
 export interface SyncableNote extends Note {
   lastSyncedAt?: string;
+  syncStatus?: 'pending' | 'synced' | 'error';
 }
 
 // Google Calendar metadata
@@ -46,9 +50,18 @@ export interface GoogleCalendar {
   accessRole?: string; // 'owner', 'writer', 'reader'
   primary?: boolean; // True for user's primary calendar
   selected?: boolean; // Whether selected in Google Calendar UI
-  enabled: boolean; // Whether to sync/display events from this calendar
+  enabled: number; // 1 = enabled, 0 = disabled (Dexie works better with numbers for indexing)
   userId: string; // Which user this calendar belongs to
   lastSyncedAt?: string;
+}
+
+// Calendar preferences (for storing which calendars are visible/enabled)
+export interface CalendarPreference {
+  id: string; // calendar ID
+  summary: string;
+  color?: string;
+  enabled: number; // 1 or 0
+  userId: string;
 }
 
 // Auth tokens
@@ -87,6 +100,31 @@ export interface AppSettings {
   syncInterval: number; // minutes
 }
 
+// Sync queue entry
+export interface SyncQueueEntry {
+  id?: number; // auto-increment
+  entityType: 'event' | 'todo' | 'goal' | 'note';
+  entityId: string;
+  operation: 'CREATE' | 'UPDATE' | 'DELETE';
+  payload: any;
+  timestamp: number;
+  retryCount: number;
+  conflictResolution: 'pending' | 'synced' | 'local-wins' | 'remote-wins';
+  error?: string;
+}
+
+// Conflict entry
+export interface Conflict {
+  id?: number; // auto-increment
+  entityType: 'event' | 'todo' | 'goal' | 'note';
+  entityId: string;
+  localVersion: any;
+  remoteVersion: any;
+  detectedAt: number;
+  resolvedAt?: number;
+  resolution?: 'pending' | 'local-wins' | 'remote-wins' | 'merge';
+}
+
 // ============================================================================
 // DATABASE CLASS
 // ============================================================================
@@ -100,11 +138,16 @@ export class OptimioDB extends Dexie {
 
   // Google Calendar tables
   calendars!: Table<GoogleCalendar, string>;
+  calendarPreferences!: Table<CalendarPreference, string>;
 
   // Auth & user tables
   authTokens!: Table<AuthToken, string>;
   users!: Table<User, string>;
   settings!: Table<AppSettings, string>;
+
+  // Sync tables
+  syncQueue!: Table<SyncQueueEntry, number>;
+  conflicts!: Table<Conflict, number>;
 
   constructor() {
     super('OptimioDB');
@@ -119,13 +162,18 @@ export class OptimioDB extends Dexie {
       goals: 'id, deadline, category',
       notes: 'id, updatedAt, createdAt, folder, *tags, isPinned, isFavorite',
 
-      // Google Calendars - indexed by id, enabled, and userId
+      // Google Calendars - indexed by id, enabled (as number 0/1), and userId
       calendars: 'id, enabled, userId, primary',
+      calendarPreferences: 'id, enabled, userId',
 
       // Auth and settings
       authTokens: 'id, expiresAt',
       users: 'id, email',
-      settings: 'id'
+      settings: 'id',
+
+      // Sync tables
+      syncQueue: '++id, entityType, entityId, conflictResolution, timestamp',
+      conflicts: '++id, entityType, entityId, detectedAt, resolvedAt'
     });
   }
 }
@@ -179,8 +227,11 @@ export async function clearAllData() {
       db.goals.clear(),
       db.notes.clear(),
       db.calendars.clear(),
+      db.calendarPreferences.clear(),
       db.authTokens.clear(),
-      db.users.clear()
+      db.users.clear(),
+      db.syncQueue.clear(),
+      db.conflicts.clear()
       // Don't clear settings
     ]);
 

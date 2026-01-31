@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AddGoalForm } from './AddGoalForm';
+import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, updateGoalProgressWithSync } from '@/lib/goal-sync';
 
 export function GoalsWidget() {
   const { state, dispatch } = useAppState();
@@ -30,23 +31,23 @@ export function GoalsWidget() {
   const [selectedGoal, setSelectedGoal] = useState<typeof goals[0] | null>(null);
   const [editingGoal, setEditingGoal] = useState<typeof goals[0] | null>(null);
 
-  const handleAddGoal = (goal: any) => {
-    dispatch(actions.addGoal(goal));
+  const handleAddGoal = async (goal: any) => {
+    await addGoalWithSync(goal, dispatch, actions);
     setShowAddGoal(false);
   };
 
-  const handleUpdateProgress = (goalId: string, newValue: number) => {
-    dispatch(actions.updateGoalProgress(goalId, newValue));
+  const handleUpdateProgress = async (goalId: string, newValue: number) => {
+    await updateGoalProgressWithSync(goalId, newValue, dispatch, actions);
   };
 
-  const handleDeleteGoal = (goalId: string) => {
-    dispatch(actions.deleteGoal(goalId));
+  const handleDeleteGoal = async (goalId: string) => {
+    await deleteGoalWithSync(goalId, dispatch, actions);
     setSelectedGoal(null);
     setExpandedGoal(null);
   };
 
-  const handleUpdateGoal = (goal: any) => {
-    dispatch(actions.updateGoal(goal));
+  const handleUpdateGoal = async (goal: any) => {
+    await updateGoalWithSync(goal, dispatch, actions);
     setEditingGoal(null);
     setSelectedGoal(goal);
   };

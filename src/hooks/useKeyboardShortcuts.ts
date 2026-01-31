@@ -35,7 +35,7 @@ export function useKeyboardShortcuts(handlers?: {
 
   useEffect(() => {
     let gPressed = false;
-    let gTimeout: NodeJS.Timeout;
+    let gTimeout: ReturnType<typeof setTimeout>;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;

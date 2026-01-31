@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AddNoteForm } from './AddNoteForm';
+import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync } from '@/lib/note-sync';
 
 export function NotesWidget() {
   const { state, dispatch } = useAppState();
@@ -44,34 +45,34 @@ export function NotesWidget() {
   const pinnedNotes = filteredNotes.filter(n => n.isPinned);
   const recentNotes = filteredNotes.filter(n => !n.isPinned).slice(0, 5);
 
-  const handleAddNote = (note: any) => {
-    dispatch(actions.addNote(note));
+  const handleAddNote = async (note: any) => {
+    await addNoteWithSync(note, dispatch, actions);
     setShowAddNote(false);
   };
 
-  const handleTogglePin = (noteId: string, e: React.MouseEvent) => {
+  const handleTogglePin = async (noteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const note = notes.find(n => n.id === noteId);
     if (note) {
-      dispatch(actions.updateNote({ ...note, isPinned: !note.isPinned }));
+      await toggleNotePinWithSync(note, dispatch, actions);
     }
   };
 
-  const handleToggleFavorite = (noteId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (noteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const note = notes.find(n => n.id === noteId);
     if (note) {
-      dispatch(actions.updateNote({ ...note, isFavorite: !note.isFavorite }));
+      await toggleNoteFavoriteWithSync(note, dispatch, actions);
     }
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    dispatch(actions.deleteNote(noteId));
+  const handleDeleteNote = async (noteId: string) => {
+    await deleteNoteWithSync(noteId, dispatch, actions);
     setSelectedNote(null);
   };
 
-  const handleUpdateNote = (note: any) => {
-    dispatch(actions.updateNote(note));
+  const handleUpdateNote = async (note: any) => {
+    await updateNoteWithSync(note, dispatch, actions);
     setEditingNote(null);
     setSelectedNote(note);
   };

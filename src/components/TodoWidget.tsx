@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AddTodoForm } from './AddTodoForm';
+import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 
 export function TodoWidget() {
   const { state, dispatch } = useAppState();
@@ -38,21 +39,21 @@ export function TodoWidget() {
     return true;
   }).slice(0, 8);
 
-  const handleToggleTodo = (todoId: string) => {
-    dispatch(actions.toggleTodo(todoId));
+  const handleToggleTodo = async (todoId: string) => {
+    await toggleTodoWithSync(todoId, dispatch, actions);
   };
 
-  const handleDeleteTodo = (todoId: string) => {
-    dispatch(actions.deleteTodo(todoId));
+  const handleDeleteTodo = async (todoId: string) => {
+    await deleteTodoWithSync(todoId, dispatch, actions);
   };
 
-  const handleAddTodo = (todo: any) => {
-    dispatch(actions.addTodo(todo));
+  const handleAddTodo = async (todo: any) => {
+    await addTodoWithSync(todo, dispatch, actions);
     setShowAddTodo(false);
   };
 
-  const handleUpdateTodo = (todo: any) => {
-    dispatch(actions.updateTodo(todo));
+  const handleUpdateTodo = async (todo: any) => {
+    await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
   };
 
@@ -139,6 +140,7 @@ export function TodoWidget() {
                     checked={todo.completed}
                     onCheckedChange={() => handleToggleTodo(todo.id)}
                     onClick={(e) => e.stopPropagation()}
+                    className="border-muted-foreground/40"
                   />
                   <div className="flex-1 min-w-0">
                     <p className={cn(
@@ -222,6 +224,7 @@ export function TodoWidget() {
                   <Checkbox
                     checked={selectedTodo.completed}
                     onCheckedChange={() => handleToggleTodo(selectedTodo.id)}
+                    className="border-muted-foreground/40"
                   />
                   <span className="text-sm text-foreground/60">
                     {selectedTodo.completed ? 'Completed' : 'Not completed'}

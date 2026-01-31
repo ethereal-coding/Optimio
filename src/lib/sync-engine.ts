@@ -34,7 +34,7 @@ export async function queueSync(
       payload,
       timestamp: Date.now(),
       retryCount: 0,
-      conflictResolution: 'pending'
+      conflictResolution: 'pending' as const
     });
 
     debug.log(`📝 Queued ${operation} for ${entityType}:${entityId}`);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { debug } from '@/lib/debug';
 import {
@@ -15,11 +16,13 @@ import {
   Sun,
   Moon,
   Monitor,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { exportData, importData, getExportStats } from '@/lib/export-import';
-import { getSyncStatus, processSyncQueue } from '@/lib/sync-engine';
 import { getDatabaseHealth, db } from '@/lib/db';
+import { isAuthenticated } from '@/lib/google-auth';
+import { syncAllEvents } from '@/lib/event-sync';
 import { SHORTCUTS, getShortcutDisplay } from '@/hooks/useKeyboardShortcuts';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { cn } from '@/lib/utils';
@@ -29,7 +32,8 @@ export function Settings() {
   const { state, dispatch } = useAppState();
   const currentTheme = state.user?.preferences?.theme || 'dark';
   const [exportStats, setExportStats] = useState<any>(null);
-  const [syncStatus, setSyncStatus] = useState<any>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [dbHealth, setDbHealth] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -42,15 +46,28 @@ export function Settings() {
   }, [currentTheme]);
 
   async function loadStats() {
-    const [stats, sync, health] = await Promise.all([
+    const [stats, health] = await Promise.all([
       getExportStats(),
-      getSyncStatus(),
       getDatabaseHealth()
     ]);
 
     setExportStats(stats);
-    setSyncStatus(sync);
     setDbHealth(health);
+
+    // Check Google Calendar connection and last sync
+    const connected = await isAuthenticated();
+    setIsGoogleConnected(connected);
+
+    if (connected) {
+      const calendars = await db.calendars.toArray();
+      const lastSync = calendars.length > 0 
+        ? calendars.reduce((latest, cal) => {
+            if (!cal.lastSyncedAt) return latest;
+            return !latest || cal.lastSyncedAt > latest ? cal.lastSyncedAt : latest;
+          }, null as string | null)
+        : null;
+      setLastSyncTime(lastSync);
+    }
   }
 
   async function handleExport() {
@@ -86,11 +103,21 @@ export function Settings() {
   async function handleSync() {
     setSyncing(true);
     try {
-      const result = await processSyncQueue();
-      alert(result.message);
-      await loadStats();
+      const connected = await isAuthenticated();
+      if (!connected) {
+        alert('Please sign in with Google to sync calendars');
+        return;
+      }
+
+      const result = await syncAllEvents();
+      if (result.success) {
+        alert(`Sync complete! Added: ${result.added}, Updated: ${result.updated}, Removed: ${result.removed}`);
+        await loadStats();
+      } else {
+        alert('Sync failed: ' + result.errors.join(', '));
+      }
     } catch (error) {
-      alert('Sync failed');
+      alert('Sync failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSyncing(false);
     }
@@ -140,7 +167,7 @@ export function Settings() {
 
       {/* Content */}
       <div className="flex-1 p-6 overflow-y-auto custom-scrollbar min-h-0">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="data" className="w-full">
             <TabsList className="inline-flex h-auto items-center gap-1 bg-card border border-border rounded-lg p-1 mb-6">
               <TabsTrigger value="data" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
@@ -162,242 +189,282 @@ export function Settings() {
 
             {/* Data & Sync Tab */}
             <TabsContent value="data" className="space-y-6">
-              {/* Database Health */}
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-foreground font-medium flex items-center gap-2">
-                    <Database className="w-4 h-4" />
-                    Database Status
-                  </h3>
-                  {dbHealth?.healthy ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <AlertTriangle className="w-5 h-5 text-red-500" />
-                  )}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Database Health */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <Database className="h-4 w-4 text-muted-foreground" />
+                        Database Status
+                      </CardTitle>
+                      {dbHealth?.healthy ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Events</p>
+                        <p className="text-lg font-semibold text-foreground">{dbHealth?.eventCount || 0}</p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Todos</p>
+                        <p className="text-lg font-semibold text-foreground">{dbHealth?.todoCount || 0}</p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Goals</p>
+                        <p className="text-lg font-semibold text-foreground">{dbHealth?.goalCount || 0}</p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Notes</p>
+                        <p className="text-lg font-semibold text-foreground">{dbHealth?.noteCount || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="bg-muted p-3 rounded">
-                    <p className="text-muted-foreground">Events</p>
-                    <p className="text-foreground text-lg font-semibold">{dbHealth?.eventCount || 0}</p>
-                  </div>
-                  <div className="bg-muted p-3 rounded">
-                    <p className="text-muted-foreground">Todos</p>
-                    <p className="text-foreground text-lg font-semibold">{dbHealth?.todoCount || 0}</p>
-                  </div>
-                  <div className="bg-muted p-3 rounded">
-                    <p className="text-muted-foreground">Goals</p>
-                    <p className="text-foreground text-lg font-semibold">{dbHealth?.goalCount || 0}</p>
-                  </div>
-                  <div className="bg-muted p-3 rounded">
-                    <p className="text-muted-foreground">Notes</p>
-                    <p className="text-foreground text-lg font-semibold">{dbHealth?.noteCount || 0}</p>
-                  </div>
-                </div>
+                {/* Google Calendar Sync */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        Google Calendar
+                      </CardTitle>
+                      {isGoogleConnected ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Status</span>
+                        <span className={isGoogleConnected ? 'text-green-400' : 'text-yellow-400'}>
+                          {isGoogleConnected ? 'Connected' : 'Not Connected'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Last Sync</span>
+                        <span className="text-foreground">
+                          {lastSyncTime 
+                            ? new Date(lastSyncTime).toLocaleString() 
+                            : 'Never'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Events</span>
+                        <span className="text-foreground">{dbHealth?.eventCount || 0}</span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleSync}
+                      disabled={syncing || !isGoogleConnected}
+                      className="w-full"
+                    >
+                      <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
+                      {syncing ? 'Syncing...' : 'Sync Now'}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Sync Status */}
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <h3 className="text-foreground font-medium mb-4 flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  Sync Status
-                </h3>
-
-                <div className="space-y-2 text-sm mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Pending Changes</span>
-                    <span className="text-foreground">{syncStatus?.pendingCount || 0}</span>
+              {/* Backup & Restore */}
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium">Backup & Restore</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Export your data as a JSON backup file. You can import it later to restore your data.
+                    Total size: <span className="text-foreground font-medium">{exportStats?.totalSize || '0 KB'}</span>
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleExport}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Data
+                    </Button>
+                    <Button
+                      onClick={handleImport}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import Data
+                    </Button>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Conflicts</span>
-                    <span className="text-foreground">{syncStatus?.conflictCount || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status</span>
-                    <span className={syncStatus?.isOnline ? 'text-green-400' : 'text-red-400'}>
-                      {syncStatus?.isOnline ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSync}
-                  disabled={syncing}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {syncing ? 'Syncing...' : 'Sync Now'}
-                </Button>
-              </div>
-
-              {/* Export / Import */}
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <h3 className="text-foreground font-medium mb-4">Backup & Restore</h3>
-
-                <div className="text-sm text-muted-foreground mb-4">
-                  Export your data as a JSON backup file. You can import it later to restore your data.
-                  <div className="mt-2">
-                    Total size: <span className="text-foreground">{exportStats?.totalSize || '0 KB'}</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleExport}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Data
-                  </Button>
-                  <Button
-                    onClick={handleImport}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Import Data
-                  </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Danger Zone */}
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                <h3 className="text-red-400 font-medium mb-2 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Danger Zone
-                </h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Permanently delete all your data. This cannot be undone.
-                </p>
-                <Button
-                  onClick={handleClearData}
-                  variant="outline"
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear All Data
-                </Button>
-              </div>
+              <Card className="bg-red-500/5 border-red-500/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium text-red-400 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Danger Zone
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete all your data. This cannot be undone.
+                  </p>
+                  <Button
+                    onClick={handleClearData}
+                    variant="outline"
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All Data
+                  </Button>
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            {/* Utilities Tab */}
+            {/* Appearance Tab */}
             <TabsContent value="appearance" className="space-y-6">
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <h3 className="text-foreground font-medium mb-2">Theme</h3>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Choose your interface theme or sync with your system preferences
-                </p>
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium">Theme</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Choose your interface theme or sync with your system preferences
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() => {
+                        debug.log('⚙️ Settings: Switching to Light theme');
+                        dispatch(actions.setTheme('light'));
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
+                        currentTheme === 'light'
+                          ? "border-primary/50 bg-accent/50"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <Sun className="h-5 w-5 text-foreground" />
+                      <span className="font-medium text-foreground text-sm">Light</span>
+                    </button>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    onClick={() => {
-                      debug.log('⚙️ Settings: Switching to Light theme');
-                      dispatch(actions.setTheme('light'));
-                    }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
-                      currentTheme === 'light'
-                        ? "border-primary bg-accent"
-                        : "border-border hover:border-muted-foreground"
-                    )}
-                  >
-                    <Sun className="h-8 w-8 text-foreground" />
-                    <span className="font-medium text-foreground text-sm">Light</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        debug.log('⚙️ Settings: Switching to Dark theme');
+                        dispatch(actions.setTheme('dark'));
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
+                        currentTheme === 'dark'
+                          ? "border-primary/50 bg-accent/50"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <Moon className="h-5 w-5 text-foreground" />
+                      <span className="font-medium text-foreground text-sm">Dark</span>
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      debug.log('⚙️ Settings: Switching to Dark theme');
-                      dispatch(actions.setTheme('dark'));
-                    }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
-                      currentTheme === 'dark'
-                        ? "border-primary bg-accent"
-                        : "border-border hover:border-muted-foreground"
-                    )}
-                  >
-                    <Moon className="h-8 w-8 text-foreground" />
-                    <span className="font-medium text-foreground text-sm">Dark</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      debug.log('⚙️ Settings: Switching to Auto theme');
-                      dispatch(actions.setTheme('auto'));
-                    }}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
-                      currentTheme === 'auto'
-                        ? "border-primary bg-accent"
-                        : "border-border hover:border-muted-foreground"
-                    )}
-                  >
-                    <Monitor className="h-8 w-8 text-foreground" />
-                    <span className="font-medium text-foreground text-sm">Auto</span>
-                  </button>
-                </div>
-              </div>
+                    <button
+                      onClick={() => {
+                        debug.log('⚙️ Settings: Switching to Auto theme');
+                        dispatch(actions.setTheme('auto'));
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
+                        currentTheme === 'auto'
+                          ? "border-primary/50 bg-accent/50"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <Monitor className="h-5 w-5 text-foreground" />
+                      <span className="font-medium text-foreground text-sm">Auto</span>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Calendars Tab */}
-            <TabsContent value="calendars">
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <h3 className="text-foreground font-medium mb-4">Google Calendars</h3>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Choose which Google Calendars to display in your app. Your primary calendar and selected calendars are enabled by default.
-                </p>
-
-                {/* Calendar list will be populated here */}
-                <CalendarPreferences />
-              </div>
+            <TabsContent value="calendars" className="space-y-6">
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    Google Calendars
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Choose which Google Calendars to display in your app. Your primary calendar and selected calendars are enabled by default.
+                  </p>
+                  <CalendarPreferences />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Keyboard Shortcuts Tab */}
-            <TabsContent value="shortcuts">
-              <div className="bg-card rounded-lg p-6 border border-border">
-                <h3 className="text-foreground font-medium mb-4 flex items-center gap-2">
-                  <Keyboard className="w-4 h-4" />
-                  Keyboard Shortcuts
-                </h3>
-
-                <div className="space-y-2">
-                  {SHORTCUTS.map((shortcut, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center py-2 border-b border-border last:border-0"
-                    >
-                      <span className="text-muted-foreground text-sm">{shortcut.description}</span>
-                      <kbd className="px-3 py-1 bg-muted text-foreground text-xs rounded border border-border font-mono">
-                        {getShortcutDisplay(shortcut.key)}
-                      </kbd>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <TabsContent value="shortcuts" className="space-y-6">
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Keyboard className="h-4 w-4 text-muted-foreground" />
+                    Keyboard Shortcuts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    {SHORTCUTS.map((shortcut, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center py-2.5 border-b border-border last:border-0"
+                      >
+                        <span className="text-muted-foreground text-sm">{shortcut.description}</span>
+                        <kbd className="px-3 py-1 bg-muted text-foreground text-xs rounded border border-border font-mono">
+                          {getShortcutDisplay(shortcut.key)}
+                        </kbd>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* About Tab */}
-            <TabsContent value="about">
-              <div className="bg-card rounded-lg p-8 border border-border text-center">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Optimio</h2>
-                <p className="text-muted-foreground mb-6">Your Personal Productivity Workspace</p>
+            <TabsContent value="about" className="space-y-6">
+              <Card className="bg-card border-border">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 mb-4">
+                    <Sparkles className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-1">Optimio</h2>
+                  <p className="text-muted-foreground mb-6">Your Personal Productivity Workspace</p>
 
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>Version 1.0.0</p>
-                  <p>Built with React + TypeScript + Vite</p>
-                  <p className="mt-4">
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>Version 1.0.0</p>
+                    <p>Built with React + TypeScript + Vite</p>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-border">
                     <a
                       href="https://github.com/yourusername/optimio"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground underline"
+                      className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
                     >
                       View on GitHub
                     </a>
-                  </p>
-                </div>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

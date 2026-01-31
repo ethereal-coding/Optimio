@@ -222,7 +222,7 @@ export function useFeatureDetailed(featureName: string): FeatureState {
         name: featureName,
         defaultValue: false,
         isEnabled: false,
-        source: 'default',
+        source: 'default' as const,
         description: 'Unknown feature',
       };
     }
@@ -262,7 +262,7 @@ export function getFeatureState(featureName: string, options?: EvaluateOptions):
       name: featureName,
       defaultValue: false,
       isEnabled: false,
-      source: 'default',
+      source: 'default' as const,
       description: 'Unknown feature',
     };
   }
@@ -302,7 +302,6 @@ export const FeatureFlagsManager = {
 // =============================================================================
 
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
 
 interface FeatureFlagProps {
   name: string;

@@ -21,13 +21,13 @@ import {
   TrendingUp,
   Trophy,
   Trash2,
-  AlertCircle,
-  Clock
+  AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from 'date-fns';
 import { AddTodoForm } from '@/components/AddTodoForm';
 import type { Todo } from '@/types';
+import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 
 type ViewMode = 'grid' | 'list';
 type FilterMode = 'all' | 'active' | 'completed';
@@ -47,7 +47,7 @@ export function Todos() {
   // Auto-open todo from search
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'todo') {
-      const todo = state.todos.find(t => t.id === state.selectedItemToOpen.id);
+      const todo = state.todos.find(t => t.id === state.selectedItemToOpen!.id);
       if (todo) {
         setSelectedTodo(todo);
         dispatch(actions.setSelectedItemToOpen(null));
@@ -72,24 +72,24 @@ export function Todos() {
     return true;
   });
 
-  const handleAddTodo = (todo: Todo) => {
-    dispatch(actions.addTodo(todo));
+  const handleAddTodo = async (todo: Todo) => {
+    await addTodoWithSync(todo, dispatch, actions);
     setShowAddTodo(false);
   };
 
-  const handleUpdateTodo = (todo: Todo) => {
-    dispatch(actions.updateTodo(todo));
+  const handleUpdateTodo = async (todo: Todo) => {
+    await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
     setSelectedTodo(todo);
   };
 
-  const handleDeleteTodo = (todoId: string) => {
-    dispatch(actions.deleteTodo(todoId));
+  const handleDeleteTodo = async (todoId: string) => {
+    await deleteTodoWithSync(todoId, dispatch, actions);
     setSelectedTodo(null);
   };
 
-  const handleToggleTodo = (todoId: string) => {
-    dispatch(actions.toggleTodo(todoId));
+  const handleToggleTodo = async (todoId: string) => {
+    await toggleTodoWithSync(todoId, dispatch, actions);
     const updatedTodo = todos.find(t => t.id === todoId);
     if (updatedTodo && selectedTodo?.id === todoId) {
       setSelectedTodo({ ...updatedTodo, completed: !updatedTodo.completed });
@@ -410,6 +410,7 @@ function TodoCard({ todo, viewMode, onClick, onToggle, getPriorityColor }: TodoC
               e.stopPropagation();
               onToggle(e);
             }}
+            className="border-muted-foreground/40"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -455,7 +456,7 @@ function TodoCard({ todo, viewMode, onClick, onToggle, getPriorityColor }: TodoC
             e.stopPropagation();
             onToggle(e);
           }}
-          className="mt-0.5"
+          className="mt-0.5 border-muted-foreground/40"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
@@ -519,7 +520,7 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, getPriorityColor }:
             <Checkbox
               checked={todo.completed}
               onClick={onToggle}
-              className="mt-1"
+              className="mt-1 border-muted-foreground/40"
             />
             <DialogTitle className={cn(
               "text-xl text-foreground",

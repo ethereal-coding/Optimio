@@ -45,7 +45,7 @@ export async function fetchCalendarListFromGoogle(accessToken: string): Promise<
     accessRole: item.accessRole,
     primary: item.primary || false,
     selected: item.selected !== false, // Default to true if not specified
-    enabled: item.primary === true || item.selected === true, // Auto-enable primary and selected calendars
+    enabled: (item.primary === true || item.selected === true) ? 1 : 0, // Use 1/0 for Dexie indexing
     userId: user.id,
     lastSyncedAt: undefined
   }));
@@ -103,10 +103,13 @@ export async function getAllCalendars(): Promise<GoogleCalendar[]> {
  * Get only enabled calendars from database
  */
 export async function getEnabledCalendars(): Promise<GoogleCalendar[]> {
+  // Use 1 for enabled (Dexie stores booleans as 0/1 internally sometimes)
   const calendars = await db.calendars
     .where('enabled')
-    .equals(true)
+    .equals(1)
     .toArray();
+
+  console.log(`📅 Found ${calendars.length} enabled calendars`);
 
   // Sort: primary first, then by name
   calendars.sort((a, b) => {
@@ -122,7 +125,7 @@ export async function getEnabledCalendars(): Promise<GoogleCalendar[]> {
  * Toggle calendar enabled status
  */
 export async function toggleCalendar(calendarId: string, enabled: boolean): Promise<void> {
-  await db.calendars.update(calendarId, { enabled });
+  await db.calendars.update(calendarId, { enabled: enabled ? 1 : 0 });
   console.log(`✅ Calendar ${calendarId} ${enabled ? 'enabled' : 'disabled'}`);
 }
 

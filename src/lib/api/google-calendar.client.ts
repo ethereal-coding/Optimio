@@ -21,14 +21,21 @@ const log = logger('google-calendar-client');
 // =============================================================================
 
 export class GoogleCalendarError extends Error {
+  statusCode: number;
+  code?: string;
+  details?: Record<string, unknown>;
+
   constructor(
     message: string,
-    public statusCode: number,
-    public code?: string,
-    public details?: Record<string, unknown>
+    statusCode: number,
+    code?: string,
+    details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'GoogleCalendarError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
   }
 }
 
@@ -78,7 +85,6 @@ interface GoogleCalendarClientConfig {
   maxRetries?: number;
   retryDelay?: number;
   getAccessToken: () => Promise<string | null>;
-  onTokenRefresh?: (token: string) => Promise<void>;
 }
 
 // =============================================================================
@@ -90,14 +96,12 @@ export class GoogleCalendarClient {
   private maxRetries: number;
   private retryDelay: number;
   private getAccessToken: () => Promise<string | null>;
-  private onTokenRefresh?: (token: string) => Promise<void>;
 
   constructor(config: GoogleCalendarClientConfig) {
     this.baseUrl = config.baseUrl || 'https://www.googleapis.com/calendar/v3';
     this.maxRetries = config.maxRetries || 3;
     this.retryDelay = config.retryDelay || 1000;
     this.getAccessToken = config.getAccessToken;
-    this.onTokenRefresh = config.onTokenRefresh;
   }
 
   // ===========================================================================

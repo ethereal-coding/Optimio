@@ -35,14 +35,14 @@ import {
   Tag,
   Folder,
   Grid3x3,
-  List,
-  MoreVertical
+  List
 } from 'lucide-react';
 import { PinIcon } from '@/components/icons/PinIcon';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
 import { AddNoteForm } from '@/components/AddNoteForm';
 import type { Note } from '@/types';
+import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
 
 type ViewMode = 'grid' | 'list';
 type FilterMode = 'all' | 'pinned' | 'favorites';
@@ -60,7 +60,7 @@ export function Notes() {
   // Auto-open note from search
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'note') {
-      const note = state.notes.find(n => n.id === state.selectedItemToOpen.id);
+      const note = state.notes.find(n => n.id === state.selectedItemToOpen!.id);
       if (note) {
         setSelectedNote(note);
         dispatch(actions.setSelectedItemToOpen(null));
@@ -100,39 +100,39 @@ export function Notes() {
     })
   );
 
-  const handleAddNote = (note: Note) => {
-    dispatch(actions.addNote(note));
+  const handleAddNote = async (note: Note) => {
+    await addNoteWithSync(note, dispatch, actions);
     setShowAddNote(false);
   };
 
-  const handleUpdateNote = (note: Note) => {
-    dispatch(actions.updateNote(note));
+  const handleUpdateNote = async (note: Note) => {
+    await updateNoteWithSync(note, dispatch, actions);
     setEditingNote(null);
     setSelectedNote(note);
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    dispatch(actions.deleteNote(noteId));
+  const handleDeleteNote = async (noteId: string) => {
+    await deleteNoteWithSync(noteId, dispatch, actions);
     setSelectedNote(null);
   };
 
-  const handleTogglePin = (note: Note, e?: React.MouseEvent) => {
+  const handleTogglePin = async (note: Note, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    dispatch(actions.updateNote({ ...note, isPinned: !note.isPinned }));
+    await toggleNotePinWithSync(note, dispatch, actions);
     if (selectedNote?.id === note.id) {
       setSelectedNote({ ...note, isPinned: !note.isPinned });
     }
   };
 
-  const handleToggleFavorite = (note: Note, e?: React.MouseEvent) => {
+  const handleToggleFavorite = async (note: Note, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    dispatch(actions.updateNote({ ...note, isFavorite: !note.isFavorite }));
+    await toggleNoteFavoriteWithSync(note, dispatch, actions);
     if (selectedNote?.id === note.id) {
       setSelectedNote({ ...note, isFavorite: !note.isFavorite });
     }
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -163,8 +163,7 @@ export function Notes() {
       order: index
     }));
 
-    // Merge with the other list and all unfiltered notes
-    const otherNotes = activeIsPinned ? unpinnedNotes : pinnedNotes;
+    // Merge with all unfiltered notes
     const allUpdatedNotes = notes.map(note => {
       if (note.isPinned === activeIsPinned && relevantNotes.find(n => n.id === note.id)) {
         return updatedNotes.find(n => n.id === note.id) || note;
@@ -172,7 +171,7 @@ export function Notes() {
       return note;
     });
 
-    dispatch(actions.reorderNotes(allUpdatedNotes));
+    await reorderNotesWithSync(allUpdatedNotes, dispatch, actions);
   };
 
   return (
@@ -610,7 +609,7 @@ interface ViewNoteContentProps {
   onClose: () => void;
 }
 
-function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite, onClose }: ViewNoteContentProps) {
+function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite }: ViewNoteContentProps) {
   return (
     <>
       <DialogHeader>

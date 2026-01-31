@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useEffect } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { debug } from '@/lib/debug';
 

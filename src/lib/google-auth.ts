@@ -254,7 +254,7 @@ async function fetchAndStoreCalendarList(userId: string): Promise<void> {
         accessRole: calendar.accessRole,
         primary: calendar.primary || false,
         selected: calendar.selected ?? true,
-        enabled: calendar.primary || calendar.selected || false, // Enable primary and selected by default
+        enabled: (calendar.primary || calendar.selected) ? 1 : 0, // Enable primary and selected by default (1/0 for Dexie)
         userId: userId,
         lastSyncedAt: new Date().toISOString()
       });

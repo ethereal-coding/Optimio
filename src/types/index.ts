@@ -10,9 +10,17 @@ export interface CalendarEvent {
   isAllDay?: boolean;
   recurrence?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
   reminder?: number; // minutes before
-  calendarId?: string;
+  calendarId: string;
   googleEventId?: string; // Google Calendar event ID
   syncedFromGoogle?: boolean; // Whether this event was synced from Google Calendar
+  // Google Calendar sync metadata
+  etag?: string; // Google's version identifier
+  recurringEventId?: string; // ID of the master recurring event
+  isRecurringInstance?: boolean; // Whether this is an instance of a recurring event
+  sourceCalendarId?: string; // Which Google Calendar this came from
+  sourceCalendarName?: string;
+  sourceCalendarColor?: string;
+  lastSyncedAt?: string;
 }
 
 // Alias for backward compatibility

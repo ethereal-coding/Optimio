@@ -24,6 +24,7 @@ import {
 import { AddEventForm } from './AddEventForm';
 import { AddTodoForm } from './AddTodoForm';
 import { updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
+import { updateTodoWithSync, deleteTodoWithSync, toggleTodoWithSync } from '@/lib/todo-sync';
 
 export function TodayOverview() {
   const { state, dispatch, getTodayEvents, getTodayTodos } = useAppState();
@@ -35,8 +36,8 @@ export function TodayOverview() {
   const todayEvents = getTodayEvents();
   const todayTodos = getTodayTodos();
 
-  const handleToggleTodo = (todoId: string) => {
-    dispatch(actions.toggleTodo(todoId));
+  const handleToggleTodo = async (todoId: string) => {
+    await toggleTodoWithSync(todoId, dispatch, actions);
   };
 
   const handleEventClick = (event: any) => {
@@ -55,13 +56,13 @@ export function TodayOverview() {
     setSelectedEvent(event);
   };
 
-  const handleUpdateTodo = (todo: any) => {
-    dispatch(actions.updateTodo(todo));
+  const handleUpdateTodo = async (todo: any) => {
+    await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
   };
 
-  const handleDeleteTodo = (todoId: string) => {
-    dispatch(actions.deleteTodo(todoId));
+  const handleDeleteTodo = async (todoId: string) => {
+    await deleteTodoWithSync(todoId, dispatch, actions);
   };
 
   return (
@@ -167,6 +168,7 @@ export function TodayOverview() {
                     checked={todo.completed}
                     onCheckedChange={() => handleToggleTodo(todo.id)}
                     onClick={(e) => e.stopPropagation()}
+                    className="border-muted-foreground/40"
                   />
                   <div className="flex-1 min-w-0">
                     <p className={cn(
@@ -339,6 +341,7 @@ export function TodayOverview() {
                   <Checkbox
                     checked={selectedTodo.completed}
                     onCheckedChange={() => handleToggleTodo(selectedTodo.id)}
+                    className="border-muted-foreground/40"
                   />
                   <span className="text-sm text-muted-foreground">
                     {selectedTodo.completed ? 'Completed' : 'Not completed'}

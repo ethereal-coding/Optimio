@@ -1,6 +1,6 @@
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+
 import {
   Tooltip,
   TooltipContent,
@@ -30,7 +30,7 @@ const navItems = [
   { id: 'notes', label: 'Notes', icon: FileText },
 ];
 
-export function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
+export function Sidebar({ isOpen: _isOpen = false, onToggle: _onToggle }: SidebarProps) {
   const { state, dispatch } = useAppState();
   const { view } = state;
 
@@ -64,7 +64,7 @@ export function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
                       )}
                       onClick={() => dispatch(actions.setView(item.id as any))}
                     >
-                      <Icon className="h-11 w-11 flex-shrink-0" />
+                      <Icon className="size-5 flex-shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8} className="bg-popover border-border text-foreground">
@@ -90,7 +90,7 @@ export function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
                 )}
                 onClick={() => dispatch(actions.setView('settings'))}
               >
-                <SettingsIcon className="h-11 w-11 flex-shrink-0" />
+                <SettingsIcon className="size-5 flex-shrink-0" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={8} className="bg-popover border-border text-foreground">

@@ -145,47 +145,66 @@ function parseRecurrenceRule(rrules?: string[]): 'none' | 'daily' | 'weekly' | '
 }
 
 /**
+ * Parse a YYYY-MM-DD date string to local Date (avoiding timezone issues)
+ * All-day events should always display on the correct date regardless of timezone
+ */
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Invalid date format: ${dateStr}`);
+  }
+  const [year, month, day] = parts;
+  // Use local date constructor to avoid UTC conversion issues
+  // Month is 0-indexed in JavaScript Date
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Convert Google Calendar event to app Event format
  */
 export function convertGoogleEventToAppEvent(googleEvent: GoogleCalendarEvent, calendarId: string): Event {
   // Parse start and end times
   // For all-day events (date without time), create proper day boundaries
-  const isAllDayEvent = !googleEvent.start.dateTime;
 
-  const startTime = googleEvent.start.dateTime
-    ? new Date(googleEvent.start.dateTime)
-    : (() => {
-        if (!googleEvent.start.date) {
-          throw new Error('All-day event missing start.date');
-        }
-        const parts = googleEvent.start.date.split('-').map(Number);
-        if (parts.length !== 3 || parts.some(isNaN)) {
-          throw new Error(`Invalid date format: ${googleEvent.start.date}`);
-        }
-        const [year, month, day] = parts;
-        return new Date(year, month - 1, day, 0, 0, 0, 0); // Start of day
-      })();
+  const isAllDay = !googleEvent.start.dateTime;
 
-  const endTime = googleEvent.end.dateTime
-    ? new Date(googleEvent.end.dateTime)
-    : (() => {
-        // Google Calendar API returns EXCLUSIVE end dates (day after) for all-day events
-        // So we use the start date to get the correct day, then set to end of that day
-        if (!googleEvent.start.date) {
-          throw new Error('All-day event missing start.date');
-        }
-        const parts = googleEvent.start.date.split('-').map(Number);
-        if (parts.length !== 3 || parts.some(isNaN)) {
-          throw new Error(`Invalid date format: ${googleEvent.start.date}`);
-        }
-        const [year, month, day] = parts;
-        return new Date(year, month - 1, day, 23, 59, 59, 999); // End of the SAME day as start
-      })();
+  let startTime: Date;
+  let endTime: Date;
+
+  if (isAllDay) {
+    // All-day events: parse YYYY-MM-DD as local date to avoid timezone shifts
+    if (!googleEvent.start.date) {
+      throw new Error('All-day event missing start.date');
+    }
+    startTime = parseLocalDate(googleEvent.start.date);
+    startTime.setHours(0, 0, 0, 0); // Start of day
+
+    // For multi-day all-day events, Google returns end.date as the day AFTER the last day
+    // e.g., a 3-day event starting March 15 has end.date = "2024-03-18"
+    // We need to subtract one day to get the actual end date
+    if (googleEvent.end?.date) {
+      endTime = parseLocalDate(googleEvent.end.date);
+      // Subtract 1 millisecond to get the last moment of the previous day
+      endTime.setTime(endTime.getTime() - 1);
+    } else {
+      // Single day event - end at end of start day
+      endTime = new Date(startTime.getTime());
+      endTime.setHours(23, 59, 59, 999);
+    }
+  } else {
+    // Timed events: use standard Date parsing which handles timezones
+    startTime = new Date(googleEvent.start.dateTime!);
+    endTime = new Date(googleEvent.end.dateTime!);
+  }
 
   // Map Google Calendar colors to hex colors
   const color = googleEvent.colorId && GOOGLE_CALENDAR_COLORS[googleEvent.colorId]
     ? GOOGLE_CALENDAR_COLORS[googleEvent.colorId].hex
     : '#5484ed'; // Default to Blueberry
+  
+  if (googleEvent.colorId) {
+    debug.log(`  🎨 Event "${googleEvent.summary}" - Google colorId: ${googleEvent.colorId} → ${color}`);
+  }
 
   // Determine recurrence: either from the recurrence rules, or if this is a recurring instance,
   // we'll need to fetch the master event to know the pattern. For now, mark as 'yearly' for birthdays
@@ -193,7 +212,6 @@ export function convertGoogleEventToAppEvent(googleEvent: GoogleCalendarEvent, c
 
   // If this is a recurring event instance without explicit recurrence rules,
   // mark it as recurring (we'll default to yearly for all-day recurring events like birthdays)
-  const isAllDay = !googleEvent.start.dateTime;
   if (recurrence === 'none' && googleEvent.recurringEventId && isAllDay) {
     recurrence = 'yearly'; // Most likely a birthday or anniversary
   }
@@ -281,7 +299,7 @@ export async function syncMultipleGoogleCalendars(
     const { db } = await import('./db');
 
     // Get calendar preferences - only fetch from enabled calendars
-    const prefs = await db.calendarPreferences.where('enabled').equals(true).toArray();
+    const prefs = await db.calendarPreferences.where('enabled').equals(1).toArray();
 
     if (prefs.length === 0) {
       debug.log('⚠️ No enabled calendars found, defaulting to primary calendar');
@@ -585,23 +603,29 @@ export function expandRecurringEvent(
       console.error(`Invalid date format for recurring event: ${masterEvent.start.date}`);
       return [masterEvent];
     }
-    const [_, month, day] = parts;
+    const [_, monthStr, dayStr] = parts;
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
 
-    debug.log(`  → Parsed date parts: year=?, month=${month}, day=${day}`);
+    // Pad with leading zeros for proper YYYY-MM-DD format
+    const paddedMonth = month.toString().padStart(2, '0');
+    const paddedDay = day.toString().padStart(2, '0');
+
+    debug.log(`  → Parsed date parts: year=?, month=${paddedMonth}, day=${paddedDay}`);
 
     for (let year = startYear; year <= endYear; year++) {
-      const instanceDate = `${year}-${month}-${day}`;
-
       // Validate date (handles leap year Feb 29 case)
-      const testDate = new Date(year, parseInt(month) - 1, parseInt(day));
+      const testDate = new Date(year, month - 1, day);
       if (
         testDate.getFullYear() !== year ||
-        testDate.getMonth() !== parseInt(month) - 1 ||
-        testDate.getDate() !== parseInt(day)
+        testDate.getMonth() !== month - 1 ||
+        testDate.getDate() !== day
       ) {
-        debug.log(`  → Skipping invalid date: ${instanceDate} (e.g., Feb 29 in non-leap year)`);
+        debug.log(`  → Skipping invalid date: ${year}-${paddedMonth}-${paddedDay} (e.g., Feb 29 in non-leap year)`);
         continue;
       }
+
+      const instanceDate = `${year}-${paddedMonth}-${paddedDay}`;
 
       const instance: GoogleCalendarEvent = {
         ...masterEvent,

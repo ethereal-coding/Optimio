@@ -35,6 +35,7 @@ const initialState: AppState = {
 type Action =
   | { type: 'SET_USER'; payload: User | null }
   | { type: 'SET_CALENDARS'; payload: Calendar[] }
+  | { type: 'SET_EVENTS'; payload: { calendarId: string; events: CalendarEvent[] } }
   | { type: 'ADD_EVENT'; payload: { calendarId: string; event: CalendarEvent } }
   | { type: 'UPDATE_EVENT'; payload: { calendarId: string; event: CalendarEvent } }
   | { type: 'DELETE_EVENT'; payload: { calendarId: string; eventId: string } }
@@ -73,6 +74,17 @@ function appReducer(state: AppState, action: Action): AppState {
 
     case 'SET_CALENDARS':
       return { ...state, calendars: action.payload };
+
+    case 'SET_EVENTS':
+      // Replace all events atomically
+      return {
+        ...state,
+        calendars: state.calendars.map(cal =>
+          cal.id === action.payload.calendarId
+            ? { ...cal, events: action.payload.events }
+            : cal
+        )
+      };
 
     case 'ADD_EVENT':
       return {
@@ -297,11 +309,7 @@ function appReducer(state: AppState, action: Action): AppState {
                 startOfWeek: 0,
                 dateFormat: 'MM/dd/yyyy',
                 timeFormat: '12h',
-                notifications: {
-                  email: false,
-                  push: false,
-                  desktop: false
-                }
+                notifications: false
               }
             }
       };
@@ -445,6 +453,7 @@ export function useAppState() {
 export const actions = {
   setUser: (user: User | null): Action => ({ type: 'SET_USER', payload: user }),
   setCalendars: (calendars: Calendar[]): Action => ({ type: 'SET_CALENDARS', payload: calendars }),
+  setEvents: (calendarId: string, events: CalendarEvent[]): Action => ({ type: 'SET_EVENTS', payload: { calendarId, events } }),
   addEvent: (calendarId: string, event: CalendarEvent): Action => ({ 
     type: 'ADD_EVENT', 
     payload: { calendarId, event } 

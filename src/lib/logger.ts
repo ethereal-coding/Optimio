@@ -58,10 +58,6 @@ let globalTransport: LogTransport = (entry) => {
 
 function isDevelopment(): boolean {
   return (
-    typeof process !== 'undefined' && 
-    process.env && 
-    process.env.NODE_ENV === 'development'
-  ) || (
     typeof window !== 'undefined' && 
     window.location && 
     window.location.hostname === 'localhost'

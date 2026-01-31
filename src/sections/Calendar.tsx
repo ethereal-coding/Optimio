@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
 import { debug } from '@/lib/debug';
@@ -18,10 +18,9 @@ import {
   Clock,
   MapPin,
   Trash2,
-  Edit,
+  Pen,
   Repeat,
 } from 'lucide-react';
-import { Button as UIButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   format,
@@ -31,7 +30,6 @@ import {
   endOfWeek,
   addDays,
   isSameMonth,
-  isSameDay,
   isToday,
   addMonths,
   subMonths,
@@ -42,8 +40,6 @@ import {
 } from 'date-fns';
 import { AddEventForm } from '@/components/AddEventForm';
 import { addEventWithSync, updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
-
-type ViewMode = 'month' | 'week' | 'day';
 
 export function Calendar() {
   const { state, dispatch } = useAppState();
@@ -65,7 +61,7 @@ export function Calendar() {
   // Auto-open event from search
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'event') {
-      const event = state.calendars.flatMap(cal => cal.events).find(e => e.id === state.selectedItemToOpen.id);
+      const event = state.calendars.flatMap(cal => cal.events).find(e => e.id === state.selectedItemToOpen!.id);
       if (event) {
         setSelectedEvent(event);
         dispatch(actions.setSelectedItemToOpen(null));
@@ -322,7 +318,7 @@ interface MonthViewProps {
   getEventsForDay: (day: Date) => any[];
 }
 
-function MonthView({ currentDate, events, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
+function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
@@ -404,7 +400,7 @@ function MonthView({ currentDate, events, onEventClick, onDayClick, getEventsFor
 }
 
 // Week View Component
-function WeekView({ currentDate, events, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
+function WeekView({ currentDate, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
   const weekStart = startOfWeek(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -506,9 +502,9 @@ function WeekView({ currentDate, events, onEventClick, onDayClick, getEventsForD
 }
 
 // Day View Component
-function DayView({ currentDate, events, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
-  const amContainerRef = useRef<HTMLDivElement>(null);
-  const pmContainerRef = useRef<HTMLDivElement>(null);
+function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const HOUR_HEIGHT = 60; // Reduced from 80px for more compact view
 
   const dayEvents = getEventsForDay(currentDate).sort((a, b) => {
     const aStart = typeof a.startTime === 'string' ? parseISO(a.startTime) : a.startTime;
@@ -516,8 +512,7 @@ function DayView({ currentDate, events, onEventClick, onDayClick, getEventsForDa
     return aStart.getTime() - bStart.getTime();
   });
 
-  const amHours = Array.from({ length: 12 }, (_, i) => i); // 0-11 (12 AM - 11 AM)
-  const pmHours = Array.from({ length: 12 }, (_, i) => i + 12); // 12-23 (12 PM - 11 PM)
+  const hours = Array.from({ length: 24 }, (_, i) => i);
 
   const handleTimeSlotClick = (hour: number) => {
     const clickedTime = new Date(currentDate);
@@ -525,156 +520,175 @@ function DayView({ currentDate, events, onEventClick, onDayClick, getEventsForDa
     onDayClick(clickedTime);
   };
 
-  // Auto-scroll to show first event
+  // Auto-scroll to 7 AM or first event
   useEffect(() => {
-    if (dayEvents.length === 0) return;
-
-    const firstEvent = dayEvents[0];
-    const eventStart = typeof firstEvent.startTime === 'string' ? parseISO(firstEvent.startTime) : firstEvent.startTime;
-    const firstEventHour = eventStart.getHours();
-
-    // Determine which container to scroll
-    const containerRef = firstEventHour < 12 ? amContainerRef : pmContainerRef;
     if (!containerRef.current) return;
+    
+    const scrollHour = dayEvents.length > 0 
+      ? (typeof dayEvents[0].startTime === 'string' ? parseISO(dayEvents[0].startTime) : dayEvents[0].startTime).getHours()
+      : 7;
+    
+    containerRef.current.scrollTo({
+      top: scrollHour * HOUR_HEIGHT,
+      behavior: 'smooth'
+    });
+  }, [dayEvents, currentDate]);
 
-    // Calculate scroll position (each hour is 80px high, plus padding)
-    const hourIndex = firstEventHour < 12 ? firstEventHour : firstEventHour - 12;
-    const scrollPosition = hourIndex * 80; // h-20 = 80px
+  // Group overlapping events
+  const getEventGroups = () => {
+    const groups: { event: any; column: number; totalColumns: number }[][] = [];
+    
+    dayEvents.forEach((event) => {
+      const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
+      const eventEnd = typeof event.endTime === 'string' ? parseISO(event.endTime) : event.endTime;
+      
+      // Find a group this event overlaps with
+      let foundGroup = false;
+      for (const group of groups) {
+        const overlaps = group.some(({ event: e }) => {
+          const eStart = typeof e.startTime === 'string' ? parseISO(e.startTime) : e.startTime;
+          const eEnd = typeof e.endTime === 'string' ? parseISO(e.endTime) : e.endTime;
+          return eventStart < eEnd && eventEnd > eStart;
+        });
+        
+        if (overlaps) {
+          // Find available column
+          const usedColumns = new Set(group.map(g => g.column));
+          let column = 0;
+          while (usedColumns.has(column)) column++;
+          
+          group.push({ event, column, totalColumns: 0 });
+          foundGroup = true;
+          break;
+        }
+      }
+      
+      if (!foundGroup) {
+        groups.push([{ event, column: 0, totalColumns: 1 }]);
+      }
+    });
+    
+    // Update totalColumns for each event
+    groups.forEach(group => {
+      const maxColumn = Math.max(...group.map(g => g.column));
+      group.forEach(g => g.totalColumns = maxColumn + 1);
+    });
+    
+    return groups.flat();
+  };
 
-    // Smooth scroll to show the first event
-    setTimeout(() => {
-      containerRef.current?.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
-    }, 100);
-  }, [dayEvents]);
+  const eventPositions = getEventGroups();
 
-  const renderTimeline = (hours: number[]) => {
-    const HOUR_HEIGHT = 80; // h-20 = 80px
-    const startHour = hours[0];
-
-    return (
-      <div className="relative">
+  return (
+    <div ref={containerRef} className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-background">
+      <div className="relative min-h-full">
+        {/* Hour grid */}
         {hours.map((hour) => {
-          const timeDate = new Date();
+          const timeDate = new Date(currentDate);
           timeDate.setHours(hour, 0, 0, 0);
+          const isCurrentHour = new Date().getHours() === hour && isToday(currentDate);
 
           return (
-            <div key={hour} className="flex border-b border-border/50 last:border-b-0 h-20">
+            <div 
+              key={hour} 
+              className="flex border-b border-border/30"
+              style={{ height: `${HOUR_HEIGHT}px` }}
+            >
               {/* Time label */}
-              <div className="w-16 flex-shrink-0 pr-3 text-right pt-2">
-                <span className="text-[11px] font-medium text-muted-foreground">
+              <div className="w-14 flex-shrink-0 pr-2 text-right pt-1 sticky left-0 bg-background z-10">
+                <span className={cn(
+                  "text-[11px] font-medium",
+                  isCurrentHour ? "text-primary font-semibold" : "text-muted-foreground"
+                )}>
                   {format(timeDate, 'h a')}
                 </span>
               </div>
 
-              {/* Events area - clickable */}
+              {/* Time slot - clickable */}
               <div
-                className="flex-1 border-l border-border pl-3 py-2 cursor-pointer hover:bg-accent transition-colors relative group"
+                className="flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors relative group"
                 onClick={() => handleTimeSlotClick(hour)}
               >
-                {/* Add event hint on hover */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <Plus className="h-4 w-4 text-foreground/20" />
-                </div>
+                {/* Current time indicator */}
+                {isCurrentHour && (
+                  <div className="absolute left-0 right-0 top-0 h-px bg-primary/30" />
+                )}
               </div>
             </div>
           );
         })}
 
-        {/* Render all events with absolute positioning */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="relative h-full" style={{ marginLeft: '64px' }}>
-            <div className="absolute inset-0 border-l border-border pl-3 pointer-events-auto">
-              {dayEvents.map((event) => {
-                const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
-                const eventEnd = typeof event.endTime === 'string' ? parseISO(event.endTime) : event.endTime;
-                const eventHour = eventStart.getHours();
+        {/* Events overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={{ left: '56px' }}>
+          {eventPositions.map(({ event, column, totalColumns }) => {
+            const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
+            const eventEnd = typeof event.endTime === 'string' ? parseISO(event.endTime) : event.endTime;
+            
+            const startHour = eventStart.getHours() + eventStart.getMinutes() / 60;
+            const topOffset = startHour * HOUR_HEIGHT;
+            
+            const durationHours = (eventEnd.getTime() - eventStart.getTime()) / (1000 * 60 * 60);
+            const height = Math.max(durationHours * HOUR_HEIGHT - 2, 24);
+            
+            // Calculate width and left position for overlapping events
+            const widthPercent = totalColumns > 1 ? 95 / totalColumns : 98;
+            const leftPercent = column * widthPercent;
 
-                // Only render events in the current timeline (AM or PM)
-                if (startHour === 0 && eventHour >= 12) return null;
-                if (startHour === 12 && eventHour < 12) return null;
-
-                // Calculate position and height
-                const hourIndex = eventHour - startHour;
-                const minutesFromHourStart = eventStart.getMinutes();
-                const topOffset = hourIndex * HOUR_HEIGHT + (minutesFromHourStart / 60) * HOUR_HEIGHT;
-
-                const durationMinutes = (eventEnd.getTime() - eventStart.getTime()) / (1000 * 60);
-                const height = (durationMinutes / 60) * HOUR_HEIGHT;
-
-                return (
+            return (
+              <div
+                key={event.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEventClick(event);
+                }}
+                className="absolute pointer-events-auto bg-card border border-border/80 rounded-md px-2 py-1 cursor-pointer hover:shadow-md hover:border-border transition-all overflow-hidden"
+                style={{
+                  top: `${topOffset}px`,
+                  height: `${height}px`,
+                  left: `${leftPercent}%`,
+                  width: `${widthPercent}%`,
+                  zIndex: 10
+                }}
+              >
+                <div className="flex gap-1.5 h-full">
                   <div
-                    key={event.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEventClick(event);
-                    }}
-                    className="absolute right-3 bg-card border border-border rounded-md p-2.5 cursor-pointer hover:border-border transition-all overflow-hidden"
-                    style={{
-                      top: `${topOffset}px`,
-                      height: `${Math.max(height - 4, 32)}px`,
-                      width: 'calc(100% - 16px)',
-                      left: '12px'
-                    }}
-                  >
-                    <div className="flex gap-2 h-full">
-                      <div
-                        className="w-0.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: event.color }}
-                      />
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <h3 className="text-[13px] font-semibold text-foreground mb-0.5 line-clamp-1">
-                          {event.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 flex-shrink-0" />
-                            <span className="whitespace-nowrap">
-                              {format(eventStart, 'h:mm a')} - {format(eventEnd, 'h:mm a')}
-                            </span>
-                          </div>
-                          {event.location && height > 50 && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                        {event.description && height > 70 && (
-                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
-                            {event.description}
-                          </p>
-                        )}
-                      </div>
+                    className="w-1 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: event.color || '#666' }}
+                  />
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h3 className="text-xs font-semibold text-foreground truncate leading-tight">
+                      {event.title}
+                    </h3>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+                      <span className="whitespace-nowrap">
+                        {format(eventStart, 'h:mm')} - {format(eventEnd, 'h:mm')}
+                      </span>
                     </div>
+                    {event.location && height > 35 && (
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                        <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                        <span className="truncate">{event.location}</span>
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Current time line */}
+        {isToday(currentDate) && (
+          <div 
+            className="absolute left-14 right-0 border-t-2 border-primary z-20 pointer-events-none"
+            style={{ 
+              top: `${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px` 
+            }}
+          >
+            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 rounded-full bg-primary" />
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-px bg-secondary/30 h-full">
-      {/* AM Timeline */}
-      <div ref={amContainerRef} className="bg-background h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-        <div className="px-4 py-3">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-3 px-1 sticky top-0 bg-background py-2 -mt-2 z-10">Morning</h3>
-          {renderTimeline(amHours)}
-        </div>
-      </div>
-
-      {/* PM Timeline */}
-      <div ref={pmContainerRef} className="bg-background h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-        <div className="px-4 py-3">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-3 px-1 sticky top-0 bg-background py-2 -mt-2 z-10">Afternoon & Evening</h3>
-          {renderTimeline(pmHours)}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -688,7 +702,7 @@ interface ViewEventContentProps {
   onClose: () => void;
 }
 
-function ViewEventContent({ event, onEdit, onDelete, onClose }: ViewEventContentProps) {
+function ViewEventContent({ event, onEdit, onDelete }: ViewEventContentProps) {
   const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
   const eventEnd = typeof event.endTime === 'string' ? parseISO(event.endTime) : event.endTime;
 
@@ -704,7 +718,7 @@ function ViewEventContent({ event, onEdit, onDelete, onClose }: ViewEventContent
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
               onClick={onEdit}
             >
-              <Edit className="h-4 w-4" />
+              <Pen className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"

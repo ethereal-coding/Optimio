@@ -17,7 +17,7 @@ export function success(message: string, options?: NotificationOptions): string 
   return toast.success(message, {
     duration: 4000,
     ...options,
-  });
+  }) as string;
 }
 
 /**
@@ -27,7 +27,7 @@ export function error(message: string, options?: NotificationOptions): string {
   return toast.error(message, {
     duration: 6000,
     ...options,
-  });
+  }) as string;
 }
 
 /**
@@ -37,7 +37,7 @@ export function info(message: string, options?: NotificationOptions): string {
   return toast.info(message, {
     duration: 4000,
     ...options,
-  });
+  }) as string;
 }
 
 /**
@@ -47,7 +47,7 @@ export function warning(message: string, options?: NotificationOptions): string 
   return toast.warning(message, {
     duration: 5000,
     ...options,
-  });
+  }) as string;
 }
 
 /**
@@ -57,7 +57,7 @@ export function warning(message: string, options?: NotificationOptions): string 
 export function loading(message: string): string {
   return toast.loading(message, {
     duration: Infinity,
-  });
+  }) as string;
 }
 
 /**
@@ -223,7 +223,7 @@ export function promise<T>(
     loading: options.loading,
     success: options.success,
     error: options.error,
-  });
+  }) as unknown as Promise<T>;
 }
 
 // =============================================================================

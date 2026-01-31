@@ -7,9 +7,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { initializeDatabase, db } from '@/lib/db';
-import { loadTodosFromDB } from '@/lib/todo-sync';
-import { loadGoalsFromDB } from '@/lib/goal-sync';
-import { loadNotesFromDB } from '@/lib/note-sync';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { getCurrentUser, isAuthenticated } from '@/lib/google-auth';
 import { AuthWall } from '@/components/AuthWall';
@@ -103,7 +100,6 @@ function AppContent() {
               dueDate: todo.dueDate ? (todo.dueDate instanceof Date ? todo.dueDate : new Date(todo.dueDate)) : undefined,
               completedAt: todo.completedAt ? (todo.completedAt instanceof Date ? todo.completedAt : new Date(todo.completedAt)) : undefined,
               createdAt: todo.createdAt instanceof Date ? todo.createdAt : new Date(todo.createdAt),
-              updatedAt: todo.updatedAt instanceof Date ? todo.updatedAt : new Date(todo.updatedAt),
               priority: todo.priority || 'medium',
               completed: todo.completed || false
             };
@@ -252,7 +248,7 @@ function AppContent() {
  */
 function App() {
   const [dbReady, setDbReady] = useState(false);
-  const [dbError, setDbError] = useState<string | null>(null);
+  const [, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
     async function setupDatabase() {
@@ -294,7 +290,7 @@ function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <ThemeProvider defaultTheme="dark" storageKey="optimio-theme">
+        <ThemeProvider>
           <AppContent />
           <Toaster />
         </ThemeProvider>
