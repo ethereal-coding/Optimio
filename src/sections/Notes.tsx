@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import {
@@ -35,7 +36,9 @@ import {
   Tag,
   Folder,
   Grid3x3,
-  List
+  List,
+  Palette,
+  Image
 } from 'lucide-react';
 import { PinIcon } from '@/components/icons/PinIcon';
 import { cn } from '@/lib/utils';
@@ -318,7 +321,7 @@ export function Notes() {
               {/* Pinned Notes */}
               {pinnedNotes.length > 0 && (
                 <div>
-                  {(filterMode === 'all' || filterMode === 'pinned' || (filterMode === 'favorites' && unpinnedNotes.length > 0)) && (
+                  {(filterMode === 'all' || filterMode === 'pinned' || filterMode === 'favorites') && (
                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-1">
                       {filterMode === 'favorites' ? 'Pinned Favorites' : 'Pinned'}
                     </h3>
@@ -350,7 +353,7 @@ export function Notes() {
               {/* Unpinned Notes */}
               {unpinnedNotes.length > 0 && (
                 <div>
-                  {((filterMode === 'all' && pinnedNotes.length > 0) || (filterMode === 'favorites' && pinnedNotes.length > 0)) && (
+                  {((filterMode === 'all' && pinnedNotes.length > 0) || filterMode === 'favorites') && (
                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 px-1">
                       {filterMode === 'favorites' ? 'Favorites' : 'Others'}
                     </h3>
@@ -460,11 +463,19 @@ function SortableNoteCard(props: NoteCardProps) {
 }
 
 function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
+  // Get color style for the note
+  const colorStyle = note.color ? { backgroundColor: note.color } : {};
+  const hasCustomColor = !!note.color;
+  
   if (viewMode === 'list') {
     return (
       <Card
         onClick={onClick}
-        className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group"
+        style={colorStyle}
+        className={cn(
+          "p-4 border-border hover:border-border transition-all cursor-pointer group",
+          hasCustomColor ? "bg-opacity-20" : "bg-card"
+        )}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -517,7 +528,11 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
   return (
     <Card
       onClick={onClick}
-      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[260px]"
+      style={colorStyle}
+      className={cn(
+        "p-4 border-border hover:border-border transition-all cursor-pointer group flex flex-col h-[260px]",
+        hasCustomColor ? "bg-opacity-20" : "bg-card"
+      )}
     >
       {/* Top: Title and Date */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -563,12 +578,15 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
           <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
             {note.content}
           </p>
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+          <div className={cn(
+            "absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t pointer-events-none",
+            hasCustomColor ? "from-transparent" : "from-card to-transparent"
+          )} />
         </div>
       )}
 
-      {/* Bottom: Folder and Tags */}
-      {(note.folder || note.tags.length > 0) && (
+      {/* Bottom: Folder, Tags, and Image indicator */}
+      {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
         <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border">
           {note.folder && (
             <>
@@ -576,22 +594,33 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
                 <Folder className="h-3 w-3" />
                 {note.folder}
               </span>
-              {note.tags.length > 0 && (
+              {(note.tags.length > 0 || (note.images && note.images.length > 0)) && (
                 <span className="text-muted-foreground/50">|</span>
               )}
             </>
           )}
           {note.tags.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              {note.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground">
-                  {tag}
-                </span>
-              ))}
-              {note.tags.length > 2 && (
-                <span className="text-[10px] text-muted-foreground">+{note.tags.length - 2}</span>
+            <>
+              <div className="flex items-center gap-1 flex-wrap">
+                {note.tags.slice(0, 2).map((tag) => (
+                  <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground">
+                    {tag}
+                  </span>
+                ))}
+                {note.tags.length > 2 && (
+                  <span className="text-[10px] text-muted-foreground">+{note.tags.length - 2}</span>
+                )}
+              </div>
+              {note.images && note.images.length > 0 && (
+                <span className="text-muted-foreground/50">|</span>
               )}
-            </div>
+            </>
+          )}
+          {note.images && note.images.length > 0 && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Image className="h-3 w-3" />
+              {note.images.length}
+            </span>
           )}
         </div>
       )}
@@ -683,6 +712,21 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             </div>
           )}
 
+          {/* Images */}
+          {note.images && note.images.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+              {note.images.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Note image ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => window.open(img, '_blank')}
+                />
+              ))}
+            </div>
+          )}
+
           <div className="prose prose-invert max-w-none pt-4">
             <p className="text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">
               {note.content}
@@ -701,12 +745,27 @@ interface EditNoteContentProps {
   onCancel: () => void;
 }
 
+const NOTE_COLORS = [
+  { name: 'Default', value: '' },
+  { name: 'Red', value: '#fef2f2' },
+  { name: 'Orange', value: '#fff7ed' },
+  { name: 'Yellow', value: '#fefce8' },
+  { name: 'Green', value: '#f0fdf4' },
+  { name: 'Blue', value: '#eff6ff' },
+  { name: 'Purple', value: '#faf5ff' },
+  { name: 'Pink', value: '#fdf2f8' },
+  { name: 'Gray', value: '#f9fafb' },
+];
+
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [folder, setFolder] = useState(note.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(note.tags);
+  const [color, setColor] = useState(note.color || '');
+  const [images, setImages] = useState<string[]>(note.images || []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -719,6 +778,32 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setImages(prev => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
@@ -727,6 +812,8 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
       content: content.trim(),
       tags,
       folder: folder.trim() || undefined,
+      color: color || undefined,
+      images: images.length > 0 ? images : undefined,
       updatedAt: new Date(),
     });
   };
@@ -752,9 +839,79 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Write your note..."
-            rows={10}
+            rows={8}
             className="bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 resize-none"
           />
+        </div>
+
+        {/* Color Picker */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground text-sm flex items-center gap-1">
+            <Palette className="h-4 w-4" />
+            Note Color
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {NOTE_COLORS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setColor(c.value)}
+                className={cn(
+                  "w-7 h-7 rounded-full border-2 transition-all",
+                  color === c.value ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+                )}
+                style={{ backgroundColor: c.value || 'hsl(var(--card))' }}
+                title={c.name}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Image Upload */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground text-sm flex items-center gap-1">
+            <Image className="h-4 w-4" />
+            Images
+          </Label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="border-border text-foreground/70 hover:text-foreground hover:bg-accent"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Images
+          </Button>
+          
+          {images.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {images.map((img, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={img}
+                    alt={`Note image ${index + 1}`}
+                    className="w-16 h-16 object-cover rounded-lg border border-border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

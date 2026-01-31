@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, FileText, Plus, Tag } from 'lucide-react';
+import { X, FileText, Plus, Tag, Image, Palette } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
 
 interface AddNoteFormProps {
   onSubmit: (note: any) => void;
@@ -12,12 +13,27 @@ interface AddNoteFormProps {
   initialNote?: any;
 }
 
+const NOTE_COLORS = [
+  { name: 'Default', value: '' },
+  { name: 'Red', value: '#fef2f2' },
+  { name: 'Orange', value: '#fff7ed' },
+  { name: 'Yellow', value: '#fefce8' },
+  { name: 'Green', value: '#f0fdf4' },
+  { name: 'Blue', value: '#eff6ff' },
+  { name: 'Purple', value: '#faf5ff' },
+  { name: 'Pink', value: '#fdf2f8' },
+  { name: 'Gray', value: '#f9fafb' },
+];
+
 export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProps) {
   const [title, setTitle] = useState(initialNote?.title || '');
   const [content, setContent] = useState(initialNote?.content || '');
   const [folder, setFolder] = useState(initialNote?.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialNote?.tags || []);
+  const [color, setColor] = useState(initialNote?.color || '');
+  const [images, setImages] = useState<string[]>(initialNote?.images || []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -37,6 +53,33 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setImages(prev => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -50,7 +93,9 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
       createdAt: initialNote?.createdAt || new Date(),
       updatedAt: new Date(),
       isPinned: initialNote?.isPinned || false,
-      isFavorite: initialNote?.isFavorite || false
+      isFavorite: initialNote?.isFavorite || false,
+      color: color || undefined,
+      images: images.length > 0 ? images : undefined,
     });
   };
 
@@ -81,6 +126,76 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
           rows={5}
           className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 resize-none"
         />
+      </div>
+
+      {/* Color Picker */}
+      <div className="space-y-2">
+        <Label className="text-muted-foreground flex items-center gap-1">
+          <Palette className="h-4 w-4" />
+          Note Color
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          {NOTE_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              onClick={() => setColor(c.value)}
+              className={cn(
+                "w-8 h-8 rounded-full border-2 transition-all",
+                color === c.value ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+              )}
+              style={{ backgroundColor: c.value || 'hsl(var(--card))' }}
+              title={c.name}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Image Upload */}
+      <div className="space-y-2">
+        <Label className="text-muted-foreground flex items-center gap-1">
+          <Image className="h-4 w-4" />
+          Images
+        </Label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          className="border-border text-foreground/70 hover:text-foreground hover:bg-accent h-10"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Images
+        </Button>
+        
+        {/* Image Previews */}
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {images.map((img, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={img}
+                  alt={`Note image ${index + 1}`}
+                  className="w-20 h-20 object-cover rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">

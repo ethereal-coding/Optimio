@@ -90,6 +90,8 @@ export interface Note {
   isPinned?: boolean;
   isFavorite?: boolean;
   order?: number;
+  color?: string; // Card background color
+  images?: string[]; // Array of base64 image data URLs
 }
 
 // User Types
