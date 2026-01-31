@@ -692,7 +692,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+              className="h-8 w-8 text-white/80 hover:text-red-500 hover:bg-red-500/10"
               onClick={onDelete}
             >
               <Trash2 className="h-4 w-4" />
@@ -1042,4 +1042,5 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
     </>
   );
 }
+
 
