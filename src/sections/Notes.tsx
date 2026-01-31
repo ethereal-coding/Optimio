@@ -388,7 +388,7 @@ export function Notes() {
 
       {/* Add Note Dialog */}
       <Dialog open={showAddNote} onOpenChange={setShowAddNote}>
-        <DialogContent className="bg-card border-border max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Create New Note</DialogTitle>
           </DialogHeader>
@@ -406,6 +406,7 @@ export function Notes() {
         <DialogContent 
           className="border-border max-w-3xl max-h-[80vh]"
           style={{ backgroundColor: editingNote?.color || selectedNote?.color || 'hsl(var(--card))' }}
+          showCloseButton={false}
         >
           {selectedNote && !editingNote && (
             <ViewNoteContent
@@ -543,7 +544,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       )}
     >
       {/* Top: Title only */}
-      <div className="flex items-start justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <h3 className={cn("text-base font-semibold line-clamp-1", textClass)}>
             {note.title}
@@ -570,7 +571,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
             )}
             onClick={(e) => onToggleFavorite(note, e)}
           >
-            <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+            <Star className={cn("h-4 w-4", note.isFavorite ? "fill-yellow-500 text-yellow-500" : "text-white/80")} />
           </Button>
         </div>
       </div>
@@ -589,7 +590,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
       )}
 
       {/* Date - below content body with separator */}
-      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/20" : "border-border")}>
+      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/10" : "border-border")}>
         <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
         <span>•</span>
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
@@ -597,7 +598,7 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
 
       {/* Bottom: Folder, Tags, and Image indicator */}
       {(note.folder || note.tags.length > 0 || (note.images && note.images.length > 0)) && (
-        <div className={cn("flex items-center gap-2 pt-3 mt-3 border-t", useWhiteText ? "border-white/20" : "border-border")}>
+        <div className={cn("flex items-center gap-2 pt-2 mt-2 border-t", useWhiteText ? "border-white/10" : "border-border")}>
           {note.folder && (
             <>
               <span className={cn("text-[10px] flex items-center gap-1", mutedTextClass)}>
@@ -657,7 +658,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
   return (
     <>
       <DialogHeader>
-        <div className="flex items-start justify-between gap-4 pt-4">
+        <div className="flex items-start justify-between gap-4 pt-2">
           <DialogTitle className={cn("text-xl flex-1", useWhiteText ? "text-white" : "text-foreground")}>
             {note.title}
           </DialogTitle>
@@ -673,10 +674,10 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"
+              className="h-8 w-8 text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10"
               onClick={onToggleFavorite}
             >
-              <Star className={cn("h-4 w-4", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+              <Star className={cn("h-4 w-4", note.isFavorite ? "fill-yellow-500 text-yellow-500" : "text-white/80")} />
             </Button>
             <Button
               variant="ghost"
@@ -698,8 +699,8 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
         </div>
       </DialogHeader>
 
-      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
-        <div className="space-y-4">
+      <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-2">
+        <div className="space-y-3">
           {note.folder && (
             <div className="flex items-center gap-2 text-sm">
               <Folder className={cn("h-4 w-4", useWhiteText ? "text-white/70" : "text-muted-foreground")} />
@@ -740,14 +741,14 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             </div>
           )}
 
-          <div className="prose prose-invert max-w-none pt-4">
+          <div className="prose prose-invert max-w-none pt-2">
             <p className={cn("text-base whitespace-pre-wrap leading-relaxed", useWhiteText ? "text-white/90" : "text-foreground/80")}>
               {note.content}
             </p>
           </div>
 
           {/* Dates - below content body */}
-          <div className={cn("flex items-center gap-4 text-xs pt-4 border-t", useWhiteText ? "text-white/70 border-white/20" : "text-muted-foreground border-border")}>
+          <div className={cn("flex items-center gap-4 text-xs pt-3 border-t", useWhiteText ? "text-white/70 border-white/10" : "text-muted-foreground border-border")}>
             <span>Created {format(note.createdAt, 'MMM d, yyyy')}</span>
             <span>•</span>
             <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
