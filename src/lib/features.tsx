@@ -301,10 +301,13 @@ export const FeatureFlagsManager = {
 // React Component for Conditional Rendering
 // =============================================================================
 
+import type { ReactNode } from 'react';
+import { useMemo } from 'react';
+
 interface FeatureFlagProps {
   name: string;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: ReactNode;
+  fallback?: ReactNode;
 }
 
 export function FeatureFlag({ name, children, fallback = null }: FeatureFlagProps) {
