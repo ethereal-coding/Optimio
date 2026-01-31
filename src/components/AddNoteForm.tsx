@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, FileText, Plus, Tag, Image, Palette } from 'lucide-react';
+import { X, FileText, Plus, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
@@ -127,10 +127,6 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
 
       {/* Color Picker */}
       <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-1">
-          <Palette className="h-4 w-4" />
-          Note Color
-        </Label>
         <div className="flex flex-wrap gap-2">
           {NOTE_COLORS.map((c) => (
             <button
@@ -150,10 +146,6 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
 
       {/* Image Upload */}
       <div className="space-y-2">
-        <Label className="text-muted-foreground flex items-center gap-1">
-          <Image className="h-4 w-4" />
-          Images
-        </Label>
         <input
           ref={fileInputRef}
           type="file"

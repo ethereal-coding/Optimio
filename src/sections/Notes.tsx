@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import {
@@ -37,7 +37,6 @@ import {
   Folder,
   Grid3x3,
   List,
-  Palette,
   Image
 } from 'lucide-react';
 import { PinIcon } from '@/components/icons/PinIcon';
@@ -878,10 +877,6 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
 
         {/* Color Picker */}
         <div className="space-y-2">
-          <Label className={cn("text-sm flex items-center gap-1", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
-            <Palette className="h-4 w-4" />
-            Note Color
-          </Label>
           <div className="flex flex-wrap gap-2">
             {NOTE_COLORS.map((c) => (
               <button
@@ -901,10 +896,6 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
 
         {/* Image Upload */}
         <div className="space-y-2">
-          <Label className={cn("text-sm flex items-center gap-1", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
-            <Image className="h-4 w-4" />
-            Images
-          </Label>
           <input
             ref={fileInputRef}
             type="file"
