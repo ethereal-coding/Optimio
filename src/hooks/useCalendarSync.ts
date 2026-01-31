@@ -13,6 +13,13 @@ import { isAuthenticated } from '@/lib/google-auth';
 
 const log = logger('useCalendarSync');
 
+// Debug: Check if actions is imported correctly
+if (!actions) {
+  console.error('[useCalendarSync] actions is undefined!');
+} else {
+  console.log('[useCalendarSync] actions imported successfully:', Object.keys(actions));
+}
+
 export interface SyncStatus {
   /** Last successful sync result */
   lastSync: {
@@ -164,6 +171,10 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
           }));
 
         // Replace all events atomically
+        if (!actions?.setEvents) {
+          log.error('actions.setEvents is not available');
+          return;
+        }
         dispatch(actions.setEvents('1', hydratedEvents));
         
         log.info('State updated after sync', { eventCount: hydratedEvents.length });
