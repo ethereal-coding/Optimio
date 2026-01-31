@@ -176,14 +176,18 @@ function convertGoogleEventToAppEvent(googleEvent: any, calendarId: string): Syn
 
 /**
  * Save events to database for a specific calendar
- * Replaces all events for that calendar
+ * Replaces all events for that calendar and removes events that no longer exist in Google
  */
-async function saveEventsForCalendar(sourceCalendarId: string, events: SyncableEvent[]): Promise<{ deleted: number; added: number }> {
+async function saveEventsForCalendar(
+  sourceCalendarId: string, 
+  events: SyncableEvent[],
+  removedEventIds?: string[]
+): Promise<{ deleted: number; added: number }> {
   log.info(`Saving ${events.length} events for calendar ${sourceCalendarId}`);
   log.debug('New events from Google', { events: events.map(e => ({ id: e.id, googleId: e.googleEventId, title: e.title })) });
 
   // Collect all event IDs to delete:
-  // 1. Events with matching sourceCalendarId
+  // 1. Events with matching sourceCalendarId (for full replacement)
   // 2. Events with matching googleEventId (to prevent duplicates from local creation)
   const eventsToDelete = new Map<string, SyncableEvent>(); // id -> event
 
@@ -217,6 +221,22 @@ async function saveEventsForCalendar(sourceCalendarId: string, events: SyncableE
           title: event.title, 
           googleEventId: event.googleEventId 
         });
+      }
+    }
+  }
+
+  // 3. Also delete specific removed events if provided (for targeted deletion)
+  if (removedEventIds && removedEventIds.length > 0) {
+    log.info(`Adding ${removedEventIds.length} specifically removed events to deletion list`);
+    for (const removedId of removedEventIds) {
+      // Find the local event with this googleEventId
+      const localEvents = await db.events
+        .where('googleEventId')
+        .equals(removedId)
+        .toArray();
+      for (const event of localEvents) {
+        eventsToDelete.set(event.id, event);
+        log.debug(`Marked removed event for deletion`, { eventId: event.id, googleEventId: removedId });
       }
     }
   }
@@ -375,7 +395,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
       console.log(`  📝 Processed ${appEvents.length} unique events (${skippedCount} duplicates skipped)`);
       console.log(`  📊 Stats for this calendar: ${addedCalendar} added, ${updatedCalendar} updated, ${removedEventIds.length} to be removed`);
       
-      const saveResult = await saveEventsForCalendar(calendar.id, appEvents);
+      const saveResult = await saveEventsForCalendar(calendar.id, appEvents, removedEventIds);
       console.log(`  💾 Save result: ${saveResult.deleted} deleted, ${saveResult.added} added to DB`);
 
       // Update calendar's lastSyncedAt
