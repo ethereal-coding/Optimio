@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { syncAllEvents } from '@/lib/event-sync';
 import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
-import { useAppState } from './useAppState';
+import { useAppState, actions } from './useAppState';
 import { isAuthenticated } from '@/lib/google-auth';
 
 const log = logger('useCalendarSync');
@@ -173,7 +173,7 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
     };
 
     updateState();
-  }, [syncResult, dispatch, actions]);
+  }, [syncResult, dispatch]);
 
   // Manual sync trigger
   const manualSync = useCallback(async () => {
