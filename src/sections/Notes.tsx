@@ -589,8 +589,8 @@ function NoteCard({ note, viewMode, onClick, onTogglePin, onToggleFavorite }: No
         </div>
       )}
 
-      {/* Date - below content body */}
-      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2", mutedTextClass)}>
+      {/* Date - below content body with separator */}
+      <div className={cn("flex items-center gap-1.5 text-[10px] mt-auto pt-2 border-t", useWhiteText ? "border-white/20" : "border-border")}>
         <span>{format(note.createdAt, 'MMM d, yyyy')}</span>
         <span>•</span>
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
@@ -698,8 +698,6 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
           </div>
         </div>
       </DialogHeader>
-
-      <div className={cn("border-t -mt-4", useWhiteText ? "border-white/20" : "border-border")}></div>
 
       <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar pt-3">
         <div className="space-y-4">
