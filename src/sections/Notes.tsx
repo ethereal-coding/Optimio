@@ -785,7 +785,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
   const [folder, setFolder] = useState(note.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(note.tags);
-  const [color, setColor] = useState(note.color || '');
+  const [color, setColor] = useState(note.color || '#e1e1e1'); // Default to Graphite
   const [images, setImages] = useState<string[]>(note.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
   

@@ -23,7 +23,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
   const [folder, setFolder] = useState(initialNote?.folder || '');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialNote?.tags || []);
-  const [color, setColor] = useState(initialNote?.color || '#5484ed'); // Default to Blueberry
+  const [color, setColor] = useState(initialNote?.color || '#e1e1e1'); // Default to Graphite
   const [images, setImages] = useState<string[]>(initialNote?.images || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
