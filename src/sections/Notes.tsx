@@ -913,20 +913,19 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             onChange={handleImageUpload}
             className="hidden"
           />
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={() => fileInputRef.current?.click()}
             className={cn(
+              "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all h-8 px-3",
               useWhiteText 
-                ? "border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
-                : "border-border text-foreground/70 hover:text-foreground hover:bg-accent"
+                ? "border border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
+                : "border border-border text-foreground/70 hover:text-foreground hover:bg-accent"
             )}
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Images
-          </Button>
+          </button>
           
           {images.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
@@ -978,18 +977,18 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
                   : "bg-background border-border text-foreground placeholder:text-muted-foreground"
               )}
             />
-            <Button 
+            <button 
               type="button" 
-              variant="outline" 
               onClick={addTag} 
               className={cn(
+                "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all h-9 w-10",
                 useWhiteText 
-                  ? "border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
-                  : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+                  ? "border border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
+                  : "border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
             >
               <Plus className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">

@@ -162,15 +162,14 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
           onChange={handleImageUpload}
           className="hidden"
         />
-        <Button
+        <button
           type="button"
-          variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          className="border-border text-foreground/70 hover:text-foreground hover:bg-accent h-10"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border border-border text-foreground/70 hover:text-foreground hover:bg-accent h-10 px-4"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Images
-        </Button>
+        </button>
         
         {/* Image Previews */}
         {images.length > 0 && (
