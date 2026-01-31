@@ -1,6 +1,7 @@
 import { db } from './db';
 import type { Todo } from '@/types';
 import { debug } from './debug';
+import { notify } from './notifications';
 
 /**
  * Todo Sync Helpers
@@ -25,8 +26,10 @@ export async function addTodoWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Todo saved to IndexedDB:', todo.id);
+    notify.todoCreated(todo.title);
   } catch (dbError) {
     console.error('Failed to save todo to IndexedDB:', dbError);
+    notify.error('Failed to save task');
   }
 }
 
@@ -48,8 +51,10 @@ export async function updateTodoWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Todo updated in IndexedDB:', todo.id);
+    notify.todoUpdated(todo.title);
   } catch (dbError) {
     console.error('Failed to update todo in IndexedDB:', dbError);
+    notify.error('Failed to update task');
   }
 }
 
@@ -61,23 +66,33 @@ export async function toggleTodoWithSync(
   dispatch: (action: any) => void,
   actions: any
 ): Promise<void> {
+  // Get todo before toggling to know the new state
+  const todo = await db.todos.get(todoId);
+  const willBeCompleted = todo ? !todo.completed : true;
+  
   // Toggle in local state immediately
   dispatch(actions.toggleTodo(todoId));
 
   // Also update in IndexedDB
   try {
-    const todo = await db.todos.get(todoId);
     if (todo) {
       await db.todos.update(todoId, {
         ...todo,
-        completed: !todo.completed,
-        completedAt: !todo.completed ? new Date() : undefined,
+        completed: willBeCompleted,
+        completedAt: willBeCompleted ? new Date() : undefined,
         lastSyncedAt: new Date().toISOString()
       });
       debug.log('💾 Todo toggled in IndexedDB:', todoId);
+      
+      if (willBeCompleted) {
+        notify.todoCompleted(todo.title);
+      } else {
+        notify.todoUncompleted(todo.title);
+      }
     }
   } catch (dbError) {
     console.error('Failed to toggle todo in IndexedDB:', dbError);
+    notify.error('Failed to update task');
   }
 }
 
@@ -96,8 +111,10 @@ export async function deleteTodoWithSync(
   try {
     await db.todos.delete(todoId);
     debug.log('🗑️ Todo deleted from IndexedDB:', todoId);
+    notify.todoDeleted();
   } catch (dbError) {
     console.error('Failed to delete todo from IndexedDB:', dbError);
+    notify.error('Failed to delete task');
   }
 }
 

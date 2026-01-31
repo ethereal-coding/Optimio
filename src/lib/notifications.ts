@@ -1,6 +1,7 @@
 /**
  * Toast notification system
  * Provides user feedback for actions and events
+ * Styled to match Optimio's card-based design
  */
 
 import { toast, type ExternalToast } from 'sonner';
@@ -9,6 +10,10 @@ export interface NotificationOptions extends ExternalToast {
   /** Duration in milliseconds (default: 4000 for success, 6000 for error) */
   duration?: number;
 }
+
+// =============================================================================
+// Base Notifications
+// =============================================================================
 
 /**
  * Show a success toast notification
@@ -82,16 +87,15 @@ export function update(toastId: string, message: string, options?: NotificationO
 }
 
 // =============================================================================
-// Specific Action Notifications
+// Calendar Event Notifications
 // =============================================================================
 
 /**
  * Show notification when calendar event is created
  */
 export function eventCreated(eventName?: string): string {
-  return success(eventName ? `Created "${eventName}"` : 'Event created', {
+  return success(eventName ? `"${eventName}" created` : 'Event created', {
     description: 'Synced to Google Calendar',
-    icon: '📅',
   });
 }
 
@@ -99,8 +103,8 @@ export function eventCreated(eventName?: string): string {
  * Show notification when calendar event is updated
  */
 export function eventUpdated(eventName?: string): string {
-  return success(eventName ? `Updated "${eventName}"` : 'Event updated', {
-    icon: '✏️',
+  return success(eventName ? `"${eventName}" updated` : 'Event updated', {
+    description: 'Changes synced',
   });
 }
 
@@ -108,10 +112,167 @@ export function eventUpdated(eventName?: string): string {
  * Show notification when calendar event is deleted
  */
 export function eventDeleted(eventName?: string): string {
-  return success(eventName ? `Deleted "${eventName}"` : 'Event deleted', {
-    icon: '🗑️',
+  return success(eventName ? `"${eventName}" deleted` : 'Event deleted', {
+    description: 'Removed from calendar',
   });
 }
+
+// =============================================================================
+// Todo Notifications
+// =============================================================================
+
+/**
+ * Show notification when todo is created
+ */
+export function todoCreated(todoTitle?: string): string {
+  return success(todoTitle ? `"${todoTitle}" added` : 'Task added', {
+    description: 'Ready to tackle',
+  });
+}
+
+/**
+ * Show notification when todo is updated
+ */
+export function todoUpdated(todoTitle?: string): string {
+  return success(todoTitle ? `"${todoTitle}" updated` : 'Task updated');
+}
+
+/**
+ * Show notification when todo is deleted
+ */
+export function todoDeleted(todoTitle?: string): string {
+  return success(todoTitle ? `"${todoTitle}" deleted` : 'Task deleted');
+}
+
+/**
+ * Show notification when todo is completed
+ */
+export function todoCompleted(todoTitle?: string): string {
+  return success(todoTitle ? `Completed "${todoTitle}"` : 'Task completed', {
+    description: 'Great job! 🎉',
+  });
+}
+
+/**
+ * Show notification when todo is uncompleted
+ */
+export function todoUncompleted(todoTitle?: string): string {
+  return info(todoTitle ? `"${todoTitle}" reopened` : 'Task reopened');
+}
+
+// =============================================================================
+// Goal Notifications
+// =============================================================================
+
+/**
+ * Show notification when goal is created
+ */
+export function goalCreated(goalTitle?: string): string {
+  return success(goalTitle ? `"${goalTitle}" created` : 'Goal created', {
+    description: 'Let\'s achieve it! 🎯',
+  });
+}
+
+/**
+ * Show notification when goal is updated
+ */
+export function goalUpdated(goalTitle?: string): string {
+  return success(goalTitle ? `"${goalTitle}" updated` : 'Goal updated');
+}
+
+/**
+ * Show notification when goal is deleted
+ */
+export function goalDeleted(goalTitle?: string): string {
+  return success(goalTitle ? `"${goalTitle}" deleted` : 'Goal deleted');
+}
+
+/**
+ * Show notification when goal progress is updated
+ */
+export function goalProgressUpdated(goalTitle?: string, progress?: number): string {
+  if (progress !== undefined && progress >= 100) {
+    return success(goalTitle ? `"${goalTitle}" achieved!` : 'Goal achieved!', {
+      description: 'You crushed it! 🏆',
+      duration: 6000,
+    });
+  }
+  return success(goalTitle ? `"${goalTitle}" progress updated` : 'Progress updated', {
+    description: progress !== undefined ? `${Math.round(progress)}% complete` : undefined,
+  });
+}
+
+/**
+ * Show notification when milestone is completed
+ */
+export function milestoneCompleted(milestoneTitle?: string): string {
+  return success(milestoneTitle ? `Milestone: "${milestoneTitle}"` : 'Milestone completed', {
+    description: 'One step closer! 🚀',
+  });
+}
+
+// =============================================================================
+// Note Notifications
+// =============================================================================
+
+/**
+ * Show notification when note is created
+ */
+export function noteCreated(noteTitle?: string): string {
+  return success(noteTitle ? `"${noteTitle}" saved` : 'Note saved', {
+    description: 'Captured for later',
+  });
+}
+
+/**
+ * Show notification when note is updated
+ */
+export function noteUpdated(noteTitle?: string): string {
+  return success(noteTitle ? `"${noteTitle}" updated` : 'Note updated', {
+    description: 'Changes saved',
+  });
+}
+
+/**
+ * Show notification when note is deleted
+ */
+export function noteDeleted(noteTitle?: string): string {
+  return success(noteTitle ? `"${noteTitle}" deleted` : 'Note deleted');
+}
+
+/**
+ * Show notification when note is pinned
+ */
+export function notePinned(noteTitle?: string): string {
+  return info(noteTitle ? `"${noteTitle}" pinned` : 'Note pinned', {
+    description: 'Now at the top',
+  });
+}
+
+/**
+ * Show notification when note is unpinned
+ */
+export function noteUnpinned(noteTitle?: string): string {
+  return info(noteTitle ? `"${noteTitle}" unpinned` : 'Note unpinned');
+}
+
+/**
+ * Show notification when note is favorited
+ */
+export function noteFavorited(noteTitle?: string): string {
+  return success(noteTitle ? `"${noteTitle}" added to favorites` : 'Added to favorites');
+}
+
+/**
+ * Show notification when note is unfavorited
+ */
+export function noteUnfavorited(noteTitle?: string): string {
+  return info(noteTitle ? `"${noteTitle}" removed from favorites` : 'Removed from favorites');
+}
+
+// =============================================================================
+// Sync Notifications
+// =============================================================================
 
 /**
  * Show loading notification when sync starts
@@ -130,7 +291,6 @@ export function syncCompleted(eventCount?: number): void {
     description: eventCount 
       ? `Updated ${eventCount} events` 
       : 'All calendars up to date',
-    icon: '☁️',
   });
 }
 
@@ -155,12 +315,24 @@ export function syncFailed(retryCallback?: () => void): void {
 }
 
 /**
+ * Show notification when data is saved locally
+ */
+export function savedLocally(entity?: string): string {
+  return success(entity ? `${entity} saved` : 'Saved', {
+    description: 'Stored locally',
+  });
+}
+
+// =============================================================================
+// Auth Notifications
+// =============================================================================
+
+/**
  * Show notification on successful authentication
  */
 export function authSuccess(provider: string = 'Google'): string {
   return success(`Signed in with ${provider}`, {
     description: 'Welcome back!',
-    icon: '🔐',
   });
 }
 
@@ -170,34 +342,15 @@ export function authSuccess(provider: string = 'Google'): string {
 export function authError(reason?: string): string {
   return error('Sign in failed', {
     description: reason || 'Please try again',
-    icon: '🔒',
   });
 }
 
 /**
- * Show notification when todo is created
+ * Show notification on sign out
  */
-export function todoCreated(): string {
-  return success('Task added', {
-    icon: '✅',
-  });
-}
-
-/**
- * Show notification when todo is completed
- */
-export function todoCompleted(): string {
-  return success('Task completed', {
-    icon: '🎉',
-  });
-}
-
-/**
- * Show notification for generic save operations
- */
-export function saved(entity: string = 'Changes'): string {
-  return success(`${entity} saved`, {
-    icon: '💾',
+export function authSignedOut(): string {
+  return info('Signed out', {
+    description: 'See you soon!',
   });
 }
 
@@ -238,17 +391,39 @@ export const notify = {
   loading,
   dismiss,
   update,
+  // Calendar
   eventCreated,
   eventUpdated,
   eventDeleted,
+  // Todos
+  todoCreated,
+  todoUpdated,
+  todoDeleted,
+  todoCompleted,
+  todoUncompleted,
+  // Goals
+  goalCreated,
+  goalUpdated,
+  goalDeleted,
+  goalProgressUpdated,
+  milestoneCompleted,
+  // Notes
+  noteCreated,
+  noteUpdated,
+  noteDeleted,
+  notePinned,
+  noteUnpinned,
+  noteFavorited,
+  noteUnfavorited,
+  // Sync
   syncStarted,
   syncCompleted,
   syncFailed,
+  savedLocally,
+  // Auth
   authSuccess,
   authError,
-  todoCreated,
-  todoCompleted,
-  saved,
+  authSignedOut,
   promise,
 };
 

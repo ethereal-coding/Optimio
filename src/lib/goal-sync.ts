@@ -1,6 +1,7 @@
 import { db } from './db';
 import type { Goal } from '@/types';
 import { debug } from './debug';
+import { notify } from './notifications';
 
 /**
  * Goal Sync Helpers
@@ -25,8 +26,10 @@ export async function addGoalWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Goal saved to IndexedDB:', goal.id);
+    notify.goalCreated(goal.title);
   } catch (dbError) {
     console.error('Failed to save goal to IndexedDB:', dbError);
+    notify.error('Failed to save goal');
   }
 }
 
@@ -48,8 +51,10 @@ export async function updateGoalWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Goal updated in IndexedDB:', goal.id);
+    notify.goalUpdated(goal.title);
   } catch (dbError) {
     console.error('Failed to update goal in IndexedDB:', dbError);
+    notify.error('Failed to update goal');
   }
 }
 
@@ -68,8 +73,10 @@ export async function deleteGoalWithSync(
   try {
     await db.goals.delete(goalId);
     debug.log('🗑️ Goal deleted from IndexedDB:', goalId);
+    notify.goalDeleted();
   } catch (dbError) {
     console.error('Failed to delete goal from IndexedDB:', dbError);
+    notify.error('Failed to delete goal');
   }
 }
 
@@ -82,12 +89,14 @@ export async function updateGoalProgressWithSync(
   dispatch: (action: any) => void,
   actions: any
 ): Promise<void> {
+  // Get goal for notification
+  const goal = await db.goals.get(goalId);
+  
   // Update local state immediately
   dispatch(actions.updateGoalProgress(goalId, value));
 
   // Also update in IndexedDB
   try {
-    const goal = await db.goals.get(goalId);
     if (goal) {
       await db.goals.update(goalId, {
         ...goal,
@@ -95,9 +104,13 @@ export async function updateGoalProgressWithSync(
         lastSyncedAt: new Date().toISOString()
       });
       debug.log('💾 Goal progress updated in IndexedDB:', goalId);
+      
+      const progress = (value / goal.targetValue) * 100;
+      notify.goalProgressUpdated(goal.title, progress);
     }
   } catch (dbError) {
     console.error('Failed to update goal progress in IndexedDB:', dbError);
+    notify.error('Failed to update progress');
   }
 }
 
@@ -110,16 +123,20 @@ export async function toggleMilestoneWithSync(
   dispatch: (action: any) => void,
   actions: any
 ): Promise<void> {
+  // Get goal and milestone for notification
+  const goal = await db.goals.get(goalId);
+  const milestone = goal?.milestones.find(m => m.id === milestoneId);
+  const willBeCompleted = milestone ? !milestone.isCompleted : true;
+  
   // Toggle in local state immediately
   dispatch(actions.toggleMilestone(goalId, milestoneId));
 
   // Also update in IndexedDB
   try {
-    const goal = await db.goals.get(goalId);
     if (goal) {
       const updatedMilestones = goal.milestones.map(m =>
         m.id === milestoneId
-          ? { ...m, isCompleted: !m.isCompleted, completedAt: !m.isCompleted ? new Date() : undefined }
+          ? { ...m, isCompleted: willBeCompleted, completedAt: willBeCompleted ? new Date() : undefined }
           : m
       );
       await db.goals.update(goalId, {
@@ -128,9 +145,14 @@ export async function toggleMilestoneWithSync(
         lastSyncedAt: new Date().toISOString()
       });
       debug.log('💾 Milestone toggled in IndexedDB:', milestoneId);
+      
+      if (willBeCompleted && milestone) {
+        notify.milestoneCompleted(milestone.title);
+      }
     }
   } catch (dbError) {
     console.error('Failed to toggle milestone in IndexedDB:', dbError);
+    notify.error('Failed to update milestone');
   }
 }
 

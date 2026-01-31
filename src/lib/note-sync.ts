@@ -1,6 +1,7 @@
 import { db } from './db';
 import type { Note } from '@/types';
 import { debug } from './debug';
+import { notify } from './notifications';
 
 /**
  * Note Sync Helpers
@@ -25,8 +26,10 @@ export async function addNoteWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Note saved to IndexedDB:', note.id);
+    notify.noteCreated(note.title);
   } catch (dbError) {
     console.error('Failed to save note to IndexedDB:', dbError);
+    notify.error('Failed to save note');
   }
 }
 
@@ -49,8 +52,10 @@ export async function updateNoteWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Note updated in IndexedDB:', note.id);
+    notify.noteUpdated(note.title);
   } catch (dbError) {
     console.error('Failed to update note in IndexedDB:', dbError);
+    notify.error('Failed to update note');
   }
 }
 
@@ -69,8 +74,10 @@ export async function deleteNoteWithSync(
   try {
     await db.notes.delete(noteId);
     debug.log('🗑️ Note deleted from IndexedDB:', noteId);
+    notify.noteDeleted();
   } catch (dbError) {
     console.error('Failed to delete note from IndexedDB:', dbError);
+    notify.error('Failed to delete note');
   }
 }
 
@@ -82,7 +89,8 @@ export async function toggleNotePinWithSync(
   dispatch: (action: any) => void,
   actions: any
 ): Promise<void> {
-  const updatedNote = { ...note, isPinned: !note.isPinned };
+  const willBePinned = !note.isPinned;
+  const updatedNote = { ...note, isPinned: willBePinned };
   
   // Update local state immediately
   dispatch(actions.updateNote(updatedNote));
@@ -94,8 +102,15 @@ export async function toggleNotePinWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Note pin toggled in IndexedDB:', note.id);
+    
+    if (willBePinned) {
+      notify.notePinned(note.title);
+    } else {
+      notify.noteUnpinned(note.title);
+    }
   } catch (dbError) {
     console.error('Failed to toggle note pin in IndexedDB:', dbError);
+    notify.error('Failed to update note');
   }
 }
 
@@ -107,7 +122,8 @@ export async function toggleNoteFavoriteWithSync(
   dispatch: (action: any) => void,
   actions: any
 ): Promise<void> {
-  const updatedNote = { ...note, isFavorite: !note.isFavorite };
+  const willBeFavorite = !note.isFavorite;
+  const updatedNote = { ...note, isFavorite: willBeFavorite };
   
   // Update local state immediately
   dispatch(actions.updateNote(updatedNote));
@@ -119,8 +135,15 @@ export async function toggleNoteFavoriteWithSync(
       lastSyncedAt: new Date().toISOString()
     });
     debug.log('💾 Note favorite toggled in IndexedDB:', note.id);
+    
+    if (willBeFavorite) {
+      notify.noteFavorited(note.title);
+    } else {
+      notify.noteUnfavorited(note.title);
+    }
   } catch (dbError) {
     console.error('Failed to toggle note favorite in IndexedDB:', dbError);
+    notify.error('Failed to update note');
   }
 }
 
