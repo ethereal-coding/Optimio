@@ -109,29 +109,25 @@ export function GoalsWidget() {
                 return (
                   <div
                     key={goal.id}
-                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-2"
                     onClick={() => setSelectedGoal(goal)}
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    {/* Top row: Title + Progress percentage */}
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm text-foreground truncate">{goal.title}</h4>
+                          <h4 className="text-sm text-foreground font-medium truncate">{goal.title}</h4>
                           {progress >= 100 && (
-                            <Trophy className="h-4 w-4 text-yellow-500" />
+                            <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {(goal.currentValue ?? 0).toLocaleString()} / {(goal.targetValue ?? 0).toLocaleString()} {goal.unit}
-                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-lg font-semibold"
-                          style={{ color: goal.color }}
-                        >
-                          {progress}%
-                        </span>
-                      </div>
+                      <span
+                        className="text-base font-semibold flex-shrink-0"
+                        style={{ color: goal.color }}
+                      >
+                        {progress}%
+                      </span>
                     </div>
 
                     {/* Progress Bar */}
@@ -145,21 +141,24 @@ export function GoalsWidget() {
                       />
                     </div>
 
-                    {/* Meta Info */}
-                    <div className="flex items-center justify-between mt-2 text-xs">
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                    {/* Bottom row: Meta info */}
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
+                      <div className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
                         <span>{completedMilestones}/{goal.milestones.length} milestones</span>
                       </div>
-                      {daysLeft !== null && (
-                        <span className={cn(
-                          daysLeft < 7 && 'text-red-400',
-                          daysLeft < 30 && daysLeft >= 7 && 'text-yellow-400',
-                          daysLeft >= 30 && 'text-muted-foreground'
-                        )}>
-                          {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <span>{(goal.currentValue ?? 0).toLocaleString()} / {(goal.targetValue ?? 0).toLocaleString()} {goal.unit}</span>
+                        {daysLeft !== null && (
+                          <span className={cn(
+                            'ml-2',
+                            daysLeft < 7 && 'text-red-400',
+                            daysLeft < 30 && daysLeft >= 7 && 'text-yellow-400'
+                          )}>
+                            • {daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Expanded Milestones */}

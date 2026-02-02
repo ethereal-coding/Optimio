@@ -318,16 +318,14 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
   return (
     <div
       onClick={onClick}
-      className="p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group"
+      className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-2"
     >
-      <div className="flex items-start justify-between">
+      {/* Top row: Title with action buttons */}
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm text-foreground truncate">{note.title}</h4>
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-            {note.content}
-          </p>
+          <h4 className="text-sm text-foreground font-medium truncate">{note.title}</h4>
         </div>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="icon"
@@ -352,26 +350,30 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
           </Button>
         </div>
       </div>
+
+      {/* Content preview */}
+      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+        {note.content}
+      </p>
       
-      <div className="flex items-center justify-between mt-2">
+      {/* Bottom row: Tags and timestamp */}
+      <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
         <div className="flex items-center gap-1 flex-wrap">
           {note.tags.slice(0, 2).map((tag) => (
             <span 
               key={tag}
-              className="px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground"
+              className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50"
             >
               {tag}
             </span>
           ))}
           {note.tags.length > 2 && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground/30">
               +{note.tags.length - 2}
             </span>
           )}
         </div>
-        <span className="text-[10px] text-muted-foreground">
-          {formatDistanceToNow(note.updatedAt, { addSuffix: true })}
-        </span>
+        <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
       </div>
     </div>
   );

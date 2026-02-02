@@ -204,21 +204,22 @@ export function CalendarWidget() {
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="group flex items-center gap-2 p-2 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer"
+                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5"
                     onClick={() => handleEventClick(event)}
                   >
-                    <div
-                      className="w-1 h-6 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: event.color || '#666' }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">{event.title}</p>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}
-                        </span>
-                      </div>
+                    {/* Top row: Color indicator + Title */}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-2 w-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: event.color || '#666' }}
+                      />
+                      <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
+                    </div>
+                    
+                    {/* Bottom row: Time */}
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                      <Clock className="h-3 w-3" />
+                      <span>{format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}</span>
                     </div>
                   </div>
                 ))}

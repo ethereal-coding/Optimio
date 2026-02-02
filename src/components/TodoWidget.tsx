@@ -136,39 +136,56 @@ export function TodoWidget() {
               {filteredTodos.map((todo) => (
                 <div
                   key={todo.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
+                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-2"
                   onClick={() => setSelectedTodo(todo)}
                 >
-                  <Checkbox
-                    checked={todo.completed}
-                    onCheckedChange={() => handleToggleTodo(todo.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="border-muted-foreground/40"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      'text-sm truncate transition-all',
-                      todo.completed && 'line-through text-muted-foreground'
-                    )}>
-                      {todo.title}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={cn(
-                        'px-1.5 py-0.5 rounded text-[10px]',
-                        todo.priority === 'high' && 'bg-red-500/20 text-red-400',
-                        todo.priority === 'medium' && 'bg-yellow-500/20 text-yellow-400',
-                        todo.priority === 'low' && 'bg-blue-500/20 text-blue-400'
-                      )}>
-                        {todo.priority}
-                      </span>
+                  {/* Top row: Checkbox + Title */}
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={todo.completed}
+                      onCheckedChange={() => handleToggleTodo(todo.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="border-muted-foreground/40"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          'h-2 w-2 rounded-full flex-shrink-0',
+                          todo.priority === 'high' && 'bg-red-500',
+                          todo.priority === 'medium' && 'bg-yellow-500',
+                          todo.priority === 'low' && 'bg-blue-500'
+                        )} />
+                        <p className={cn(
+                          'text-sm text-foreground truncate',
+                          todo.completed && 'line-through text-muted-foreground'
+                        )}>
+                          {todo.title}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom row: Metadata */}
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                    <div className="flex items-center gap-2">
                       {todo.dueDate && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {format(todo.dueDate, 'MMM d')}
                         </span>
                       )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={cn(
+                        'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
+                        todo.priority === 'high' && 'bg-red-500',
+                        todo.priority === 'medium' && 'bg-yellow-500',
+                        todo.priority === 'low' && 'bg-blue-500'
+                      )}>
+                        {todo.priority}
+                      </span>
                       {todo.category && (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
                           {todo.category}
                         </span>
                       )}
