@@ -347,9 +347,8 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
             "border-r border-b border-border p-2 cursor-pointer transition-colors relative group",
             !isSameMonth(day, monthStart) && "bg-background/50",
             isToday(day) && "bg-white/[0.02]",
-            // Hover effect: show subtle background for all, stronger for empty days
-            "hover:bg-secondary/30",
-            !hasEvents && "hover:bg-secondary/50"
+            // Subtle hover for all days
+            "hover:bg-secondary/20"
           )}
           style={{ minHeight: `${400 / numWeeks}px` }}
         >
@@ -385,11 +384,8 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
 
           {/* Empty day hover overlay */}
           {!hasEvents && (
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/20">
-              <div className="text-center">
-                <Plus className="h-6 w-6 text-foreground/30 mx-auto mb-1" />
-                <p className="text-xs text-muted-foreground">Add event</p>
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+              <Plus className="h-5 w-5 text-foreground/20 group-hover:text-foreground/40 transition-colors" />
             </div>
           )}
         </div>
@@ -470,12 +466,9 @@ function WeekView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mo
                 {dayEvents.length === 0 ? (
                   <div
                     onClick={() => onDayClick(day)}
-                    className="h-full flex items-center justify-center cursor-pointer hover:bg-secondary rounded-lg transition-colors"
+                    className="h-full flex items-center justify-center cursor-pointer hover:bg-secondary/30 rounded-lg transition-colors group"
                   >
-                    <div className="text-center">
-                      <Plus className="h-6 w-6 text-foreground/20 mx-auto mb-2" />
-                      <p className="text-xs text-muted-foreground">Add event</p>
-                    </div>
+                    <Plus className="h-5 w-5 text-foreground/20 group-hover:text-foreground/40 transition-colors" />
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -640,10 +633,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
               {/* Time slot - clickable */}
               <div
-                className={cn(
-                  "flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer transition-colors relative group",
-                  hasEvents ? "hover:bg-secondary/20" : "hover:bg-secondary/40"
-                )}
+                className="flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer transition-colors relative group hover:bg-secondary/10"
                 onClick={() => handleTimeSlotClick(hour)}
               >
                 {/* Current time indicator */}
@@ -653,11 +643,8 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
                 {/* Empty hour hover overlay */}
                 {!hasEvents && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-1.5">
-                      <Plus className="h-3.5 w-3.5 text-foreground/30" />
-                      <p className="text-[11px] text-muted-foreground">Add event</p>
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                    <Plus className="h-4 w-4 text-foreground/15 group-hover:text-foreground/30 transition-colors" />
                   </div>
                 )}
               </div>
