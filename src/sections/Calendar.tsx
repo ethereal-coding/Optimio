@@ -466,7 +466,7 @@ function WeekView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mo
                 {dayEvents.length === 0 ? (
                   <div
                     onClick={() => onDayClick(day)}
-                    className="h-full flex items-center justify-center cursor-pointer hover:bg-secondary/30 rounded-lg transition-colors group"
+                    className="h-full flex items-center justify-center cursor-pointer hover:bg-secondary/20 transition-colors group"
                   >
                     <Plus className="h-5 w-5 text-foreground/20 group-hover:text-foreground/40 transition-colors" />
                   </div>
