@@ -122,10 +122,7 @@ export function GoalsWidget() {
                           )}
                         </div>
                       </div>
-                      <span
-                        className="text-base font-semibold flex-shrink-0"
-                        style={{ color: goal.color }}
-                      >
+                      <span className="text-base font-semibold flex-shrink-0 text-foreground">
                         {progress}%
                       </span>
                     </div>
@@ -133,11 +130,8 @@ export function GoalsWidget() {
                     {/* Progress Bar */}
                     <div className="relative h-1.5 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                        style={{ 
-                          width: `${Math.min(progress, 100)}%`,
-                          backgroundColor: goal.color
-                        }}
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 bg-primary"
+                        style={{ width: `${Math.min(progress, 100)}%` }}
                       />
                     </div>
 

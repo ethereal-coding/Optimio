@@ -396,22 +396,16 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                       >
-                        <div
-                          className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: goal.color ? `${goal.color}20` : 'rgba(255,255,255,0.05)' }}
-                        >
-                          <Target className="h-4 w-4" style={{ color: goal.color || 'rgba(255,255,255,0.6)' }} />
+                        <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-secondary">
+                          <Target className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 text-left min-w-0">
                           <div className="text-foreground text-sm font-medium truncate mb-1.5">{goal.title}</div>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
                               <div
-                                className="h-full rounded-full transition-all"
-                                style={{
-                                  width: `${progress}%`,
-                                  backgroundColor: goal.color || 'rgba(255,255,255,0.6)'
-                                }}
+                                className="h-full rounded-full transition-all bg-primary"
+                                style={{ width: `${progress}%` }}
                               />
                             </div>
                             <span className="text-xs text-muted-foreground font-medium">{progress}%</span>

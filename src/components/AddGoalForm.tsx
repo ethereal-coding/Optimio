@@ -12,19 +12,12 @@ import {
 import { CalendarIcon, X, Target, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 interface AddGoalFormProps {
   onSubmit: (goal: any) => void;
   onCancel: () => void;
   initialGoal?: any;
 }
-
-// Use Google Calendar colors for consistency
-const colors = Object.values(GOOGLE_CALENDAR_COLORS).map(({ hex, name }) => ({
-  value: hex,
-  label: name,
-}));
 
 export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProps) {
   const [title, setTitle] = useState(initialGoal?.title || '');
@@ -33,7 +26,6 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
   const [currentValue, setCurrentValue] = useState(initialGoal?.currentValue?.toString() || '0');
   const [unit, setUnit] = useState(initialGoal?.unit || '');
   const [deadline, setDeadline] = useState<Date | undefined>(initialGoal?.deadline ? new Date(initialGoal.deadline) : undefined);
-  const [color, setColor] = useState(initialGoal?.color || '#5484ed'); // Default to Blueberry
   const [category, setCategory] = useState(initialGoal?.category || '');
   const [milestones, setMilestones] = useState<{ id: string; title: string; targetValue: string }[]>(
     initialGoal?.milestones?.map((m: any) => ({
@@ -72,8 +64,8 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
       currentValue: current,
       unit: unit.trim() || undefined,
       deadline,
-      color,
       category: category.trim() || undefined,
+      color: undefined,
       milestones: milestones
         .filter(m => m.title.trim())
         .map(m => {
@@ -187,24 +179,6 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
           placeholder="e.g., Health, Career, Learning"
           className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 h-10"
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-muted-foreground">Color</Label>
-        <div className="flex gap-2 flex-wrap p-1">
-          {colors.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => setColor(c.value)}
-              className={`h-7 w-7 rounded-md transition-all ${
-                color === c.value ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' : ''
-              }`}
-              style={{ backgroundColor: c.value }}
-              title={c.label}
-            />
-          ))}
-        </div>
       </div>
 
       {/* Milestones */}

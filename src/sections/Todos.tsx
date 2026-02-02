@@ -617,10 +617,7 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
           </span>
           {/* Goal badge */}
           {linkedGoal && (
-            <span
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white/80 text-[10px]"
-              style={{ backgroundColor: linkedGoal.color }}
-            >
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
               <Target className="h-3 w-3" />
               <span className="truncate max-w-[80px]">{linkedGoal.title}</span>
             </span>

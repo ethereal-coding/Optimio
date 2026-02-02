@@ -341,10 +341,7 @@ function GoalCard({ goal, todos, onClick }: GoalCardProps) {
       <div className="flex items-center gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-3">
-            <div
-              className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: goal.color }}
-            />
+            <div className="h-2 w-2 rounded-full flex-shrink-0 bg-primary" />
             <h3 className="text-sm font-medium text-foreground truncate">{goal.title}</h3>
             {isCompleted && <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />}
           </div>
@@ -359,17 +356,14 @@ function GoalCard({ goal, todos, onClick }: GoalCardProps) {
                 <span className="text-foreground/50 text-xs">
                   {totalTasks === 0 ? 'No tasks' : `${completedTasks} / ${totalTasks} tasks`}
                 </span>
-                <span className="font-semibold text-sm" style={{ color: goal.color }}>
+                <span className="font-semibold text-sm text-foreground">
                   {progress}%
                 </span>
               </div>
               <div className="relative h-2.5 bg-secondary rounded-full overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(progress, 100)}%`,
-                    backgroundColor: goal.color
-                  }}
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 bg-primary"
+                  style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>
             </div>
@@ -470,17 +464,14 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
           <div className="p-4 rounded-md bg-background border border-border">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">Progress</span>
-              <span className="text-3xl font-bold" style={{ color: goal.color }}>
+              <span className="text-3xl font-bold text-foreground">
                 {progress}%
               </span>
             </div>
             <div className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3">
               <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all"
-                style={{
-                  width: `${Math.min(progress, 100)}%`,
-                  backgroundColor: goal.color
-                }}
+                className="absolute inset-y-0 left-0 rounded-full transition-all bg-primary"
+                style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
             <div className="text-sm text-muted-foreground">
