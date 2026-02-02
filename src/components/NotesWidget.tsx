@@ -356,24 +356,21 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
         {note.content}
       </p>
       
-      {/* Bottom row: Tags and timestamp */}
+      {/* Bottom row: Updated time on left; Tags on right */}
       <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
-        <div className="flex items-center gap-1 flex-wrap">
-          {note.tags.slice(0, 2).map((tag) => (
-            <span 
-              key={tag}
-              className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50"
-            >
-              {tag}
-            </span>
-          ))}
-          {note.tags.length > 2 && (
-            <span className="text-foreground/30">
-              +{note.tags.length - 2}
-            </span>
-          )}
-        </div>
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
+        {note.tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {note.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
+                {tag}
+              </span>
+            ))}
+            {note.tags.length > 2 && (
+              <span className="text-foreground/30">+{note.tags.length - 2}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -166,7 +166,7 @@ export function TodayOverview() {
                   className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5"
                   onClick={() => setSelectedTodo(todo)}
                 >
-                  {/* Top row: Checkbox + Title */}
+                  {/* Top row: Checkbox + Priority dot + Title */}
                   <div className="flex items-center gap-3">
                     <Checkbox
                       checked={todo.completed}
@@ -175,32 +175,38 @@ export function TodayOverview() {
                       className="border-muted-foreground/40"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        'text-sm text-foreground truncate',
-                        todo.completed && 'line-through text-muted-foreground'
-                      )}>
-                        {todo.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          'h-2 w-2 rounded-full flex-shrink-0',
+                          todo.priority === 'high' && 'bg-red-500',
+                          todo.priority === 'medium' && 'bg-yellow-500',
+                          todo.priority === 'low' && 'bg-blue-500'
+                        )} />
+                        <p className={cn(
+                          'text-sm text-foreground truncate',
+                          todo.completed && 'line-through text-muted-foreground'
+                        )}>
+                          {todo.title}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Bottom row: Metadata */}
-                  <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
-                    <div className="flex items-center gap-1">
-                      <span className={cn(
-                        'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
-                        todo.priority === 'high' && 'bg-red-500',
-                        todo.priority === 'medium' && 'bg-yellow-500',
-                        todo.priority === 'low' && 'bg-blue-500'
-                      )}>
-                        {todo.priority}
+                  {/* Bottom row: Priority badge + Category on RIGHT */}
+                  <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
+                    <span className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
+                      todo.priority === 'high' && 'bg-red-500',
+                      todo.priority === 'medium' && 'bg-yellow-500',
+                      todo.priority === 'low' && 'bg-blue-500'
+                    )}>
+                      {todo.priority}
+                    </span>
+                    {todo.category && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                        {todo.category}
                       </span>
-                      {todo.category && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
-                          {todo.category}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               ))}
