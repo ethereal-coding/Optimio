@@ -138,7 +138,7 @@ export function TodoWidget() {
                 return (
                   <div
                     key={todo.id}
-                    className="p-4 bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-1.5"
                     onClick={() => setSelectedTodo(todo)}
                   >
                     {/* Top row: Checkbox + Priority dot + Title */}
@@ -167,9 +167,9 @@ export function TodoWidget() {
                       </div>
                     </div>
 
-                    {/* Bottom section: Due date on left; Priority, Category on right */}
-                    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-2 border-t border-border mt-auto">
-                      <div className="flex items-center gap-2 min-w-0">
+                    {/* Bottom row: Due date LEFT; Priority, Category RIGHT */}
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                      <div className="flex items-center gap-1">
                         {todo.dueDate && (
                           <span className={cn(
                             'flex items-center gap-1',
@@ -180,7 +180,7 @@ export function TodoWidget() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1">
                         <span className={cn(
                           'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
                           todo.priority === 'high' && 'bg-red-500',
@@ -190,7 +190,7 @@ export function TodoWidget() {
                           {todo.priority}
                         </span>
                         {todo.category && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
                             {todo.category}
                           </span>
                         )}
