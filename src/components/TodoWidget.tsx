@@ -98,22 +98,25 @@ export function TodoWidget() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-0.5 mt-2 p-1 bg-secondary/30 rounded-md">
+        <div className="flex items-center gap-1 mt-2 bg-card border border-border rounded-lg p-1">
           {(['all', 'pending', 'completed'] as const).map((f) => (
             <Button
               key={f}
               variant="ghost"
               size="sm"
               className={cn(
-                'text-xs capitalize flex-1 rounded-md h-7 transition-colors',
+                'text-xs capitalize flex-1 h-8 transition-colors rounded-sm',
                 filter === f
-                  ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
+                  ? 'bg-white text-black hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
               onClick={() => setFilter(f)}
             >
               {f}
-              <span className="ml-1.5 text-[10px] text-muted-foreground">
+              <span className={cn(
+                'ml-1.5 text-[10px]',
+                filter === f ? 'text-black/60' : 'text-muted-foreground'
+              )}>
                 {f === 'all' ? todos.length : f === 'pending' ? pendingCount : completedCount}
               </span>
             </Button>

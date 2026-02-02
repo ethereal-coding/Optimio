@@ -170,19 +170,19 @@ export function Settings() {
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="data" className="w-full">
             <TabsList className="inline-flex h-auto items-center gap-1 bg-card border border-border rounded-lg p-1 mb-6">
-              <TabsTrigger value="data" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="data" className="h-8 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm px-3 text-xs transition-colors border-0">
                 Data & Sync
               </TabsTrigger>
-              <TabsTrigger value="appearance" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="appearance" className="h-8 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm px-3 text-xs transition-colors border-0">
                 Appearance
               </TabsTrigger>
-              <TabsTrigger value="calendars" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="calendars" className="h-8 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm px-3 text-xs transition-colors border-0">
                 Calendars
               </TabsTrigger>
-              <TabsTrigger value="shortcuts" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="shortcuts" className="h-8 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm px-3 text-xs transition-colors border-0">
                 Shortcuts
               </TabsTrigger>
-              <TabsTrigger value="about" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="about" className="h-8 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm px-3 text-xs transition-colors border-0">
                 About
               </TabsTrigger>
             </TabsList>
