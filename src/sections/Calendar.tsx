@@ -324,6 +324,10 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
 
+  // Calculate number of weeks to determine row height
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const numWeeks = Math.ceil(totalDays / 7);
+
   const rows = [];
   let days = [];
   let day = startDate;
@@ -333,16 +337,21 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
       const formattedDate = format(day, 'd');
       const cloneDay = day;
       const dayEvents = getEventsForDay(day);
+      const hasEvents = dayEvents.length > 0;
 
       days.push(
         <div
           key={day.toString()}
           onClick={() => onDayClick(cloneDay)}
           className={cn(
-            "min-h-[120px] border-r border-b border-border p-2 cursor-pointer hover:bg-secondary transition-colors",
+            "border-r border-b border-border p-2 cursor-pointer transition-colors relative group",
             !isSameMonth(day, monthStart) && "bg-background/50",
-            isToday(day) && "bg-white/[0.02]"
+            isToday(day) && "bg-white/[0.02]",
+            // Hover effect: show subtle background for all, stronger for empty days
+            "hover:bg-secondary/30",
+            !hasEvents && "hover:bg-secondary/50"
           )}
+          style={{ minHeight: `${400 / numWeeks}px` }}
         >
           <div className={cn(
             "text-sm font-medium mb-2",
@@ -351,6 +360,8 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
           )}>
             {formattedDate}
           </div>
+          
+          {/* Events */}
           <div className="space-y-1">
             {dayEvents.slice(0, 3).map((event) => (
               <div
@@ -371,12 +382,22 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
               </div>
             )}
           </div>
+
+          {/* Empty day hover overlay */}
+          {!hasEvents && (
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/20">
+              <div className="text-center">
+                <Plus className="h-6 w-6 text-foreground/30 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Add event</p>
+              </div>
+            </div>
+          )}
         </div>
       );
       day = addDays(day, 1);
     }
     rows.push(
-      <div key={day.toString()} className="grid grid-cols-7">
+      <div key={day.toString()} className="grid grid-cols-7 flex-1">
         {days}
       </div>
     );
@@ -387,14 +408,14 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
 
   return (
     <div className="h-full flex flex-col">
-      <div className="grid grid-cols-7 border-b border-border">
+      <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
         {dayNames.map((day) => (
           <div key={day} className="text-center text-sm font-medium text-muted-foreground py-3 border-r border-border last:border-r-0">
             {day}
           </div>
         ))}
       </div>
-      <div className="flex-1">{rows}</div>
+      <div className="flex-1 flex flex-col">{rows}</div>
     </div>
   );
 }
@@ -579,6 +600,18 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
   const eventPositions = getEventGroups();
 
+  // Check which hours have events
+  const hoursWithEvents = new Set<number>();
+  dayEvents.forEach((event) => {
+    const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
+    const eventEnd = typeof event.endTime === 'string' ? parseISO(event.endTime) : event.endTime;
+    const startHour = eventStart.getHours();
+    const endHour = eventEnd.getHours();
+    for (let h = startHour; h <= endHour; h++) {
+      hoursWithEvents.add(h);
+    }
+  });
+
   return (
     <div ref={containerRef} className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-background">
       <div className="relative min-h-full">
@@ -587,6 +620,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
           const timeDate = new Date(currentDate);
           timeDate.setHours(hour, 0, 0, 0);
           const isCurrentHour = new Date().getHours() === hour && isToday(currentDate);
+          const hasEvents = hoursWithEvents.has(hour);
 
           return (
             <div 
@@ -606,12 +640,25 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
               {/* Time slot - clickable */}
               <div
-                className="flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer hover:bg-secondary/40 transition-colors relative group"
+                className={cn(
+                  "flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer transition-colors relative group",
+                  hasEvents ? "hover:bg-secondary/20" : "hover:bg-secondary/40"
+                )}
                 onClick={() => handleTimeSlotClick(hour)}
               >
                 {/* Current time indicator */}
                 {isCurrentHour && (
                   <div className="absolute left-0 right-0 top-0 h-px bg-primary/30" />
+                )}
+
+                {/* Empty hour hover overlay */}
+                {!hasEvents && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1.5">
+                      <Plus className="h-3.5 w-3.5 text-foreground/30" />
+                      <p className="text-[11px] text-muted-foreground">Add event</p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
