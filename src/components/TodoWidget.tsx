@@ -15,7 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isPast, isToday } from 'date-fns';
+import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -133,66 +133,72 @@ export function TodoWidget() {
             </div>
           ) : (
             <div className="space-y-1.5">
-              {filteredTodos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-2"
-                  onClick={() => setSelectedTodo(todo)}
-                >
-                  {/* Top row: Checkbox + Title */}
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={todo.completed}
-                      onCheckedChange={() => handleToggleTodo(todo.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="border-muted-foreground/40"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+              {filteredTodos.map((todo) => {
+                const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
+                return (
+                  <div
+                    key={todo.id}
+                    className="p-4 bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
+                    onClick={() => setSelectedTodo(todo)}
+                  >
+                    {/* Top row: Checkbox + Priority dot + Title */}
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={todo.completed}
+                        onCheckedChange={() => handleToggleTodo(todo.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="border-muted-foreground/40"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            'h-2 w-2 rounded-full flex-shrink-0',
+                            todo.priority === 'high' && 'bg-red-500',
+                            todo.priority === 'medium' && 'bg-yellow-500',
+                            todo.priority === 'low' && 'bg-blue-500'
+                          )} />
+                          <p className={cn(
+                            'text-sm text-foreground truncate',
+                            todo.completed && 'line-through text-muted-foreground'
+                          )}>
+                            {todo.title}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom section: Due date on left; Priority, Category on right */}
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-2 border-t border-border mt-auto">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {todo.dueDate && (
+                          <span className={cn(
+                            'flex items-center gap-1',
+                            isOverdue && 'text-red-400'
+                          )}>
+                            <Calendar className="h-3 w-3" />
+                            {isToday(todo.dueDate) ? 'Today' : isTomorrow(todo.dueDate) ? 'Tomorrow' : isOverdue ? 'Overdue' : format(todo.dueDate, 'MMM d')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <span className={cn(
-                          'h-2 w-2 rounded-full flex-shrink-0',
+                          'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
                           todo.priority === 'high' && 'bg-red-500',
                           todo.priority === 'medium' && 'bg-yellow-500',
                           todo.priority === 'low' && 'bg-blue-500'
-                        )} />
-                        <p className={cn(
-                          'text-sm text-foreground truncate',
-                          todo.completed && 'line-through text-muted-foreground'
                         )}>
-                          {todo.title}
-                        </p>
+                          {todo.priority}
+                        </span>
+                        {todo.category && (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                            {todo.category}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  {/* Bottom row: Metadata */}
-                  <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
-                    <div className="flex items-center gap-2">
-                      {todo.dueDate && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(todo.dueDate, 'MMM d')}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className={cn(
-                        'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
-                        todo.priority === 'high' && 'bg-red-500',
-                        todo.priority === 'medium' && 'bg-yellow-500',
-                        todo.priority === 'low' && 'bg-blue-500'
-                      )}>
-                        {todo.priority}
-                      </span>
-                      {todo.category && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
-                          {todo.category}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           </div>
