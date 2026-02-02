@@ -124,15 +124,15 @@ export function TodoWidget() {
         </div>
       </CardHeader>
 
-      <CardContent>
-        <ScrollArea className="h-[260px] pr-3">
-          <div className="pb-2">
+      <CardContent className="min-w-0">
+        <ScrollArea className="h-[260px] pr-3 w-full">
+          <div className="pb-2 min-w-0">
           {filteredTodos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">No {filter} tasks</p>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               {filteredTodos.map((todo) => {
                 const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
                 return (

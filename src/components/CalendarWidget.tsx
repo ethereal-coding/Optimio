@@ -194,13 +194,13 @@ export function CalendarWidget() {
             </Dialog>
           </div>
 
-          <ScrollArea className="h-[120px]">
+          <ScrollArea className="h-[120px] w-full">
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="text-xs">No events for this day</p>
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 min-w-0">
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
