@@ -192,21 +192,27 @@ export function TodayOverview() {
                     </div>
                   </div>
                   
-                  {/* Bottom row: Priority badge + Category on RIGHT */}
-                  <div className="flex items-center justify-end gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
-                    <span className={cn(
-                      'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
-                      todo.priority === 'high' && 'bg-red-500',
-                      todo.priority === 'medium' && 'bg-yellow-500',
-                      todo.priority === 'low' && 'bg-blue-500'
-                    )}>
-                      {todo.priority}
+                  {/* Bottom row: Due date on LEFT; Priority + Category on RIGHT */}
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Today
                     </span>
-                    {todo.category && (
-                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
-                        {todo.category}
+                    <div className="flex items-center gap-1">
+                      <span className={cn(
+                        'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
+                        todo.priority === 'high' && 'bg-red-500',
+                        todo.priority === 'medium' && 'bg-yellow-500',
+                        todo.priority === 'low' && 'bg-blue-500'
+                      )}>
+                        {todo.priority}
                       </span>
-                    )}
+                      {todo.category && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                          {todo.category}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
