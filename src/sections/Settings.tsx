@@ -350,7 +350,7 @@ export function Settings() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'light'
                           ? "border-primary/50 bg-secondary/60"
-                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
+                          : "border-border hover:border-border-strong hover:bg-secondary/30 bg-card"
                       )}
                     >
                       <Sun className="h-5 w-5 text-foreground" />
@@ -366,7 +366,7 @@ export function Settings() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'dark'
                           ? "border-primary/50 bg-secondary/60"
-                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
+                          : "border-border hover:border-border-strong hover:bg-secondary/30 bg-card"
                       )}
                     >
                       <Moon className="h-5 w-5 text-foreground" />
@@ -382,7 +382,7 @@ export function Settings() {
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'auto'
                           ? "border-primary/50 bg-secondary/60"
-                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
+                          : "border-border hover:border-border-strong hover:bg-secondary/30 bg-card"
                       )}
                     >
                       <Monitor className="h-5 w-5 text-foreground" />

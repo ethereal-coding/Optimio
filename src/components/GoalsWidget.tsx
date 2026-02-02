@@ -109,7 +109,7 @@ export function GoalsWidget() {
                 return (
                   <div
                     key={goal.id}
-                    className="p-3 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
                     onClick={() => setSelectedGoal(goal)}
                   >
                     <div className="flex items-start justify-between mb-2">

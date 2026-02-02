@@ -136,7 +136,7 @@ export function TodoWidget() {
               {filteredTodos.map((todo) => (
                 <div
                   key={todo.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
                   onClick={() => setSelectedTodo(todo)}
                 >
                   <Checkbox

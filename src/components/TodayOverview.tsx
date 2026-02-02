@@ -108,7 +108,7 @@ export function TodayOverview() {
               {todayEvents.slice(0, 4).map((event) => (
                 <div
                   key={event.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
                   onClick={() => handleEventClick(event)}
                 >
                   <div
@@ -161,7 +161,7 @@ export function TodayOverview() {
               {todayTodos.slice(0, 5).map((todo) => (
                 <div
                   key={todo.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer"
                   onClick={() => setSelectedTodo(todo)}
                 >
                   <Checkbox

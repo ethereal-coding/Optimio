@@ -675,7 +675,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
                   e.stopPropagation();
                   onEventClick(event);
                 }}
-                className="absolute pointer-events-auto bg-secondary/40 border border-border/60 rounded-md px-2 py-1 cursor-pointer hover:bg-secondary/60 hover:border-border hover:shadow-md transition-all overflow-hidden"
+                className="absolute pointer-events-auto bg-card border border-border rounded-md px-2 py-1 cursor-pointer hover:bg-secondary/30 hover:border-border-strong hover:shadow-md transition-all overflow-hidden"
                 style={{
                   top: `${topOffset}px`,
                   height: `${height}px`,

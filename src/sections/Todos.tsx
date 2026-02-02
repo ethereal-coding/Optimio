@@ -573,7 +573,7 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
   return (
     <Card
       onClick={onClick}
-      className="p-4 bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
+      className="p-4 bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
     >
       <div className="flex items-center gap-3">
         <Checkbox

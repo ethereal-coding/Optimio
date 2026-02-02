@@ -601,7 +601,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
                 {goalTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-3 p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-colors group"
+                    className="flex items-center gap-3 p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors group"
                   >
                     <Checkbox
                       checked={task.completed}

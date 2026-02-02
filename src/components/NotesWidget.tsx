@@ -318,7 +318,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
   return (
     <div
       onClick={onClick}
-      className="p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer group"
+      className="p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
