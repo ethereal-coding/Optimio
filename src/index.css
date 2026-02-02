@@ -4,77 +4,281 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   OPTIMIO CRM - Modern Color System v2.0
+   Designed for streamlined visual hierarchy with Google Calendar integration
+   Background preserved: #0d0d0d (dark) / #f5f5f5 (light)
+   Style: Modern outlined with subtle depth
+   ========================================================================== */
+
 @layer base {
+  /* -------------------------------------------------------------------------
+     DARK THEME (Default) - Background: #0d0d0d
+     ------------------------------------------------------------------------- */
   :root {
-    /* Dark theme - Custom color scheme */
-    --background: 0 0% 5%;
-    --foreground: 0 0% 94%;
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 94%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 94%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 94%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 94%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 14%;
-    --input: 0 0% 16%;
-    --ring: 0 0% 100%;
-    --radius: 0.625rem;
-  }
+    /* Background Scale */
+    --background: 0 0% 5%;           /* #0d0d0d - PRESERVED */
+    --foreground: 0 0% 96%;          /* #f5f5f5 */
 
-  /* Dark Theme - Explicit dark mode */
-  [data-theme="dark"] {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 94%;
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 94%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 94%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 94%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 94%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 14%;
-    --input: 0 0% 16%;
-    --ring: 0 0% 100%;
-  }
+    /* Card System - Subtle elevation */
+    --card: 0 0% 7%;                 /* #121212 */
+    --card-foreground: 0 0% 96%;
+    --card-border: 0 0% 14%;         /* #242424 */
 
-  /* Light Theme - Standard light mode */
-  [data-theme="light"] {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 217 91% 60%;
+    /* Popover/Modal System */
+    --popover: 0 0% 8%;              /* #141414 */
+    --popover-foreground: 0 0% 96%;
+    --popover-border: 0 0% 16%;      /* #292929 */
+
+    /* Primary Action - Blueberry (#5484ed) */
+    --primary: 219 82% 63%;          /* #5484ed */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --primary-hover: 219 82% 55%;
+    --primary-subtle: 219 82% 15%;
+
+    /* Secondary Action - Neutral */
+    --secondary: 0 0% 12%;           /* #1f1f1f */
+    --secondary-foreground: 0 0% 96%;
+    --secondary-hover: 0 0% 16%;
+
+    /* Muted/Disabled States */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 52%;    /* #858585 */
+    --disabled: 0 0% 18%;
+    --disabled-foreground: 0 0% 40%;
+
+    /* Accent/Highlight - Subtle blue tint */
+    --accent: 219 60% 15%;
+    --accent-foreground: 0 0% 96%;
+    --accent-hover: 219 60% 20%;
+
+    /* Destructive Action - Tomato (#dc2127) */
+    --destructive: 358 76% 50%;      /* #dc2127 */
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 95%;
-    --ring: 217 91% 60%;
+    --destructive-hover: 358 76% 42%;
+    --destructive-subtle: 358 76% 12%;
+
+    /* Success - Basil (#51b749) */
+    --success: 115 43% 50%;          /* #51b749 */
+    --success-foreground: 0 0% 100%;
+    --success-hover: 115 43% 42%;
+    --success-subtle: 115 43% 12%;
+
+    /* Warning - Banana (#fbd75b) - BLACK text for contrast */
+    --warning: 47 95% 67%;           /* #fbd75b */
+    --warning-foreground: 0 0% 8%;   /* #141414 - BLACK */
+    --warning-hover: 47 95% 58%;
+    --warning-subtle: 47 95% 15%;
+
+    /* Info - Peacock (#46d6db) */
+    --info: 182 68% 57%;             /* #46d6db */
+    --info-foreground: 0 0% 8%;
+    --info-hover: 182 68% 48%;
+    --info-subtle: 182 68% 12%;
+
+    /* Border System - Outlined aesthetic */
+    --border: 0 0% 16%;              /* #292929 */
+    --border-subtle: 0 0% 12%;       /* #1f1f1f */
+    --border-strong: 0 0% 22%;       /* #383838 */
+
+    /* Input Fields */
+    --input: 0 0% 10%;               /* #1a1a1a */
+    --input-foreground: 0 0% 96%;
+    --input-border: 0 0% 20%;        /* #333333 */
+    --input-focus: 219 82% 63%;      /* Primary */
+
+    /* Ring/Focus States */
+    --ring: 219 82% 63%;
+    --ring-offset: 0 0% 5%;
+
+    /* 
+      Border Radius System using Nested Radius Formula:
+      Outer Radius = Inner Radius + Padding
+      
+      Base scale:
+      - xs: 2px  (badges, tags)
+      - sm: 4px  (small buttons, inputs)
+      - md: 6px  (buttons, inputs - inner elements)
+      - lg: 8px  (cards - padding 8px = md + 2px)
+      - xl: 12px (modals, popovers - padding 12px = lg + 4px)
+      - 2xl: 16px (large modals - padding 16px = xl + 4px)
+    */
+    --radius: 0.5rem;                /* 8px - base for cards */
+    --radius-xs: 0.125rem;           /* 2px */
+    --radius-sm: 0.25rem;            /* 4px */
+    --radius-md: 0.375rem;           /* 6px - buttons, inputs */
+    --radius-lg: 0.5rem;             /* 8px - cards */
+    --radius-xl: 0.75rem;            /* 12px - modals */
+    --radius-2xl: 1rem;              /* 16px - large modals */
+
+    /* Elevation/Shadow - Subtle for dark mode */
+    --shadow-color: 0 0% 0%;
+    --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.1);
+    --shadow-sm: 0 2px 4px hsl(var(--shadow-color) / 0.15);
+    --shadow-md: 0 4px 8px hsl(var(--shadow-color) / 0.2);
+    --shadow-lg: 0 8px 16px hsl(var(--shadow-color) / 0.25);
+
+    /* Glassmorphism - Theme-aware */
+    --glass-bg: 240 10% 8% / 0.6;
+    --glass-border: 0 0% 100% / 0.08;
+    --glass-hover: 240 10% 12% / 0.7;
+
+    /* Overlay */
+    --overlay: 0 0% 0% / 0.5;
+
+    /* Chart/Data Visualization Colors */
+    --chart-1: 219 82% 63%;   /* Blueberry */
+    --chart-2: 115 43% 50%;   /* Basil */
+    --chart-3: 358 76% 50%;   /* Tomato */
+    --chart-4: 47 95% 67%;    /* Banana */
+    --chart-5: 182 68% 57%;   /* Peacock */
+    --chart-6: 276 100% 84%;  /* Grape */
+    --chart-7: 5 100% 74%;    /* Flamingo */
+    --chart-8: 158 72% 69%;   /* Sage */
+    --chart-9: 28 100% 73%;   /* Tangerine */
+    --chart-10: 228 90% 81%;  /* Lavender */
+    --chart-11: 0 0% 88%;     /* Graphite */
+    
+    /* Sidebar Colors */
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 219 82% 63%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 219 82% 63%;
+  }
+
+  /* -------------------------------------------------------------------------
+     LIGHT THEME - Background: #f5f5f5
+     ------------------------------------------------------------------------- */
+  [data-theme="light"] {
+    /* Background Scale */
+    --background: 0 0% 96%;          /* #f5f5f5 */
+    --foreground: 0 0% 8%;           /* #141414 */
+
+    /* Card System */
+    --card: 0 0% 100%;               /* #ffffff */
+    --card-foreground: 0 0% 8%;
+    --card-border: 0 0% 88%;         /* #e0e0e0 */
+
+    /* Popover/Modal System */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --popover-border: 0 0% 90%;      /* #e5e5e5 */
+
+    /* Primary Action - Same Blueberry */
+    --primary: 219 82% 63%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 219 82% 55%;
+    --primary-subtle: 219 82% 95%;
+
+    /* Secondary Action */
+    --secondary: 0 0% 94%;           /* #f0f0f0 */
+    --secondary-foreground: 0 0% 8%;
+    --secondary-hover: 0 0% 90%;
+
+    /* Muted/Disabled States */
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 42%;    /* #6b6b6b */
+    --disabled: 0 0% 90%;
+    --disabled-foreground: 0 0% 55%;
+
+    /* Accent/Highlight */
+    --accent: 219 60% 95%;
+    --accent-foreground: 0 0% 8%;
+    --accent-hover: 219 60% 92%;
+
+    /* Destructive Action */
+    --destructive: 358 76% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-hover: 358 76% 42%;
+    --destructive-subtle: 358 76% 95%;
+
+    /* Success */
+    --success: 115 43% 50%;
+    --success-foreground: 0 0% 100%;
+    --success-hover: 115 43% 42%;
+    --success-subtle: 115 43% 95%;
+
+    /* Warning - BLACK text maintained */
+    --warning: 47 95% 67%;
+    --warning-foreground: 0 0% 8%;   /* BLACK for contrast */
+    --warning-hover: 47 95% 58%;
+    --warning-subtle: 47 95% 95%;
+
+    /* Info */
+    --info: 182 68% 57%;
+    --info-foreground: 0 0% 8%;
+    --info-hover: 182 68% 48%;
+    --info-subtle: 182 68% 95%;
+
+    /* Border System */
+    --border: 0 0% 88%;              /* #e0e0e0 */
+    --border-subtle: 0 0% 92%;       /* #ebebeb */
+    --border-strong: 0 0% 80%;       /* #cccccc */
+
+    /* Input Fields */
+    --input: 0 0% 100%;
+    --input-foreground: 0 0% 8%;
+    --input-border: 0 0% 82%;        /* #d1d1d1 */
+    --input-focus: 219 82% 63%;
+
+    /* Ring/Focus States */
+    --ring: 219 82% 63%;
+    --ring-offset: 0 0% 100%;
+
+    /* Elevation/Shadow - More visible for light mode */
+    --shadow-color: 0 0% 0%;
+    --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.05);
+    --shadow-sm: 0 2px 4px hsl(var(--shadow-color) / 0.08);
+    --shadow-md: 0 4px 8px hsl(var(--shadow-color) / 0.1);
+    --shadow-lg: 0 8px 16px hsl(var(--shadow-color) / 0.12);
+
+    /* Glassmorphism - Light theme */
+    --glass-bg: 0 0% 100% / 0.75;
+    --glass-border: 0 0% 0% / 0.08;
+    --glass-hover: 0 0% 100% / 0.85;
+
+    /* Overlay */
+    --overlay: 0 0% 0% / 0.35;
+    
+    /* Sidebar - Light */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 219 82% 63%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 219 82% 63%;
   }
 }
+
+/* ==========================================================================
+   GOOGLE CALENDAR COLOR INTEGRATION
+   These are the exact colors from Google Calendar API
+   ========================================================================== */
+
+:root {
+  /* Original Google Calendar Colors */
+  --google-lavender: #a4bdfc;
+  --google-sage: #7ae7bf;
+  --google-grape: #dbadff;
+  --google-flamingo: #ff887c;
+  --google-banana: #fbd75b;
+  --google-tangerine: #ffb878;
+  --google-peacock: #46d6db;
+  --google-graphite: #e1e1e1;
+  --google-blueberry: #5484ed;
+  --google-basil: #51b749;
+  --google-tomato: #dc2127;
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
 
 @layer base {
   * {
@@ -91,6 +295,188 @@
   }
 }
 
+/* ==========================================================================
+   COMPONENT STYLES
+   ========================================================================== */
+
+@layer components {
+  /* Card - Outlined with subtle depth */
+  .card-outlined {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--card-border));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    transition: all 150ms ease;
+  }
+
+  .card-outlined:hover {
+    border-color: hsl(var(--border-strong));
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  /* Button - Elegant subtle hover style */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
+
+  .btn-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
+    border-color: hsl(var(--primary) / 0.9);
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.25);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  .btn-secondary:hover {
+    background-color: hsl(var(--foreground) / 0.05);
+    border-color: hsl(var(--border-strong));
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    border-color: transparent;
+  }
+
+  .btn-ghost:hover {
+    background-color: hsl(var(--foreground) / 0.05);
+  }
+
+  /* Input - Outlined style */
+  .input-outlined {
+    background-color: hsl(var(--input));
+    color: hsl(var(--input-foreground));
+    border: 1px solid hsl(var(--input-border));
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all 150ms ease;
+  }
+
+  .input-outlined:focus {
+    outline: none;
+    border-color: hsl(var(--input-focus));
+    box-shadow: 0 0 0 2px hsl(var(--input-focus) / 0.2);
+  }
+
+  /* Badge - Outlined style */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+  }
+
+  .badge-primary {
+    background-color: hsl(var(--primary-subtle));
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  .badge-success {
+    background-color: hsl(var(--success-subtle));
+    color: hsl(var(--success));
+    border-color: hsl(var(--success) / 0.3);
+  }
+
+  .badge-warning {
+    background-color: hsl(var(--warning-subtle));
+    color: hsl(var(--warning-foreground));
+    border-color: hsl(var(--warning) / 0.3);
+  }
+
+  .badge-danger {
+    background-color: hsl(var(--destructive-subtle));
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.3);
+  }
+
+  /* Glassmorphism - Theme-aware */
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--glass-border));
+  }
+
+  .glass-hover:hover {
+    background: hsl(var(--glass-hover));
+  }
+
+  /* Priority Indicators using semantic colors */
+  .priority-high {
+    color: hsl(var(--destructive));
+    background-color: hsl(var(--destructive-subtle));
+    border-color: hsl(var(--destructive) / 0.3);
+  }
+
+  .priority-medium {
+    color: hsl(var(--warning-foreground));
+    background-color: hsl(var(--warning-subtle));
+    border-color: hsl(var(--warning) / 0.3);
+  }
+
+  .priority-low {
+    color: hsl(var(--info-foreground));
+    background-color: hsl(var(--info-subtle));
+    border-color: hsl(var(--info) / 0.3);
+  }
+
+  /* Status indicators */
+  .status-completed {
+    color: hsl(var(--success));
+    background-color: hsl(var(--success-subtle));
+    border-color: hsl(var(--success) / 0.3);
+  }
+
+  .status-in-progress {
+    color: hsl(var(--primary));
+    background-color: hsl(var(--primary-subtle));
+    border-color: hsl(var(--primary) / 0.3);
+  }
+
+  .status-overdue {
+    color: hsl(var(--destructive));
+    background-color: hsl(var(--destructive-subtle));
+    border-color: hsl(var(--destructive) / 0.3);
+  }
+}
+
+/* ==========================================================================
+   UTILITY STYLES
+   ========================================================================== */
+
 @layer utilities {
   /* Sleek scrollbar - invisible until hover/scroll */
   .custom-scrollbar {
@@ -101,7 +487,7 @@
 
   .custom-scrollbar:hover,
   .custom-scrollbar:focus-within {
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -115,23 +501,23 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: transparent;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     transition: background 0.3s ease;
   }
 
   .custom-scrollbar:hover::-webkit-scrollbar-thumb,
   .custom-scrollbar:focus-within::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: hsl(var(--muted-foreground) / 0.3);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 
   /* For actively scrolling state */
   @supports selector(::-webkit-scrollbar-thumb:active) {
     .custom-scrollbar::-webkit-scrollbar-thumb:active {
-      background: rgba(255, 255, 255, 0.3);
+      background: hsl(var(--muted-foreground) / 0.5);
     }
   }
   
@@ -146,11 +532,11 @@
   
   /* Sleek card */
   .sleek-card {
-    @apply bg-card border border-border rounded-xl;
+    @apply bg-card border border-border rounded-lg;
   }
 
   .sleek-card:hover {
-    @apply border-border;
+    @apply border-border-strong;
   }
   
   /* Subtle animations */
@@ -178,15 +564,65 @@
     animation: slideUp 0.2s ease-out forwards;
   }
 
-  /* Smooth theme transitions */
-  * {
+  /* Focus ring */
+  .ring-focus {
+    outline: none;
+    ring: 2px;
+    ring-color: hsl(var(--ring));
+    ring-offset: 2px;
+    ring-offset-color: hsl(var(--ring-offset));
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+  }
+
+  /* Smooth theme transitions - only for color properties */
+  .theme-transition {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
-}
 
-/* Selection */
-::selection {
-  background: rgba(255, 255, 255, 0.15);
+  /* Elegant subtle hover - replaces blue accent hover */
+  .hover-subtle {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-subtle:hover {
+    background-color: hsl(var(--foreground) / 0.04);
+  }
+
+  /* Card item hover - for list items inside cards */
+  .hover-card-item {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-card-item:hover {
+    background-color: hsl(var(--foreground) / 0.04);
+    border-color: hsl(var(--border-strong));
+  }
+
+  /* Ghost button hover - very subtle */
+  .hover-ghost {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-ghost:hover {
+    background-color: hsl(var(--foreground) / 0.06);
+  }
+
+  /* Elevated hover - for interactive cards */
+  .hover-elevated {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-elevated:hover {
+    background-color: hsl(var(--foreground) / 0.03);
+    border-color: hsl(var(--border-strong));
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
 }
 
 /* Reduced motion */

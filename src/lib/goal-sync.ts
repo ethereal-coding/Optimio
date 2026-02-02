@@ -135,6 +135,62 @@ export async function toggleMilestoneWithSync(
 }
 
 /**
+ * Add task to goal with IndexedDB persistence
+ */
+export async function addTaskToGoalWithSync(
+  goalId: string,
+  taskId: string,
+  dispatch: (action: any) => void,
+  actions: any
+): Promise<void> {
+  dispatch(actions.addTaskToGoal(goalId, taskId));
+  
+  try {
+    const goal = await db.goals.get(goalId);
+    if (goal) {
+      const taskIds = goal.taskIds || [];
+      if (!taskIds.includes(taskId)) {
+        await db.goals.update(goalId, {
+          ...goal,
+          taskIds: [...taskIds, taskId],
+          lastSyncedAt: new Date().toISOString()
+        });
+        debug.log('💾 Task added to goal in IndexedDB:', taskId);
+      }
+    }
+  } catch (dbError) {
+    console.error('Failed to add task to goal in IndexedDB:', dbError);
+  }
+}
+
+/**
+ * Remove task from goal with IndexedDB persistence
+ */
+export async function removeTaskFromGoalWithSync(
+  goalId: string,
+  taskId: string,
+  dispatch: (action: any) => void,
+  actions: any
+): Promise<void> {
+  dispatch(actions.removeTaskFromGoal(goalId, taskId));
+  
+  try {
+    const goal = await db.goals.get(goalId);
+    if (goal) {
+      const taskIds = goal.taskIds || [];
+      await db.goals.update(goalId, {
+        ...goal,
+        taskIds: taskIds.filter(id => id !== taskId),
+        lastSyncedAt: new Date().toISOString()
+      });
+      debug.log('💾 Task removed from goal in IndexedDB:', taskId);
+    }
+  } catch (dbError) {
+    console.error('Failed to remove task from goal in IndexedDB:', dbError);
+  }
+}
+
+/**
  * Load goals from IndexedDB into state
  * Call this on app initialization
  */

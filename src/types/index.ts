@@ -44,6 +44,7 @@ export interface Todo {
   priority: 'low' | 'medium' | 'high';
   dueDate?: Date;
   category?: string;
+  tags?: string[];
   createdAt: Date;
   completedAt?: Date;
   subtasks?: Subtask[];
@@ -66,6 +67,7 @@ export interface Goal {
   deadline?: Date;
   color: string;
   milestones: Milestone[];
+  taskIds?: string[];
   createdAt: Date;
   category?: string;
 }

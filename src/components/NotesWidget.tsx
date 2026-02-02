@@ -90,7 +90,7 @@ export function NotesWidget() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddNote(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -105,7 +105,7 @@ export function NotesWidget() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent h-7 gap-1"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
               onClick={() => dispatch(actions.setView('notes'))}
             >
               View All
@@ -199,7 +199,7 @@ export function NotesWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={(e) => handleTogglePin(selectedNote.id, e)}
                     >
                       <PinIcon className={cn(
@@ -210,7 +210,7 @@ export function NotesWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={(e) => handleToggleFavorite(selectedNote.id, e)}
                     >
                       <Star className={cn(
@@ -221,7 +221,7 @@ export function NotesWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingNote(selectedNote)}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -318,7 +318,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
   return (
     <div
       onClick={onClick}
-      className="p-2.5 rounded-lg bg-muted hover:bg-accent border border-transparent hover:border-border transition-all cursor-pointer group"
+      className="p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer group"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
@@ -331,7 +331,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-accent"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-secondary"
             onClick={(e) => onTogglePin(note.id, e)}
           >
             <PinIcon className={cn(

@@ -87,19 +87,19 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
-              <SelectItem value="low" className="text-foreground/70 hover:text-foreground hover:bg-accent">
+              <SelectItem value="low" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(59, 130, 246)' }} />
                   Low
                 </span>
               </SelectItem>
-              <SelectItem value="medium" className="text-foreground/70 hover:text-foreground hover:bg-accent">
+              <SelectItem value="medium" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(234, 179, 8)' }} />
                   Medium
                 </span>
               </SelectItem>
-              <SelectItem value="high" className="text-foreground/70 hover:text-foreground hover:bg-accent">
+              <SelectItem value="high" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(239, 68, 68)' }} />
                   High
@@ -127,7 +127,7 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-foreground h-10"
+              className="w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-secondary hover:text-foreground h-10"
             >
               <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               {dueDate ? format(dueDate, 'PPP') : 'Pick a date'}
@@ -145,7 +145,7 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-accent h-10">
+        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-secondary h-10">
           <X className="h-4 w-4 mr-1" />
           Cancel
         </Button>

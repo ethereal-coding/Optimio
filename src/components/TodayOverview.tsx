@@ -78,7 +78,7 @@ export function TodayOverview() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent h-8"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary h-8"
             onClick={() => {
               dispatch(actions.setCalendarView('day'));
               dispatch(actions.setView('calendar'));
@@ -108,7 +108,7 @@ export function TodayOverview() {
               {todayEvents.slice(0, 4).map((event) => (
                 <div
                   key={event.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-muted hover:bg-accent border border-transparent hover:border-border transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                   onClick={() => handleEventClick(event)}
                 >
                   <div
@@ -134,7 +134,7 @@ export function TodayOverview() {
                 </div>
               ))}
               {todayEvents.length > 4 && (
-                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground hover:bg-accent">
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground hover:bg-secondary">
                   + {todayEvents.length - 4} more events
                 </Button>
               )}
@@ -161,7 +161,7 @@ export function TodayOverview() {
               {todayTodos.slice(0, 5).map((todo) => (
                 <div
                   key={todo.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-muted hover:bg-accent border border-transparent hover:border-border transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                   onClick={() => setSelectedTodo(todo)}
                 >
                   <Checkbox
@@ -194,7 +194,7 @@ export function TodayOverview() {
                 </div>
               ))}
               {todayTodos.length > 5 && (
-                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground hover:bg-accent">
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground hover:bg-secondary">
                   + {todayTodos.length - 5} more tasks
                 </Button>
               )}
@@ -220,7 +220,7 @@ export function TodayOverview() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingEvent(selectedEvent)}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -313,7 +313,7 @@ export function TodayOverview() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingTodo(selectedTodo)}
                     >
                       <Edit2 className="h-4 w-4" />

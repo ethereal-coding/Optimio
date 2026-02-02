@@ -218,7 +218,7 @@ export function Notes() {
               placeholder="Search notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
 
@@ -232,7 +232,7 @@ export function Notes() {
                 "h-8 text-xs transition-colors",
                 filterMode === 'all'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               All
@@ -245,7 +245,7 @@ export function Notes() {
                 "h-8 text-xs transition-colors",
                 filterMode === 'pinned'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               <PinIcon className="h-3 w-3 mr-1" />
@@ -259,7 +259,7 @@ export function Notes() {
                 "h-8 text-xs transition-colors",
                 filterMode === 'favorites'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               <Star className="h-3 w-3 mr-1" />
@@ -486,7 +486,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
         "p-4 transition-all cursor-pointer group flex flex-col shadow-none gap-1 h-[280px]",
         hasCustomColor 
           ? "border-2 hover:brightness-110" 
-          : "border border-border hover:bg-accent/50",
+          : "border border-border hover:bg-secondary/50",
         hasCustomColor ? "bg-opacity-20" : "bg-card"
       )}
     >
@@ -923,7 +923,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
               "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all h-8 px-3",
               useWhiteText 
                 ? "border border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
-                : "border border-border text-foreground/70 hover:text-foreground hover:bg-accent"
+                : "border border-border text-foreground/70 hover:text-foreground hover:bg-secondary"
             )}
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -1003,7 +1003,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
                 "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all h-9 w-10",
                 useWhiteText 
                   ? "border border-white/30 text-white/80 hover:text-white hover:bg-white/20" 
-                  : "border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "border border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
               )}
             >
               <Plus className="h-4 w-4" />
@@ -1043,7 +1043,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
             className={cn(
               useWhiteText 
                 ? "text-white/80 hover:text-white hover:bg-white/20" 
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
           >
             Cancel

@@ -90,7 +90,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-accent rounded-lg"
+            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
             onClick={handlePreviousDay}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-accent rounded-lg"
+            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
             onClick={handleNextDay}
           >
             <ChevronRight className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-accent rounded-md ml-2"
+              className="h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-secondary rounded-md ml-2"
               onClick={handleToday}
             >
               Today
@@ -145,7 +145,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative h-9 w-9 rounded-lg text-foreground/50 hover:text-foreground hover:bg-accent"
+          className="relative h-9 w-9 rounded-lg text-foreground/50 hover:text-foreground hover:bg-secondary"
         >
           <Bell className="h-4 w-4" />
           <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
@@ -157,7 +157,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex flex-col items-end h-auto py-0.5 px-2 hover:bg-accent leading-none gap-0.5"
+                className="flex flex-col items-end h-auto py-0.5 px-2 hover:bg-secondary leading-none gap-0.5"
               >
                 <span className="text-sm text-foreground font-medium leading-tight">
                   Hello, {user.name.split(' ')[0]}
@@ -174,14 +174,14 @@ export function Header({ onSearchOpen }: HeaderProps) {
               </div>
               <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
-                className="text-foreground hover:bg-accent cursor-pointer"
+                className="text-foreground hover:bg-secondary cursor-pointer"
                 onClick={() => dispatch(actions.setView('settings'))}
               >
                 <UserIcon className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="text-foreground hover:bg-accent cursor-pointer"
+                className="text-foreground hover:bg-secondary cursor-pointer"
                 onClick={handleSignOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -192,7 +192,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
         ) : (
           <Button
             variant="outline"
-            className="h-9 px-4 bg-transparent border-border text-foreground/90 hover:bg-accent hover:text-foreground hover:border-border rounded-lg transition-colors"
+            className="h-9 px-4 bg-transparent border-border text-foreground/90 hover:bg-secondary hover:text-foreground hover:border-border rounded-lg transition-colors"
             onClick={() => setShowSignIn(true)}
           >
             Sign In

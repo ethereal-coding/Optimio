@@ -73,7 +73,7 @@ export function TodoWidget() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={() => setShowAddTodo(true)}
             >
               <Plus className="h-4 w-4" />
@@ -88,7 +88,7 @@ export function TodoWidget() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent h-7 gap-1"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
             onClick={() => dispatch(actions.setView('todos'))}
           >
             View All
@@ -98,7 +98,7 @@ export function TodoWidget() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-0.5 mt-2 p-1 bg-muted rounded-lg">
+        <div className="flex gap-0.5 mt-2 p-1 bg-secondary/30 rounded-md">
           {(['all', 'pending', 'completed'] as const).map((f) => (
             <Button
               key={f}
@@ -108,7 +108,7 @@ export function TodoWidget() {
                 'text-xs capitalize flex-1 rounded-md h-7 transition-colors',
                 filter === f
                   ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
               onClick={() => setFilter(f)}
             >
@@ -133,7 +133,7 @@ export function TodoWidget() {
               {filteredTodos.map((todo) => (
                 <div
                   key={todo.id}
-                  className="group flex items-center gap-3 p-2.5 rounded-lg bg-muted hover:bg-accent border border-transparent hover:border-border transition-all cursor-pointer"
+                  className="group flex items-center gap-3 p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                   onClick={() => setSelectedTodo(todo)}
                 >
                   <Checkbox
@@ -196,7 +196,7 @@ export function TodoWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingTodo(selectedTodo)}
                     >
                       <Edit2 className="h-4 w-4" />

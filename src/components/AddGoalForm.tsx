@@ -161,7 +161,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-accent hover:text-foreground h-10"
+              className="w-full justify-start text-left font-normal bg-input border-border text-foreground hover:bg-secondary hover:text-foreground h-10"
             >
               <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               {deadline ? format(deadline, 'PPP') : 'Pick a deadline'}
@@ -211,7 +211,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-muted-foreground">Milestones</Label>
-          <Button type="button" variant="ghost" size="sm" onClick={addMilestone} className="text-muted-foreground hover:text-foreground hover:bg-accent h-8">
+          <Button type="button" variant="ghost" size="sm" onClick={addMilestone} className="text-muted-foreground hover:text-foreground hover:bg-secondary h-8">
             <Plus className="h-4 w-4 mr-1" />
             Add
           </Button>
@@ -261,7 +261,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
       </div>
 
       <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-card pb-2">
-        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-accent h-10">
+        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-secondary h-10">
           <X className="h-4 w-4 mr-1" />
           Cancel
         </Button>

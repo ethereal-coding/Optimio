@@ -170,19 +170,19 @@ export function Settings() {
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="data" className="w-full">
             <TabsList className="inline-flex h-auto items-center gap-1 bg-card border border-border rounded-lg p-1 mb-6">
-              <TabsTrigger value="data" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="data" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
                 Data & Sync
               </TabsTrigger>
-              <TabsTrigger value="appearance" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="appearance" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
                 Appearance
               </TabsTrigger>
-              <TabsTrigger value="calendars" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="calendars" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
                 Calendars
               </TabsTrigger>
-              <TabsTrigger value="shortcuts" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="shortcuts" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
                 Shortcuts
               </TabsTrigger>
-              <TabsTrigger value="about" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 text-sm transition-colors border-0">
+              <TabsTrigger value="about" className="h-8 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md px-3 text-sm transition-colors border-0">
                 About
               </TabsTrigger>
             </TabsList>
@@ -349,8 +349,8 @@ export function Settings() {
                       className={cn(
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'light'
-                          ? "border-primary/50 bg-accent/50"
-                          : "border-border hover:border-muted-foreground"
+                          ? "border-primary/50 bg-secondary/60"
+                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
                       )}
                     >
                       <Sun className="h-5 w-5 text-foreground" />
@@ -365,8 +365,8 @@ export function Settings() {
                       className={cn(
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'dark'
-                          ? "border-primary/50 bg-accent/50"
-                          : "border-border hover:border-muted-foreground"
+                          ? "border-primary/50 bg-secondary/60"
+                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
                       )}
                     >
                       <Moon className="h-5 w-5 text-foreground" />
@@ -381,8 +381,8 @@ export function Settings() {
                       className={cn(
                         "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all",
                         currentTheme === 'auto'
-                          ? "border-primary/50 bg-accent/50"
-                          : "border-border hover:border-muted-foreground"
+                          ? "border-primary/50 bg-secondary/60"
+                          : "border-border/60 hover:border-border hover:bg-secondary/40 bg-secondary/30"
                       )}
                     >
                       <Monitor className="h-5 w-5 text-foreground" />

@@ -106,10 +106,10 @@ export function CalendarWidget() {
           </div>
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground mr-2">{format(currentMonth, 'MMMM yyyy')}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent" onClick={handlePreviousMonth}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handlePreviousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent" onClick={handleNextMonth}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handleNextMonth}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -146,7 +146,7 @@ export function CalendarWidget() {
                   className={cn(
                     'relative h-7 w-7 mx-auto rounded-md flex items-center justify-center text-sm transition-colors',
                     !isCurrentMonth && 'text-muted-foreground',
-                    isCurrentMonth && 'text-foreground hover:bg-accent',
+                    isCurrentMonth && 'text-foreground hover:bg-secondary/60',
                     isToday && 'bg-muted text-foreground font-medium',
                     isSelected && 'bg-primary text-primary-foreground hover:bg-primary',
                     !isSelected && !isToday && 'hover:text-foreground'
@@ -180,7 +180,7 @@ export function CalendarWidget() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddEvent(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -204,7 +204,7 @@ export function CalendarWidget() {
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="group flex items-center gap-2 p-2 rounded-lg bg-muted hover:bg-accent transition-colors cursor-pointer"
+                    className="group flex items-center gap-2 p-2 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-colors cursor-pointer"
                     onClick={() => handleEventClick(event)}
                   >
                     <div
@@ -245,7 +245,7 @@ export function CalendarWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingEvent(selectedEvent)}
                     >
                       <Edit2 className="h-4 w-4" />

@@ -118,7 +118,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Button
                 onClick={this.handleGoHome}
                 variant="outline"
-                className="flex-1 border-border text-foreground hover:bg-accent h-11"
+                className="flex-1 border-border text-foreground hover:bg-secondary h-11"
               >
                 <Home className="w-4 h-4 mr-2" />
                 Go to Dashboard
@@ -127,7 +127,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Button
                 onClick={this.handleReset}
                 variant="ghost"
-                className="flex-1 text-muted-foreground hover:text-foreground hover:bg-accent h-11"
+                className="flex-1 text-muted-foreground hover:text-foreground hover:bg-secondary h-11"
               >
                 Try Again
               </Button>

@@ -160,7 +160,7 @@ export function Goals() {
               placeholder="Search goals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
         </div>
@@ -447,7 +447,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
             >
               <Edit2 className="h-4 w-4" />
@@ -467,7 +467,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
       <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar">
         <div className="space-y-6">
           {/* Progress Overview */}
-          <div className="p-4 rounded-lg bg-background border border-border">
+          <div className="p-4 rounded-md bg-background border border-border">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">Progress</span>
               <span className="text-3xl font-bold" style={{ color: goal.color }}>
@@ -529,7 +529,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
 
             {/* Create New Task Form */}
             {showCreateTask && (
-              <div className="p-3 rounded-lg bg-background border border-border space-y-2">
+              <div className="p-3 rounded-md bg-background border border-border space-y-2">
                 <Input
                   placeholder="Enter task title..."
                   value={newTaskTitle}
@@ -575,7 +575,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
 
             {/* Add Task Dropdown */}
             {showAddTask && availableTasks.length > 0 && (
-              <div className="p-2 rounded-lg bg-background border border-border">
+              <div className="p-2 rounded-md bg-background border border-border">
                 <select
                   className="w-full bg-transparent text-sm text-foreground outline-none"
                   onChange={(e) => {
@@ -601,7 +601,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
                 {goalTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border hover:border-border transition-colors group"
+                    className="flex items-center gap-3 p-2.5 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-colors group"
                   >
                     <Checkbox
                       checked={task.completed}

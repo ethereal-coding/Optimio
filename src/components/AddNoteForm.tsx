@@ -157,7 +157,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border border-border text-foreground/70 hover:text-foreground hover:bg-accent h-10 px-4"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border border-border text-foreground/70 hover:text-foreground hover:bg-secondary h-10 px-4"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Images
@@ -210,7 +210,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
             placeholder="Add a tag and press Enter"
             className="flex-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 h-10"
           />
-          <Button type="button" variant="outline" onClick={addTag} className="border-border text-foreground/50 hover:text-foreground hover:bg-accent h-10 w-10 px-0">
+          <Button type="button" variant="outline" onClick={addTag} className="border-border text-foreground/50 hover:text-foreground hover:bg-secondary h-10 w-10 px-0">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -236,7 +236,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
       </div>
 
       <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-card pb-2">
-        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-accent h-10">
+        <Button type="button" variant="ghost" onClick={onCancel} className="text-muted-foreground hover:text-foreground hover:bg-secondary h-10">
           <X className="h-4 w-4 mr-1" />
           Cancel
         </Button>

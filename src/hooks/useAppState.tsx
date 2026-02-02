@@ -49,6 +49,8 @@ type Action =
   | { type: 'DELETE_GOAL'; payload: string }
   | { type: 'UPDATE_GOAL_PROGRESS'; payload: { goalId: string; value: number } }
   | { type: 'TOGGLE_MILESTONE'; payload: { goalId: string; milestoneId: string } }
+  | { type: 'ADD_TASK_TO_GOAL'; payload: { goalId: string; taskId: string } }
+  | { type: 'REMOVE_TASK_FROM_GOAL'; payload: { goalId: string; taskId: string } }
   | { type: 'SET_NOTES'; payload: Note[] }
   | { type: 'ADD_NOTE'; payload: Note }
   | { type: 'UPDATE_NOTE'; payload: Note }
@@ -209,6 +211,26 @@ function appReducer(state: AppState, action: Action): AppState {
                     : m
                 )
               }
+            : g
+        )
+      };
+
+    case 'ADD_TASK_TO_GOAL':
+      return {
+        ...state,
+        goals: state.goals.map(g =>
+          g.id === action.payload.goalId
+            ? { ...g, taskIds: [...(g.taskIds || []), action.payload.taskId] }
+            : g
+        )
+      };
+
+    case 'REMOVE_TASK_FROM_GOAL':
+      return {
+        ...state,
+        goals: state.goals.map(g =>
+          g.id === action.payload.goalId
+            ? { ...g, taskIds: (g.taskIds || []).filter(id => id !== action.payload.taskId) }
             : g
         )
       };
@@ -481,6 +503,14 @@ export const actions = {
   toggleMilestone: (goalId: string, milestoneId: string): Action => ({
     type: 'TOGGLE_MILESTONE',
     payload: { goalId, milestoneId }
+  }),
+  addTaskToGoal: (goalId: string, taskId: string): Action => ({
+    type: 'ADD_TASK_TO_GOAL',
+    payload: { goalId, taskId }
+  }),
+  removeTaskFromGoal: (goalId: string, taskId: string): Action => ({
+    type: 'REMOVE_TASK_FROM_GOAL',
+    payload: { goalId, taskId }
   }),
   setNotes: (notes: Note[]): Action => ({ type: 'SET_NOTES', payload: notes }),
   addNote: (note: Note): Action => ({ type: 'ADD_NOTE', payload: note }),

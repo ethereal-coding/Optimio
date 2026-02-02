@@ -157,7 +157,7 @@ export function CalendarPreferences() {
         {calendars.map((calendar) => (
           <div
             key={calendar.id}
-            className="flex items-center justify-between py-3 px-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+            className="flex items-center justify-between py-3 px-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
           >
             <div className="flex items-center gap-3">
               {/* Calendar color indicator */}

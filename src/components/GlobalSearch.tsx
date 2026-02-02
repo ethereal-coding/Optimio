@@ -299,7 +299,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         dispatch(actions.setView('todos'));
                         onOpenChange(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                     >
                       <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         todo.completed ? 'bg-green-500/20' : 'bg-secondary'
@@ -351,7 +351,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         dispatch(actions.setView('calendar'));
                         onOpenChange(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                     >
                       <div
                         className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -394,7 +394,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                           dispatch(actions.setView('goals'));
                           onOpenChange(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                       >
                         <div
                           className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -442,7 +442,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         dispatch(actions.setView('notes'));
                         onOpenChange(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary transition-colors"
                     >
                       <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                         <FileText className="h-4 w-4 text-foreground/60" />
@@ -487,7 +487,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleSelectResult(result)}
                     className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                      isSelected ? 'bg-accent' : 'hover:bg-accent'
+                      isSelected ? 'bg-accent' : 'hover:bg-secondary'
                     }`}
                   >
                     <div

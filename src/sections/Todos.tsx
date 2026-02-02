@@ -32,20 +32,17 @@ import {
   Calendar as CalendarIcon,
   Edit2,
   Trash2,
-  AlertCircle,
   Circle,
   PlayCircle,
   CheckCircle2,
   Target,
-  X,
   Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isPast, isToday, isTomorrow, addDays, formatDistanceToNow } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, addDays } from 'date-fns';
 import { AddTodoForm } from '@/components/AddTodoForm';
 import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
-import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low';
 
@@ -228,7 +225,7 @@ export function Todos() {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border focus:ring-0"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
 
@@ -242,7 +239,7 @@ export function Todos() {
                 "h-8 text-xs transition-colors",
                 priorityFilter === 'all'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               All
@@ -255,7 +252,7 @@ export function Todos() {
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'high'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               <span className="h-2 w-2 rounded-full bg-red-500" />
@@ -269,7 +266,7 @@ export function Todos() {
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'medium'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               <span className="h-2 w-2 rounded-full bg-yellow-500" />
@@ -283,7 +280,7 @@ export function Todos() {
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'low'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               <span className="h-2 w-2 rounded-full bg-blue-500" />
@@ -448,12 +445,6 @@ export function Todos() {
               onEdit={() => setEditingTodo(selectedTodo)}
               onDelete={() => handleDeleteTodo(selectedTodo.id)}
               onToggle={() => handleToggleTodo(selectedTodo.id)}
-              onClose={() => {
-                setSelectedTodo(null);
-                setEditingTodo(null);
-              }}
-              getPriorityColor={getPriorityColor}
-              dispatch={dispatch}
             />
           )}
         </DialogContent>
@@ -582,7 +573,7 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
   return (
     <Card
       onClick={onClick}
-      className="p-4 bg-card border-border hover:border-border transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
+      className="p-4 bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer group h-[100px] flex flex-col gap-1"
     >
       <div className="flex items-center gap-3">
         <Checkbox
@@ -668,12 +659,9 @@ interface ViewTodoContentProps {
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
-  onClose: () => void;
-  getPriorityColor: (priority: string) => string;
-  dispatch: (action: any) => void;
 }
 
-function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, getPriorityColor, dispatch }: ViewTodoContentProps) {
+function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoContentProps) {
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
   const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
 
@@ -698,7 +686,7 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, getPriorityC
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
             >
               <Edit2 className="h-4 w-4" />

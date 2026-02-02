@@ -169,7 +169,7 @@ export function Calendar() {
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border"
             />
           </div>
 
@@ -215,7 +215,7 @@ export function Calendar() {
                 "h-8 text-xs transition-colors",
                 calendarView === 'month'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               Month
@@ -228,7 +228,7 @@ export function Calendar() {
                 "h-8 text-xs transition-colors",
                 calendarView === 'week'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               Week
@@ -241,7 +241,7 @@ export function Calendar() {
                 "h-8 text-xs transition-colors",
                 calendarView === 'day'
                   ? 'bg-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
               Day
@@ -339,7 +339,7 @@ function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: M
           key={day.toString()}
           onClick={() => onDayClick(cloneDay)}
           className={cn(
-            "min-h-[120px] border-r border-b border-border p-2 cursor-pointer hover:bg-accent transition-colors",
+            "min-h-[120px] border-r border-b border-border p-2 cursor-pointer hover:bg-secondary transition-colors",
             !isSameMonth(day, monthStart) && "bg-background/50",
             isToday(day) && "bg-white/[0.02]"
           )}
@@ -413,7 +413,7 @@ function WeekView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mo
             key={day.toString()}
             onClick={() => onDayClick(day)}
             className={cn(
-              "text-center py-4 border-r border-border last:border-r-0 cursor-pointer hover:bg-accent transition-colors",
+              "text-center py-4 border-r border-border last:border-r-0 cursor-pointer hover:bg-secondary transition-colors",
               isToday(day) && "bg-white/[0.03]"
             )}
           >
@@ -449,7 +449,7 @@ function WeekView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mo
                 {dayEvents.length === 0 ? (
                   <div
                     onClick={() => onDayClick(day)}
-                    className="h-full flex items-center justify-center cursor-pointer hover:bg-accent rounded-lg transition-colors"
+                    className="h-full flex items-center justify-center cursor-pointer hover:bg-secondary rounded-lg transition-colors"
                   >
                     <div className="text-center">
                       <Plus className="h-6 w-6 text-foreground/20 mx-auto mb-2" />
@@ -606,7 +606,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
               {/* Time slot - clickable */}
               <div
-                className="flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer hover:bg-accent/50 transition-colors relative group"
+                className="flex-1 border-l border-border/50 pl-2 py-1 cursor-pointer hover:bg-secondary/40 transition-colors relative group"
                 onClick={() => handleTimeSlotClick(hour)}
               >
                 {/* Current time indicator */}
@@ -641,7 +641,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
                   e.stopPropagation();
                   onEventClick(event);
                 }}
-                className="absolute pointer-events-auto bg-card border border-border/80 rounded-md px-2 py-1 cursor-pointer hover:shadow-md hover:border-border transition-all overflow-hidden"
+                className="absolute pointer-events-auto bg-secondary/40 border border-border/60 rounded-md px-2 py-1 cursor-pointer hover:bg-secondary/60 hover:border-border hover:shadow-md transition-all overflow-hidden"
                 style={{
                   top: `${topOffset}px`,
                   height: `${height}px`,
@@ -715,7 +715,7 @@ function ViewEventContent({ event, onEdit, onDelete }: ViewEventContentProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
             >
               <Pen className="h-4 w-4" />

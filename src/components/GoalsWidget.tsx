@@ -65,7 +65,7 @@ export function GoalsWidget() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddGoal(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -80,7 +80,7 @@ export function GoalsWidget() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent h-7 gap-1"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
               onClick={() => dispatch(actions.setView('goals'))}
             >
               View All
@@ -101,7 +101,7 @@ export function GoalsWidget() {
           ) : (
             <div className="space-y-2">
               {goals.map((goal) => {
-                const progress = Math.round((goal.currentValue / goal.targetValue) * 100);
+                const progress = Math.round(((goal.currentValue ?? 0) / (goal.targetValue || 1)) * 100);
                 const daysLeft = goal.deadline ? differenceInDays(goal.deadline, new Date()) : null;
                 const isExpanded = expandedGoal === goal.id;
                 const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
@@ -109,7 +109,7 @@ export function GoalsWidget() {
                 return (
                   <div
                     key={goal.id}
-                    className="p-3 rounded-lg bg-muted hover:bg-accent border border-transparent hover:border-border transition-all cursor-pointer"
+                    className="p-3 rounded-md bg-secondary/40 border border-border/60 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                     onClick={() => setSelectedGoal(goal)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -121,7 +121,7 @@ export function GoalsWidget() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {goal.currentValue.toLocaleString()} / {goal.targetValue.toLocaleString()} {goal.unit}
+                          {(goal.currentValue ?? 0).toLocaleString()} / {(goal.targetValue ?? 0).toLocaleString()} {goal.unit}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export function GoalsWidget() {
                                 key={pct}
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground hover:bg-accent"
+                                className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground hover:bg-secondary"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleUpdateProgress(goal.id, Math.round(goal.targetValue * pct / 100));
@@ -241,7 +241,7 @@ export function GoalsWidget() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingGoal(selectedGoal)}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -266,20 +266,20 @@ export function GoalsWidget() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-muted-foreground">Progress</span>
                     <span className="text-3xl font-bold" style={{ color: selectedGoal.color }}>
-                      {Math.round((selectedGoal.currentValue / selectedGoal.targetValue) * 100)}%
+                      {Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}%
                     </span>
                   </div>
                   <div className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3">
                     <div
                       className="absolute inset-y-0 left-0 rounded-full transition-all"
                       style={{
-                        width: `${Math.min((selectedGoal.currentValue / selectedGoal.targetValue) * 100, 100)}%`,
+                        width: `${Math.min(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100, 100)}%`,
                         backgroundColor: selectedGoal.color
                       }}
                     />
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {selectedGoal.currentValue.toLocaleString()} / {selectedGoal.targetValue.toLocaleString()} {selectedGoal.unit}
+                    {(selectedGoal.currentValue ?? 0).toLocaleString()} / {(selectedGoal.targetValue ?? 0).toLocaleString()} {selectedGoal.unit}
                   </div>
                 </div>
 
