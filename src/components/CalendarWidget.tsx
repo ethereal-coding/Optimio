@@ -204,7 +204,7 @@ export function CalendarWidget() {
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5"
+                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5 min-w-0"
                     onClick={() => handleEventClick(event)}
                   >
                     {/* Top row: Color indicator + Title */}

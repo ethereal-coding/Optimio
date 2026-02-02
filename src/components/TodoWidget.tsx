@@ -138,7 +138,7 @@ export function TodoWidget() {
                 return (
                   <div
                     key={todo.id}
-                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-1.5"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-1.5 min-w-0"
                     onClick={() => setSelectedTodo(todo)}
                   >
                     {/* Top row: Checkbox + Priority dot + Title */}
