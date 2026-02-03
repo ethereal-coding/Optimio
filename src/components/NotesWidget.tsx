@@ -120,14 +120,14 @@ export function NotesWidget({ className }: NotesWidgetProps) {
         </div>
 
         {/* Search */}
-        <div className="relative mt-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative group w-[240px] mt-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
           <Input
             type="search"
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 h-8 text-sm bg-muted border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:bg-accent focus:border-border"
+            className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer group-hover:border-border group-hover:text-foreground/60 transition-colors focus:bg-accent focus:border-border focus:ring-0"
           />
         </div>
       </CardHeader>

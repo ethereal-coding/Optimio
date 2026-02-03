@@ -217,14 +217,14 @@ export function Notes() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative group w-[240px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
             <Input
               type="search"
               placeholder="Search notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
+              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer group-hover:border-border group-hover:text-foreground/60 transition-colors focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
 
