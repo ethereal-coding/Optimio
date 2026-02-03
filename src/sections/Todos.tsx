@@ -202,7 +202,7 @@ export function Todos() {
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-background px-6 py-4">
+      <div className="border-b border-border bg-background px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
