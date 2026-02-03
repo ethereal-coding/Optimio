@@ -118,9 +118,13 @@ export function TodayOverview({ className }: TodayOverviewProps) {
                 >
                   {/* Top row: Color indicator + Title */}
                   <div className="flex items-center gap-2">
+                    {/* Vertical glassy color line */}
                     <div
-                      className="h-2 w-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: event.color || '#666' }}
+                      className="h-4 w-1 rounded-full flex-shrink-0 border"
+                      style={{ 
+                        backgroundColor: event.color ? `${event.color}80` : '#66666680',
+                        borderColor: event.color || '#666'
+                      }}
                     />
                     <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
                   </div>

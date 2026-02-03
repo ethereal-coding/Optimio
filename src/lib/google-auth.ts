@@ -1,10 +1,23 @@
+/**
+ * CLEAN REBUILD - Professional Google OAuth 2.0 Authentication
+ * Features:
+ * - Persistent login (stay logged in until explicit sign out)
+ * - Token refresh before expiration
+ * - No popup spam (silent auth when possible)
+ * - Clear error handling
+ */
+
 import { db } from './db';
 import { debug } from './debug';
+import { 
+  saveAuthState, 
+  clearAuthState, 
+  updateLastVerified,
+  loadAuthState,
+  type AuthState 
+} from './auth-state';
 
-/**
- * CLEAN REBUILD - Simple Google OAuth 2.0 Authentication
- * No race conditions, clear error handling
- */
+const log = debug.log;
 
 // Google OAuth Configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -24,87 +37,187 @@ export interface GoogleUser {
 
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 
+let initPromise: Promise<void> | null = null;
+
+// Token refresh buffer (5 minutes before expiry)
+const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000;
+
 /**
  * Initialize Google Identity Services
  * Call this once when the app loads
  */
-export function initializeGoogleAuth(): void {
+export function initializeGoogleAuth(): Promise<void> {
+  // Return existing promise if already initializing
+  if (initPromise) return initPromise;
+  
+  // Return resolved promise if already initialized
+  if (tokenClient) return Promise.resolve();
+  
   if (typeof google === 'undefined' || !google.accounts) {
     console.error('❌ Google Identity Services not loaded');
-    return;
+    return Promise.reject(new Error('Google Identity Services not loaded'));
   }
 
-  debug.log('🔐 Initializing Google Auth...');
+  initPromise = new Promise((resolve, reject) => {
+    try {
+      log('🔐 Initializing Google Auth...');
 
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: SCOPES,
-    callback: async (response) => {
-      if (response.error) {
-        console.error('❌ OAuth error:', response.error);
-        return;
-      }
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: SCOPES,
+        prompt: '', // No prompt for silent auth when possible
+        callback: async (response) => {
+          if (response.error) {
+            console.error('❌ OAuth error:', response.error);
+            // Don't clear auth state on refresh failures - let user stay logged in
+            if (response.error !== 'access_denied') {
+              await handleAuthError(response.error);
+            }
+            return;
+          }
 
-      try {
-        // Store the access token
-        await db.authTokens.put({
-          id: 'google',
-          accessToken: response.access_token,
-          expiresAt: Date.now() + (parseInt(response.expires_in) * 1000),
-          scope: response.scope
-        });
+          try {
+            await handleSuccessfulAuth(response);
+          } catch (error) {
+            console.error('❌ Failed to process auth response:', error);
+          }
+        },
+      });
 
-        console.log('✅ Token stored successfully');
-
-        // Fetch and store user info
-        const userInfo = await fetchUserInfo(response.access_token);
-        await db.users.put({
-          id: userInfo.id,
-          email: userInfo.email,
-          name: userInfo.name,
-          picture: userInfo.picture,
-          preferences: {
-            theme: 'dark',
-            notifications: true,
-            startOfWeek: 0
-          },
-          createdAt: new Date()
-        });
-
-        console.log('✅ User info stored:', userInfo.email);
-
-        // Fetch and store calendar list
-        await fetchAndStoreCalendarList(userInfo.id);
-        console.log('✅ Calendar list synced');
-
-        // Reload the page to show authenticated state
-        window.location.reload();
-      } catch (error) {
-        console.error('❌ Failed to complete sign-in:', error);
-      }
-    },
+      log('✅ Google Auth initialized');
+      resolve();
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Auth:', error);
+      reject(error);
+    }
   });
 
-  debug.log('✅ Google Auth initialized');
+  return initPromise;
+}
+
+/**
+ * Handle successful authentication
+ */
+async function handleSuccessfulAuth(response: google.accounts.oauth2.TokenResponse): Promise<void> {
+  try {
+    // Store the access token
+    await db.authTokens.put({
+      id: 'google',
+      accessToken: response.access_token,
+      expiresAt: Date.now() + (parseInt(response.expires_in) * 1000),
+      scope: response.scope
+    });
+
+    // Fetch and store user info
+    const userInfo = await fetchUserInfo(response.access_token);
+    await db.users.put({
+      id: userInfo.id,
+      email: userInfo.email,
+      name: userInfo.name,
+      picture: userInfo.picture,
+      preferences: {
+        theme: 'dark',
+        notifications: true,
+        startOfWeek: 0
+      },
+      createdAt: new Date()
+    });
+
+    // Save persistent auth state
+    saveAuthState({
+      isAuthenticated: true,
+      userId: userInfo.id,
+      email: userInfo.email,
+      lastVerifiedAt: Date.now(),
+    });
+
+    log('✅ Auth successful for:', userInfo.email);
+
+    // Fetch calendar list in background
+    fetchAndStoreCalendarList(userInfo.id).catch(console.error);
+
+    // Notify app of auth change
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { isAuthenticated: true, user: userInfo } 
+    }));
+
+  } catch (error) {
+    console.error('❌ Failed to complete sign-in:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle auth errors
+ */
+async function handleAuthError(error: string): Promise<void> {
+  log('⚠️ Auth error:', error);
+  
+  // Only clear state for serious errors, not transient ones
+  if (error === 'access_denied' || error === 'invalid_client') {
+    await clearAllAuthData();
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { isAuthenticated: false } 
+    }));
+  }
 }
 
 /**
  * Sign in with Google
- * Opens OAuth consent screen
+ * Opens OAuth consent screen only when necessary
  */
-export function signIn(): void {
+export async function signIn(): Promise<void> {
+  await initializeGoogleAuth();
+  
   if (!tokenClient) {
-    console.error('❌ Token client not initialized. Call initializeGoogleAuth() first.');
-    return;
+    throw new Error('Token client not initialized');
   }
 
-  console.log('🔐 Starting sign-in flow...');
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+  log('🔐 Starting sign-in flow...');
+  
+  // Try silent auth first (no prompt)
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Sign-in timeout'));
+    }, 30000);
+
+    // Store original callback
+    const originalCallback = tokenClient!.callback;
+    
+    // Temporarily override callback for this request
+    tokenClient!.callback = async (response) => {
+      clearTimeout(timeout);
+      
+      // Restore original callback
+      tokenClient!.callback = originalCallback;
+      
+      if (response.error) {
+        if (response.error === 'access_denied' || response.error === 'user_logged_out') {
+          // User needs to see consent screen
+          log('Silent auth failed, showing consent screen...');
+          tokenClient!.requestAccessToken({ prompt: 'consent' });
+          return;
+        }
+        reject(new Error(response.error));
+        return;
+      }
+
+      try {
+        await handleSuccessfulAuth(response);
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    // Try silent auth first
+    tokenClient!.requestAccessToken({ prompt: '' });
+  });
 }
 
 /**
  * Sign out
- * Clears all auth data from IndexedDB
+ * Clears all auth data from IndexedDB and localStorage
  */
 export async function signOut(): Promise<void> {
   try {
@@ -112,10 +225,7 @@ export async function signOut(): Promise<void> {
     const tokens = await db.authTokens.get('google');
 
     // Clear all auth data
-    await db.authTokens.delete('google');
-    await db.users.clear();
-    await db.calendars.clear();
-    await db.events.clear();
+    await clearAllAuthData();
 
     // Revoke token with Google (optional, doesn't block sign-out)
     if (tokens?.accessToken) {
@@ -123,14 +233,21 @@ export async function signOut(): Promise<void> {
         await fetch(`https://oauth2.googleapis.com/revoke?token=${tokens.accessToken}`, {
           method: 'POST'
         });
-        console.log('✅ Token revoked with Google');
+        log('✅ Token revoked with Google');
       } catch (error) {
         // Don't fail sign-out if revocation fails
         console.warn('⚠️ Token revocation failed:', error);
       }
     }
 
-    console.log('✅ Signed out successfully');
+    log('✅ Signed out successfully');
+    
+    // Notify app
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { isAuthenticated: false } 
+    }));
+    
+    // Reload to clear any cached state
     window.location.reload();
   } catch (error) {
     console.error('❌ Sign out failed:', error);
@@ -139,7 +256,17 @@ export async function signOut(): Promise<void> {
 }
 
 /**
+ * Clear all authentication data
+ */
+async function clearAllAuthData(): Promise<void> {
+  await db.authTokens.delete('google');
+  await db.users.clear();
+  clearAuthState();
+}
+
+/**
  * Check if user is authenticated
+ * Validates token and attempts refresh if needed
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
@@ -149,14 +276,25 @@ export async function isAuthenticated(): Promise<boolean> {
       return false;
     }
 
-    // Check if token is expired (with 5-minute buffer)
-    const isExpired = tokens.expiresAt <= Date.now() + (5 * 60 * 1000);
+    // Check if token needs refresh (within 5 minutes of expiry)
+    const needsRefresh = tokens.expiresAt <= Date.now() + TOKEN_REFRESH_BUFFER;
 
-    if (isExpired) {
-      console.log('⚠️ Token expired');
-      return false;
+    if (needsRefresh) {
+      log('🔄 Token expiring soon, attempting refresh...');
+      const refreshed = await attemptTokenRefresh();
+      
+      if (refreshed) {
+        updateLastVerified();
+        return true;
+      }
+      
+      // Token refresh failed but we still have a valid token
+      // Return true to avoid immediate logout, will retry on next check
+      const stillValid = tokens.expiresAt > Date.now();
+      return stillValid;
     }
 
+    updateLastVerified();
     return true;
   } catch (error) {
     console.error('Failed to check auth status:', error);
@@ -165,24 +303,85 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
+ * Attempt to refresh the access token silently
+ */
+async function attemptTokenRefresh(): Promise<boolean> {
+  if (!tokenClient) {
+    try {
+      await initializeGoogleAuth();
+    } catch {
+      return false;
+    }
+  }
+
+  return new Promise((resolve) => {
+    if (!tokenClient) {
+      resolve(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      resolve(false);
+    }, 10000);
+
+    // Store original callback
+    const originalCallback = tokenClient.callback;
+    
+    tokenClient.callback = async (response) => {
+      clearTimeout(timeout);
+      
+      // Restore original callback
+      tokenClient!.callback = originalCallback;
+      
+      if (response.error) {
+        log('Token refresh failed:', response.error);
+        resolve(false);
+        return;
+      }
+
+      try {
+        // Just update the token, don't fetch user info again
+        await db.authTokens.put({
+          id: 'google',
+          accessToken: response.access_token,
+          expiresAt: Date.now() + (parseInt(response.expires_in) * 1000),
+          scope: response.scope
+        });
+        
+        log('✅ Token refreshed successfully');
+        resolve(true);
+      } catch (error) {
+        console.error('Failed to store refreshed token:', error);
+        resolve(false);
+      }
+    };
+
+    // Attempt silent refresh
+    tokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+
+/**
  * Get valid access token
- * Returns null if not authenticated or token expired
+ * Automatically refreshes if needed
  */
 export async function getAccessToken(): Promise<string | null> {
   try {
     const tokens = await db.authTokens.get('google');
 
     if (!tokens) {
-      console.log('⚠️ No tokens found');
       return null;
     }
 
-    // Check if token is expired (with 5-minute buffer)
-    const isExpired = tokens.expiresAt <= Date.now() + (5 * 60 * 1000);
+    // Check if token needs refresh
+    const needsRefresh = tokens.expiresAt <= Date.now() + TOKEN_REFRESH_BUFFER;
 
-    if (isExpired) {
-      console.log('⚠️ Token expired, please sign in again');
-      return null;
+    if (needsRefresh) {
+      const refreshed = await attemptTokenRefresh();
+      if (refreshed) {
+        const newTokens = await db.authTokens.get('google');
+        return newTokens?.accessToken || null;
+      }
     }
 
     return tokens.accessToken;
@@ -212,7 +411,6 @@ export async function getCurrentUser(): Promise<GoogleUser | null> {
 
 /**
  * Fetch user info from Google
- * @param accessToken - Valid access token
  */
 async function fetchUserInfo(accessToken: string): Promise<GoogleUser> {
   const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -234,14 +432,13 @@ async function fetchUserInfo(accessToken: string): Promise<GoogleUser> {
 
 /**
  * Fetch and store calendar list from Google
- * @param userId - User ID to associate calendars with
  */
 async function fetchAndStoreCalendarList(userId: string): Promise<void> {
   try {
     const { fetchCalendarList } = await import('./google-calendar');
     const calendars = await fetchCalendarList();
 
-    debug.log(`📅 Found ${calendars.length} calendars`);
+    log(`📅 Found ${calendars.length} calendars`);
 
     // Store each calendar in the database
     for (const calendar of calendars) {
@@ -254,23 +451,21 @@ async function fetchAndStoreCalendarList(userId: string): Promise<void> {
         accessRole: calendar.accessRole,
         primary: calendar.primary || false,
         selected: calendar.selected ?? true,
-        enabled: (calendar.primary || calendar.selected) ? 1 : 0, // Enable primary and selected by default (1/0 for Dexie)
+        enabled: (calendar.primary || calendar.selected) ? 1 : 0,
         userId: userId,
         lastSyncedAt: new Date().toISOString()
       });
     }
 
-    debug.log(`✅ Stored ${calendars.length} calendars in database`);
+    log(`✅ Stored ${calendars.length} calendars in database`);
   } catch (error) {
     console.error('Failed to fetch calendar list:', error);
-    // Don't throw - calendar list is not critical for initial sign-in
+    // Don't throw - calendar list is not critical
   }
 }
 
 /**
  * Make authenticated request to Google API
- * @param endpoint - Full URL to Google API endpoint
- * @param options - Fetch options
  */
 export async function googleApiRequest(
   endpoint: string,
@@ -291,3 +486,7 @@ export async function googleApiRequest(
     }
   });
 }
+
+// Export auth state types
+export type { AuthState };
+export { loadAuthState };

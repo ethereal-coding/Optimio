@@ -1,10 +1,9 @@
 /**
  * Custom hook for managing Google Calendar sync
- * Handles automatic background sync, retry logic, and state updates
+ * Handles automatic background sync every 10 seconds while authenticated
  */
 
-import { useEffect, useCallback, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { syncAllEvents } from '@/lib/event-sync';
 import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -12,6 +11,9 @@ import { useAppState, actions } from './useAppState';
 import { isAuthenticated } from '@/lib/google-auth';
 
 const log = logger('useCalendarSync');
+
+// Sync interval: 10 seconds
+const SYNC_INTERVAL = 10000;
 
 export interface SyncStatus {
   /** Last successful sync result */
@@ -43,16 +45,14 @@ interface UseCalendarSyncOptions {
   interval?: number;
   /** Whether to enable automatic background sync (default: true) */
   enabled?: boolean;
-  /** Maximum retry attempts (default: 3) */
-  maxRetries?: number;
 }
 
 /**
  * Hook for managing Google Calendar synchronization
  * 
  * Features:
- * - Automatic background sync with configurable interval
- * - Exponential backoff retry on failure
+ * - Automatic background sync every 10 seconds while authenticated
+ * - Graceful handling of auth failures (stops syncing until re-authenticated)
  * - Manual sync trigger
  * - Automatic state updates after sync
  * - Comprehensive error handling
@@ -73,130 +73,208 @@ interface UseCalendarSyncOptions {
  */
 export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalendarSyncReturn {
   const {
-    interval = 10000,
+    interval = SYNC_INTERVAL,
     enabled = true,
-    maxRetries = 3,
   } = options;
 
   const { dispatch } = useAppState();
-  const queryClient = useQueryClient();
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-
-  // Check if user is authenticated
-  const [isAuth, setIsAuth] = useState(false);
   
-  useEffect(() => {
-    const checkAuth = async () => {
-      const auth = await isAuthenticated();
-      setIsAuth(auth);
-    };
-    checkAuth();
-    
-    // Check auth status periodically
-    const interval = setInterval(checkAuth, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Main sync query with automatic background refetch
-  const {
-    data: syncResult,
-    error: syncError,
-    isPending,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: ['calendarSync', isAuth],
-    queryFn: async () => {
-      if (!isAuth) {
-        throw new Error('Not authenticated');
-      }
-      log.info('Starting sync');
-      const startTime = Date.now();
-      
-      try {
-        const result = await syncAllEvents();
-        const duration = Date.now() - startTime;
-        
-        log.info('Sync completed', {
-          durationMs: duration,
-          added: result.added,
-          updated: result.updated,
-          removed: result.removed,
-          errorCount: result.errors.length,
-        });
-
-        setLastSyncTime(new Date().toISOString());
-        return result;
-      } catch (error) {
-        log.error('Sync failed', error instanceof Error ? error : new Error(String(error)));
-        throw error;
-      }
-    },
-    enabled: isAuth, // Only run when authenticated
-    refetchInterval: enabled && isAuth ? interval : false,
-    retry: maxRetries,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff, max 30s
-    staleTime: interval / 2, // Consider data stale halfway through interval
+  // Auth state
+  const [isAuth, setIsAuth] = useState(false);
+  const authCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Sync state
+  const [syncState, setSyncState] = useState<SyncStatus>({
+    lastSync: null,
+    isPending: false,
+    isError: false,
+    error: null,
+    lastSyncTime: null,
   });
 
-  // Update local state when sync completes successfully
+  // Track if component is mounted
+  const isMountedRef = useRef(true);
+  
+  // Track last sync time to prevent duplicate syncs
+  const lastSyncRef = useRef<number>(0);
+
+  // Check auth status periodically (every 30 seconds)
   useEffect(() => {
-    if (!syncResult) return;
+    isMountedRef.current = true;
 
-    const updateState = async () => {
-      try {
-        // Reload all events from DB to ensure consistency
-        const enabledCalendars = await db.calendars
-          .where('enabled')
-          .equals(1)
-          .toArray();
-        
-        const enabledCalendarIds = new Set(enabledCalendars.map(c => c.id));
-        const events = await db.events.toArray();
-
-        // Hydrate dates and filter by enabled calendars
-        const hydratedEvents = events
-          .filter(event => !event.sourceCalendarId || enabledCalendarIds.has(event.sourceCalendarId))
-          .map(event => ({
-            ...event,
-            startTime: event.startTime instanceof Date ? event.startTime : new Date(event.startTime),
-            endTime: event.endTime instanceof Date ? event.endTime : new Date(event.endTime),
-          }));
-
-        // Replace all events atomically
-        dispatch(actions.setEvents('1', hydratedEvents));
-        
-        log.info('State updated after sync', { eventCount: hydratedEvents.length });
-      } catch (error) {
-        log.error('Failed to update state after sync', error instanceof Error ? error : new Error(String(error)));
+    const checkAuth = async () => {
+      const auth = await isAuthenticated();
+      if (isMountedRef.current) {
+        setIsAuth(auth);
       }
     };
 
-    updateState();
-  }, [syncResult, dispatch]);
+    // Initial check
+    checkAuth();
+
+    // Periodic auth check (less frequent than sync)
+    authCheckIntervalRef.current = setInterval(checkAuth, 30000);
+
+    // Listen for auth state changes
+    const handleAuthChange = (event: CustomEvent) => {
+      if (isMountedRef.current) {
+        setIsAuth(event.detail.isAuthenticated);
+      }
+    };
+
+    window.addEventListener('auth-state-changed', handleAuthChange as EventListener);
+
+    return () => {
+      isMountedRef.current = false;
+      if (authCheckIntervalRef.current) {
+        clearInterval(authCheckIntervalRef.current);
+      }
+      window.removeEventListener('auth-state-changed', handleAuthChange as EventListener);
+    };
+  }, []);
+
+  // Perform sync
+  const performSync = useCallback(async (): Promise<boolean> => {
+    // Prevent concurrent syncs
+    if (syncState.isPending) {
+      log.debug('Sync already in progress, skipping');
+      return false;
+    }
+
+    // Check auth before syncing
+    const auth = await isAuthenticated();
+    if (!auth) {
+      log.debug('Not authenticated, skipping sync');
+      setIsAuth(false);
+      return false;
+    }
+
+    // Update state to pending
+    setSyncState(prev => ({ ...prev, isPending: true, isError: false, error: null }));
+
+    const startTime = Date.now();
+    
+    try {
+      log.info('Starting calendar sync');
+      const result = await syncAllEvents();
+      const duration = Date.now() - startTime;
+      
+      log.info('Sync completed', {
+        durationMs: duration,
+        added: result.added,
+        updated: result.updated,
+        removed: result.removed,
+        errorCount: result.errors.length,
+      });
+
+      // Update sync state
+      const newSyncState: SyncStatus = {
+        lastSync: result,
+        isPending: false,
+        isError: result.errors.length > 0 && result.added === 0 && result.updated === 0 && result.removed === 0,
+        error: result.errors.length > 0 ? new Error(result.errors.join(', ')) : null,
+        lastSyncTime: new Date().toISOString(),
+      };
+
+      if (isMountedRef.current) {
+        setSyncState(newSyncState);
+        lastSyncRef.current = Date.now();
+      }
+
+      // Update local state with synced events
+      await updateLocalState(dispatch);
+
+      return true;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      log.error('Sync failed', { 
+        durationMs: duration, 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+
+      if (isMountedRef.current) {
+        setSyncState(prev => ({
+          ...prev,
+          isPending: false,
+          isError: true,
+          error: error instanceof Error ? error : new Error(String(error)),
+        }));
+      }
+
+      return false;
+    }
+  }, [dispatch, syncState.isPending]);
+
+  // Automatic background sync every 10 seconds when authenticated
+  useEffect(() => {
+    if (!enabled || !isAuth) return;
+
+    // Perform initial sync
+    performSync();
+
+    // Set up 10-second interval
+    const syncInterval = setInterval(() => {
+      // Only sync if enough time has passed since last sync
+      const timeSinceLastSync = Date.now() - lastSyncRef.current;
+      if (timeSinceLastSync >= interval - 1000) { // Allow 1 second buffer
+        performSync();
+      }
+    }, interval);
+
+    return () => {
+      clearInterval(syncInterval);
+    };
+  }, [enabled, isAuth, interval, performSync]);
 
   // Manual sync trigger
   const manualSync = useCallback(async () => {
     log.info('Manual sync triggered');
-    await refetch();
-  }, [refetch]);
+    await performSync();
+  }, [performSync]);
 
   // Retry failed sync
   const retry = useCallback(async () => {
     log.info('Retrying sync');
-    await queryClient.invalidateQueries({ queryKey: ['calendarSync'] });
-    await refetch();
-  }, [queryClient, refetch]);
+    await performSync();
+  }, [performSync]);
 
   return {
-    lastSync: syncResult ?? null,
-    isPending,
-    isError,
-    error: syncError instanceof Error ? syncError : syncError ? new Error(String(syncError)) : null,
-    lastSyncTime,
+    ...syncState,
     manualSync,
     retry,
   };
+}
+
+/**
+ * Update local state with synced events from database
+ */
+async function updateLocalState(dispatch: ReturnType<typeof useAppState>['dispatch']): Promise<void> {
+  try {
+    // Reload all events from DB to ensure consistency
+    const enabledCalendars = await db.calendars
+      .where('enabled')
+      .equals(1)
+      .toArray();
+    
+    const enabledCalendarIds = new Set(enabledCalendars.map(c => c.id));
+    const events = await db.events.toArray();
+
+    // Hydrate dates and filter by enabled calendars
+    const hydratedEvents = events
+      .filter(event => !event.sourceCalendarId || enabledCalendarIds.has(event.sourceCalendarId))
+      .map(event => ({
+        ...event,
+        startTime: event.startTime instanceof Date ? event.startTime : new Date(event.startTime),
+        endTime: event.endTime instanceof Date ? event.endTime : new Date(event.endTime),
+      }));
+
+    // Replace all events atomically
+    dispatch(actions.setEvents('1', hydratedEvents));
+    
+    log.info('Local state updated after sync', { eventCount: hydratedEvents.length });
+  } catch (error) {
+    log.error('Failed to update local state after sync', error instanceof Error ? error : new Error(String(error)));
+  }
 }
 
 export default useCalendarSync;

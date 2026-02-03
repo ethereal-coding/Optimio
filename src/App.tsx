@@ -29,7 +29,6 @@ function AppContent() {
   useCalendarSync({
     interval: 10000,
     enabled: true,
-    maxRetries: 3,
   });
 
   useKeyboardShortcuts({

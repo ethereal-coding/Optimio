@@ -165,7 +165,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                       {dayEvents.slice(0, 3).map((event, i) => (
                         <div
                           key={i}
-                          className="h-1 w-1 rounded-full"
+                          className="h-1 w-2 rounded-full"
                           style={{ backgroundColor: event.color || '#666' }}
                         />
                       ))}
