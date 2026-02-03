@@ -111,7 +111,7 @@ export function TodoWidget({ className }: TodoWidgetProps) {
               className={cn(
                 'text-xs capitalize flex-1 min-w-0 h-8 transition-colors rounded-sm',
                 filter === f
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
               onClick={() => setFilter(f)}
@@ -188,10 +188,10 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <span className={cn(
-                          'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
-                          todo.priority === 'high' && 'bg-red-500',
-                          todo.priority === 'medium' && 'bg-yellow-500',
-                          todo.priority === 'low' && 'bg-blue-500'
+                          'px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
+                          todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500/85',
+                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500/85',
+                          todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500/85'
                         )}>
                           {todo.priority}
                         </span>

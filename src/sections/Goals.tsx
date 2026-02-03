@@ -144,7 +144,7 @@ export function Goals() {
           </div>
           <Button
             onClick={() => setShowAddGoal(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
+            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Goal

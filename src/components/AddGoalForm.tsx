@@ -242,7 +242,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
         <Button
           type="submit"
           disabled={!title.trim() || !targetValue.trim()}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-10"
+          className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10"
         >
           {initialGoal ? 'Save Changes' : 'Add Goal'}
         </Button>

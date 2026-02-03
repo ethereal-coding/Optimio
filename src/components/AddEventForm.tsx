@@ -235,7 +235,7 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
         <Button
           type="submit"
           disabled={!title.trim()}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-10"
+          className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10"
         >
           {initialEvent ? 'Save Changes' : 'Add Event'}
         </Button>

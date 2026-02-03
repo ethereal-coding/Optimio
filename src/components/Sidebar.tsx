@@ -59,7 +59,7 @@ export function Sidebar({ isOpen: _isOpen = false, onToggle: _onToggle }: Sideba
                       className={cn(
                         'w-9 h-9 p-0 flex items-center justify-center transition-colors rounded-lg',
                         isActive
-                          ? 'bg-white text-black hover:bg-white hover:text-black'
+                          ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                           : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                       )}
                       onClick={() => dispatch(actions.setView(item.id as any))}
@@ -85,7 +85,7 @@ export function Sidebar({ isOpen: _isOpen = false, onToggle: _onToggle }: Sideba
                 className={cn(
                   'w-9 h-9 p-0 flex items-center justify-center transition-colors rounded-lg',
                   view === 'settings'
-                    ? 'bg-white text-black hover:bg-white hover:text-black'
+                    ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 )}
                 onClick={() => dispatch(actions.setView('settings'))}

@@ -202,7 +202,7 @@ export function Notes() {
           </div>
           <Button
             onClick={() => setShowAddNote(true)}
-            className="bg-white text-black hover:bg-white/90 h-10 px-4"
+            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Note
@@ -231,7 +231,7 @@ export function Notes() {
               className={cn(
                 "h-8 text-xs transition-colors",
                 filterMode === 'all'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-black hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -244,7 +244,7 @@ export function Notes() {
               className={cn(
                 "h-8 text-xs transition-colors",
                 filterMode === 'pinned'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-black hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -258,7 +258,7 @@ export function Notes() {
               className={cn(
                 "h-8 text-xs transition-colors",
                 filterMode === 'favorites'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-black hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -284,7 +284,7 @@ export function Notes() {
             {!searchQuery && (
               <Button
                 onClick={() => setShowAddNote(true)}
-                className="bg-white text-black hover:bg-white/90"
+                className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Note
@@ -1048,7 +1048,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={!title.trim()} className="bg-white text-black hover:bg-white/90">
+          <Button type="submit" disabled={!title.trim()} className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white">
             Save Changes
           </Button>
         </div>

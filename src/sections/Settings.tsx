@@ -266,7 +266,7 @@ export function Settings() {
                     <Button
                       onClick={handleSync}
                       disabled={syncing || !isGoogleConnected}
-                      className="w-full"
+                      className="w-full bg-green-500/25 border border-green-500/85 text-green-500 hover:bg-green-500/45 hover:text-green-400"
                     >
                       <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
                       {syncing ? 'Syncing...' : 'Sync Now'}
@@ -289,7 +289,7 @@ export function Settings() {
                     <Button
                       onClick={handleExport}
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 bg-white/75 border-white text-neutral-950 hover:bg-white hover:text-black"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Export Data
@@ -297,7 +297,7 @@ export function Settings() {
                     <Button
                       onClick={handleImport}
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 bg-white/75 border-white text-neutral-950 hover:bg-white hover:text-black"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Import Data
@@ -307,7 +307,7 @@ export function Settings() {
               </Card>
 
               {/* Danger Zone */}
-              <Card className="bg-red-500/5 border-red-500/20">
+              <Card className="bg-red-500/25 border-red-500/50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-medium text-red-400 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
@@ -321,7 +321,7 @@ export function Settings() {
                   <Button
                     onClick={handleClearData}
                     variant="outline"
-                    className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                    className="bg-red-500/25 border-red-500/85 text-red-500 hover:bg-red-500/45 hover:text-red-300"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Clear All Data

@@ -263,7 +263,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
-                  className="rounded-full bg-white text-black hover:bg-white/90 transition-all h-12 w-12 p-0 flex items-center justify-center"
+                  className="rounded-lg bg-white/85 border border-white text-neutral-950 hover:bg-white hover:border-white transition-all h-12 w-12 p-0 flex items-center justify-center"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleQuickAdd();

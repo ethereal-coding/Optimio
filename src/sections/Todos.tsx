@@ -209,7 +209,7 @@ export function Todos() {
           </div>
           <Button
             onClick={() => setShowAddTodo(true)}
-            className="bg-white text-black hover:bg-white/90 h-10 px-4"
+            className="bg-white/75 border border-white text-black hover:bg-white hover:border-white h-10 px-4"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Task
@@ -238,7 +238,7 @@ export function Todos() {
               className={cn(
                 "h-8 text-xs transition-colors",
                 priorityFilter === 'all'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -251,7 +251,7 @@ export function Todos() {
               className={cn(
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'high'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -265,7 +265,7 @@ export function Todos() {
               className={cn(
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'medium'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
@@ -279,7 +279,7 @@ export function Todos() {
               className={cn(
                 "h-8 text-xs transition-colors gap-1",
                 priorityFilter === 'low'
-                  ? 'bg-white text-black hover:bg-white hover:text-black'
+                  ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >

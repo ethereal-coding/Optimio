@@ -152,7 +152,7 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
         <Button
           type="submit"
           disabled={!title.trim()}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 h-10"
+          className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10"
         >
           {initialTodo ? 'Save Changes' : 'Add Task'}
         </Button>
