@@ -26,7 +26,11 @@ import { AddTodoForm } from './AddTodoForm';
 import { updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
 import { updateTodoWithSync, deleteTodoWithSync, toggleTodoWithSync } from '@/lib/todo-sync';
 
-export function TodayOverview() {
+interface TodayOverviewProps {
+  className?: string;
+}
+
+export function TodayOverview({ className }: TodayOverviewProps) {
   const { state, dispatch, getTodayEvents, getTodayTodos } = useAppState();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -66,7 +70,7 @@ export function TodayOverview() {
   };
 
   return (
-    <Card className="bg-card border-border rounded-lg">
+    <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
@@ -90,9 +94,9 @@ export function TodayOverview() {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-5">
+      <CardContent className="flex-1 overflow-hidden min-w-0 flex flex-col gap-4">
         {/* Today's Schedule */}
-        <div>
+        <div className="flex-1 min-h-0">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <h4 className="text-sm font-medium text-foreground">Schedule</h4>
@@ -104,7 +108,7 @@ export function TodayOverview() {
               <p className="text-sm text-muted-foreground">No events scheduled for today</p>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
               {todayEvents.slice(0, 4).map((event) => (
                 <div
                   key={event.id}
@@ -145,7 +149,7 @@ export function TodayOverview() {
         </div>
 
         {/* Today's Tasks */}
-        <div>
+        <div className="flex-1 min-h-0">
           <div className="flex items-center gap-2 mb-2">
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
             <h4 className="text-sm font-medium text-foreground">Tasks</h4>
@@ -159,7 +163,7 @@ export function TodayOverview() {
               <p className="text-sm text-muted-foreground">No tasks due today</p>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
               {todayTodos.slice(0, 5).map((todo) => (
                 <div
                   key={todo.id}

@@ -28,7 +28,11 @@ import {
 import { AddNoteForm } from './AddNoteForm';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync } from '@/lib/note-sync';
 
-export function NotesWidget() {
+interface NotesWidgetProps {
+  className?: string;
+}
+
+export function NotesWidget({ className }: NotesWidgetProps) {
   const { state, dispatch } = useAppState();
   const { notes } = state;
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,8 +82,8 @@ export function NotesWidget() {
   };
 
   return (
-    <Card className="bg-card border-border rounded-lg">
-      <CardHeader className="pb-3">
+    <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -127,8 +131,8 @@ export function NotesWidget() {
         </div>
       </CardHeader>
 
-      <CardContent>
-        <ScrollArea className="h-[260px] pr-3">
+      <CardContent className="flex-1 overflow-hidden min-w-0">
+        <ScrollArea className="h-full w-full pr-3">
           <div className="pb-2">
           {filteredNotes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

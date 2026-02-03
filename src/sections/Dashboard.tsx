@@ -36,7 +36,6 @@ import { addTodoWithSync } from '@/lib/todo-sync';
 import { addGoalWithSync } from '@/lib/goal-sync';
 import { addNoteWithSync } from '@/lib/note-sync';
 
-
 interface DashboardProps {
   onSearchOpen?: () => void;
 }
@@ -72,206 +71,214 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex h-screen w-full overflow-hidden bg-background">
         {/* Sidebar */}
         <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header onSearchOpen={onSearchOpen} />
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <Header onSearchOpen={onSearchOpen} />
 
-        {/* Render different views based on state */}
-        {state.view === 'notes' ? (
-          <Notes />
-        ) : state.view === 'goals' ? (
-          <Goals />
-        ) : state.view === 'todos' ? (
-          <Todos />
-        ) : state.view === 'calendar' ? (
-          <Calendar />
-        ) : state.view === 'settings' ? (
-          <Settings />
-        ) : (
-          /* Dashboard Content */
-          <main className="flex-1 overflow-auto custom-scrollbar p-4">
-            <div className="max-w-[1600px] mx-auto space-y-4">
-              {/* Quick Stats Row */}
-              <QuickStats />
+          {/* Render different views based on state */}
+          {state.view === 'notes' ? (
+            <Notes />
+          ) : state.view === 'goals' ? (
+            <Goals />
+          ) : state.view === 'todos' ? (
+            <Todos />
+          ) : state.view === 'calendar' ? (
+            <Calendar />
+          ) : state.view === 'settings' ? (
+            <Settings />
+          ) : (
+            /* Dashboard Content */
+            <main className="flex-1 overflow-auto custom-scrollbar p-4">
+              <div className="w-full h-full flex flex-col gap-4">
+                {/* Quick Stats Row */}
+                <QuickStats />
 
-              {/* Main Grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                {/* Left Column - Today's Overview */}
-                <div className="xl:col-span-2 space-y-4">
-                  <TodayOverview />
-
-                  {/* Calendar & Todos Row */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <CalendarWidget />
+                {/* Main Grid - Responsive */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-fr">
+                  {/* Today Overview - full width on mobile, 2 cols on xl */}
+                  <div className="md:col-span-2 xl:col-span-2 h-[400px] md:h-[480px] xl:h-[520px]">
+                    <TodayOverview />
+                  </div>
+                  
+                  {/* Tasks - full width mobile, 1 col xl */}
+                  <div className="h-[400px] md:h-[480px] xl:h-[520px]">
                     <TodoWidget />
                   </div>
-                </div>
-
-                {/* Right Column - Goals & Notes */}
-                <div className="space-y-4">
-                  <GoalsWidget />
-                  <NotesWidget />
+                  
+                  {/* Notes */}
+                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                    <NotesWidget />
+                  </div>
+                  
+                  {/* Goals */}
+                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                    <GoalsWidget />
+                  </div>
+                  
+                  {/* Calendar */}
+                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                    <CalendarWidget />
+                  </div>
                 </div>
               </div>
-            </div>
-          </main>
-        )}
-
-        {/* Quick Add Backdrop */}
-        {isQuickAddOpen && (
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsQuickAddOpen(false)}
-          />
-        )}
-
-        {/* Floating Action Buttons */}
-        <div className="fixed bottom-4 right-4 flex flex-col items-center gap-2 z-50">
-          {/* Todo Button */}
-          {isQuickAddOpen && (
-            <Dialog open={activeDialog === 'todo'} onOpenChange={(open) => !open && setActiveDialog(null)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDialog('todo');
-                    }}
-                  >
-                    <CheckSquare className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
-                  Add Task
-                </TooltipContent>
-              </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Add New Task</DialogTitle>
-                </DialogHeader>
-                <AddTodoForm onSubmit={handleAddTodo} onCancel={() => setActiveDialog(null)} />
-              </DialogContent>
-            </Dialog>
+            </main>
           )}
 
-          {/* Event Button */}
+          {/* Quick Add Backdrop */}
           {isQuickAddOpen && (
-            <Dialog open={activeDialog === 'event'} onOpenChange={(open) => !open && setActiveDialog(null)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDialog('event');
-                    }}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
-                  Add Event
-                </TooltipContent>
-              </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Add New Event</DialogTitle>
-                </DialogHeader>
-                <AddEventForm onSubmit={handleAddEvent} onCancel={() => setActiveDialog(null)} />
-              </DialogContent>
-            </Dialog>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsQuickAddOpen(false)}
+            />
           )}
 
-          {/* Goal Button */}
-          {isQuickAddOpen && (
-            <Dialog open={activeDialog === 'goal'} onOpenChange={(open) => !open && setActiveDialog(null)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDialog('goal');
-                    }}
-                  >
-                    <Target className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
-                  Add Goal
-                </TooltipContent>
-              </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Add New Goal</DialogTitle>
-                </DialogHeader>
-                <AddGoalForm onSubmit={handleAddGoal} onCancel={() => setActiveDialog(null)} />
-              </DialogContent>
-            </Dialog>
-          )}
+          {/* Floating Action Buttons */}
+          <div className="fixed bottom-4 right-4 flex flex-col items-center gap-2 z-50">
+            {/* Todo Button */}
+            {isQuickAddOpen && (
+              <Dialog open={activeDialog === 'todo'} onOpenChange={(open) => !open && setActiveDialog(null)}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDialog('todo');
+                      }}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
+                    Add Task
+                  </TooltipContent>
+                </Tooltip>
+                <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Add New Task</DialogTitle>
+                  </DialogHeader>
+                  <AddTodoForm onSubmit={handleAddTodo} onCancel={() => setActiveDialog(null)} />
+                </DialogContent>
+              </Dialog>
+            )}
 
-          {/* Note Button */}
-          {isQuickAddOpen && (
-            <Dialog open={activeDialog === 'note'} onOpenChange={(open) => !open && setActiveDialog(null)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-from-bottom-2 duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDialog('note');
-                    }}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
-                  Add Note
-                </TooltipContent>
-              </Tooltip>
-              <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Add New Note</DialogTitle>
-                </DialogHeader>
-                <AddNoteForm onSubmit={handleAddNote} onCancel={() => setActiveDialog(null)} />
-              </DialogContent>
-            </Dialog>
-          )}
+            {/* Event Button */}
+            {isQuickAddOpen && (
+              <Dialog open={activeDialog === 'event'} onOpenChange={(open) => !open && setActiveDialog(null)}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDialog('event');
+                      }}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
+                    Add Event
+                  </TooltipContent>
+                </Tooltip>
+                <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Add New Event</DialogTitle>
+                  </DialogHeader>
+                  <AddEventForm onSubmit={handleAddEvent} onCancel={() => setActiveDialog(null)} />
+                </DialogContent>
+              </Dialog>
+            )}
 
-          {/* Main Add Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                className="rounded-full bg-white text-black hover:bg-white/90 transition-all h-12 w-12 p-0 flex items-center justify-center"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleQuickAdd();
-                }}
-              >
-                <Plus className={`h-5 w-5 transition-transform duration-200 ${isQuickAddOpen ? 'rotate-45' : ''}`} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
-              {isQuickAddOpen ? 'Close' : 'Quick Add'}
-            </TooltipContent>
-          </Tooltip>
+            {/* Goal Button */}
+            {isQuickAddOpen && (
+              <Dialog open={activeDialog === 'goal'} onOpenChange={(open) => !open && setActiveDialog(null)}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDialog('goal');
+                      }}
+                    >
+                      <Target className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
+                    Add Goal
+                  </TooltipContent>
+                </Tooltip>
+                <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Add New Goal</DialogTitle>
+                  </DialogHeader>
+                  <AddGoalForm onSubmit={handleAddGoal} onCancel={() => setActiveDialog(null)} />
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* Note Button */}
+            {isQuickAddOpen && (
+              <Dialog open={activeDialog === 'note'} onOpenChange={(open) => !open && setActiveDialog(null)}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-lg bg-card border-border text-muted-foreground hover:text-foreground hover:bg-secondary hover:border-border transition-all h-9 w-9 p-0 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveDialog('note');
+                      }}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
+                    Add Note
+                  </TooltipContent>
+                </Tooltip>
+                <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Add New Note</DialogTitle>
+                  </DialogHeader>
+                  <AddNoteForm onSubmit={handleAddNote} onCancel={() => setActiveDialog(null)} />
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* Main Add Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  className="rounded-full bg-white text-black hover:bg-white/90 transition-all h-12 w-12 p-0 flex items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleQuickAdd();
+                  }}
+                >
+                  <Plus className={`h-5 w-5 transition-transform duration-200 ${isQuickAddOpen ? 'rotate-45' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" sideOffset={8} className="bg-popover border-border text-foreground">
+                {isQuickAddOpen ? 'Close' : 'Quick Add'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 }
