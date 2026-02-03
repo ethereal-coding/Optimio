@@ -188,7 +188,7 @@ export function TodayOverview({ className }: TodayOverviewProps) {
                         <span className={cn(
                           'h-2 w-2 rounded-full flex-shrink-0 border',
                           todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
-                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-200 border border-yellow-500',
+                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-600 border border-yellow-500',
                           todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
                         )} />
                         <p className={cn(
@@ -211,7 +211,7 @@ export function TodayOverview({ className }: TodayOverviewProps) {
                       <span className={cn(
                         'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
                         todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
-                        todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-200 border border-yellow-500',
+                        todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-600 border border-yellow-500',
                         todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
                       )}>
                         {todo.priority}
@@ -388,7 +388,7 @@ export function TodayOverview({ className }: TodayOverviewProps) {
                     <span className={cn(
                       'px-2 py-0.5 rounded text-xs font-medium',
                       selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
-                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-200 border border-yellow-500',
+                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-600 border border-yellow-500',
                       selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
                     )}>
                       {selectedTodo.priority}
