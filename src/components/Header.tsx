@@ -86,8 +86,8 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
   return (
     <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-background px-4">
       {/* Left - Date Navigation (only on dashboard) */}
-      {showDateSelector ? (
-        <div className="flex items-center gap-3">
+      {showDateSelector && (
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
@@ -124,12 +124,10 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
             )}
           </div>
         </div>
-      ) : (
-        <div /> // Empty spacer to maintain layout
       )}
 
       {/* Right - Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 ml-auto">
         {/* Search Bar */}
         <div className="hidden md:flex">
           <button

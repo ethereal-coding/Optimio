@@ -224,14 +224,14 @@ export function Todos() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong hover:text-foreground transition-colors focus:bg-secondary/50 focus:border-border-strong focus:ring-0 active:bg-secondary hover:bg-secondary/30"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
 
