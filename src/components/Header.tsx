@@ -134,8 +134,8 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
             onClick={onSearchOpen}
             className="relative group"
           >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <div className="w-[240px] h-10 pl-9 pr-3 bg-card border border-border text-muted-foreground rounded-md flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+            <div className="w-[240px] h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors">
               <span className="text-sm">Search...</span>
             </div>
           </button>
