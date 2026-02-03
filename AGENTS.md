@@ -239,25 +239,42 @@ git commit -m "fix: description of subsequent changes"
 
 ## Dashboard Layout
 
+Responsive 2-row grid layout with fixed 525px widget heights:
+
 ```tsx
-<main className="flex-1 overflow-auto custom-scrollbar p-4 min-w-0">
-  <div className="max-w-[1600px] mx-auto space-y-4 min-w-0">
+<main className="flex-1 overflow-auto custom-scrollbar">
+  <div className="w-full min-h-0 flex flex-col gap-4 p-6">
+    {/* Quick Stats Row */}
     <QuickStats />
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 min-w-0">
-      {/* Left Column */}
-      <div className="xl:col-span-2 space-y-4 min-w-0 max-w-full">
+
+    {/* Main Grid - All widgets 525px */}
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-fr">
+      {/* Row 1: Today Overview spans 2 cols, Todo on right */}
+      <div className="md:col-span-2 xl:col-span-2 h-[525px]">
         <TodayOverview />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0">
-          <CalendarWidget />
-          <TodoWidget />
-        </div>
       </div>
-      {/* Right Column */}
-      <div className="xl:col-span-1 space-y-4 min-w-0 max-w-full">
-        <GoalsWidget />
+      <div className="h-[525px]">
+        <TodoWidget />
+      </div>
+      
+      {/* Row 2: Notes, Goals, Calendar */}
+      <div className="h-[525px]">
         <NotesWidget />
+      </div>
+      <div className="h-[525px]">
+        <GoalsWidget />
+      </div>
+      <div className="h-[525px]">
+        <CalendarWidget />
       </div>
     </div>
   </div>
 </main>
 ```
+
+**Layout Rules:**
+- Row 1: TodayOverview (2 cols) + TodoWidget (1 col)
+- Row 2: NotesWidget + GoalsWidget + CalendarWidget (each 1 col)
+- All widgets: fixed `h-[525px]` for visual consistency
+- Responsive: stacks on mobile, 2-col on md, 3-col on xl
+- Padding: `p-6` (24px) around the content area
