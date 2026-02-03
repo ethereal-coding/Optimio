@@ -92,35 +92,35 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
             <Settings />
           ) : (
             /* Dashboard Content */
-            <main className="flex-1 overflow-auto custom-scrollbar p-4">
-              <div className="w-full h-full flex flex-col gap-4">
+            <main className="flex-1 overflow-auto custom-scrollbar">
+              <div className="w-full min-h-0 flex flex-col gap-4 p-6">
                 {/* Quick Stats Row */}
                 <QuickStats />
 
-                {/* Main Grid - Responsive */}
+                {/* Main Grid - All widgets 525px */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-fr">
                   {/* Today Overview - full width on mobile, 2 cols on xl */}
-                  <div className="md:col-span-2 xl:col-span-2 h-[400px] md:h-[480px] xl:h-[520px]">
+                  <div className="md:col-span-2 xl:col-span-2 h-[525px]">
                     <TodayOverview />
                   </div>
                   
                   {/* Tasks - full width mobile, 1 col xl */}
-                  <div className="h-[400px] md:h-[480px] xl:h-[520px]">
+                  <div className="h-[525px]">
                     <TodoWidget />
                   </div>
                   
                   {/* Notes */}
-                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                  <div className="h-[525px]">
                     <NotesWidget />
                   </div>
                   
                   {/* Goals */}
-                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                  <div className="h-[525px]">
                     <GoalsWidget />
                   </div>
                   
                   {/* Calendar */}
-                  <div className="h-[350px] md:h-[400px] xl:h-[450px]">
+                  <div className="h-[525px]">
                     <CalendarWidget />
                   </div>
                 </div>
