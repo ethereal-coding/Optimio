@@ -72,12 +72,12 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen w-full overflow-hidden bg-background">
-        {/* Sidebar */}
+      <div className="flex h-screen w-full bg-background">
+        {/* Sidebar - Fixed */}
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 ml-16 pt-14">
           <Header onSearchOpen={onSearchOpen} showDateSelector={state.view === 'dashboard'} />
 
           {/* Render different views based on state */}
@@ -93,7 +93,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
             <Settings />
           ) : (
             /* Dashboard Content */
-            <main className="flex-1 overflow-auto custom-scrollbar">
+            <main className="flex-1 overflow-auto custom-scrollbar h-[calc(100vh-3.5rem)]">
               <div className="w-full min-h-0 flex flex-col gap-4 p-6">
                 {/* Quick Stats Row */}
                 <QuickStats />

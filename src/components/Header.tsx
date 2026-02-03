@@ -84,7 +84,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   return (
-    <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-background px-4">
+    <header className="fixed top-0 left-16 right-0 h-14 flex items-center justify-between gap-4 border-b border-border bg-background px-4 z-40">
       {/* Left - Date Navigation (only on dashboard) */}
       {showDateSelector && (
         <div className="flex items-center gap-3 flex-shrink-0">

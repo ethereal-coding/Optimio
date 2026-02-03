@@ -38,7 +38,7 @@ export function Sidebar({ isOpen: _isOpen, onToggle: _onToggle }: SidebarProps) 
 
   return (
     <TooltipProvider delayDuration={300}>
-      <aside className="relative flex flex-col bg-background border-r border-border w-16">
+      <aside className="fixed left-0 top-0 h-screen flex flex-col bg-background border-r border-border w-16 z-40">
         {/* Logo */}
         <div className="flex h-14 items-center justify-center border-b border-border">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black">
