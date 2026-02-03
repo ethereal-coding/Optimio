@@ -164,7 +164,7 @@ export function Goals() {
               placeholder="Search goals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong hover:text-foreground transition-colors focus:bg-secondary/50 focus:border-border-strong focus:ring-0 active:bg-secondary hover:bg-secondary/30"
+              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-md flex items-center cursor-pointer hover:border-border-strong hover:text-foreground transition-colors focus:bg-secondary/50 focus:border-border-strong focus:ring-0 active:bg-secondary hover:bg-secondary/30"
             />
           </div>
         </div>
