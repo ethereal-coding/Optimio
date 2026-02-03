@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
+import type { Todo, CalendarEvent } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,10 +33,10 @@ interface TodayOverviewProps {
 
 export function TodayOverview({ className }: TodayOverviewProps) {
   const { state, dispatch, getTodayEvents, getTodayTodos } = useAppState();
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
-  const [selectedTodo, setSelectedTodo] = useState<any>(null);
-  const [editingTodo, setEditingTodo] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
 
   const todayEvents = getTodayEvents();
   const todayTodos = getTodayTodos();
@@ -44,7 +45,7 @@ export function TodayOverview({ className }: TodayOverviewProps) {
     await toggleTodoWithSync(todoId, dispatch, actions);
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
   };
 
@@ -54,13 +55,13 @@ export function TodayOverview({ className }: TodayOverviewProps) {
     setSelectedEvent(null);
   };
 
-  const handleUpdateEvent = async (event: any) => {
+  const handleUpdateEvent = async (event: CalendarEvent) => {
     await updateEventWithSync('1', event, dispatch, actions);
     setEditingEvent(null);
     setSelectedEvent(event);
   };
 
-  const handleUpdateTodo = async (todo: any) => {
+  const handleUpdateTodo = async (todo: Todo) => {
     await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
   };

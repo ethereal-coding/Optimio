@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
+import type { Event } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,8 +44,8 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
   const { calendars, selectedDate } = state;
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const allEvents = calendars.flatMap(cal => cal.events);
 
@@ -60,12 +61,12 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
     dispatch(actions.setSelectedDate(date));
   };
 
-  const handleAddEvent = (event: any) => {
+  const handleAddEvent = (event: Event) => {
     dispatch(actions.addEvent('1', event));
     setShowAddEvent(false);
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
   };
 
@@ -74,7 +75,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
     setSelectedEvent(null);
   };
 
-  const handleUpdateEvent = (event: any) => {
+  const handleUpdateEvent = (event: Event) => {
     dispatch(actions.updateEvent('1', event));
     setEditingEvent(null);
     setSelectedEvent(event);

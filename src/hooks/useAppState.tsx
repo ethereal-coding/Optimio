@@ -462,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 // Hook
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppState() {
   const context = useContext(AppContext);
   if (context === undefined) {
@@ -470,7 +471,8 @@ export function useAppState() {
   return context;
 }
 
-// Action creators
+// Action creators object - exported alongside hook
+// eslint-disable-next-line react-refresh/only-export-components
 export const actions = {
   setUser: (user: User | null): Action => ({ type: 'SET_USER', payload: user }),
   setCalendars: (calendars: Calendar[]): Action => ({ type: 'SET_CALENDARS', payload: calendars }),

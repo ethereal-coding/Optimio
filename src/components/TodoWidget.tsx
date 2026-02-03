@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
+import type { Todo } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -51,12 +52,12 @@ export function TodoWidget({ className }: TodoWidgetProps) {
     await deleteTodoWithSync(todoId, dispatch, actions);
   };
 
-  const handleAddTodo = async (todo: any) => {
+  const handleAddTodo = async (todo: Omit<Todo, 'id' | 'createdAt'>) => {
     await addTodoWithSync(todo, dispatch, actions);
     setShowAddTodo(false);
   };
 
-  const handleUpdateTodo = async (todo: any) => {
+  const handleUpdateTodo = async (todo: Todo) => {
     await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
   };

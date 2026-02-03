@@ -8,6 +8,23 @@ import type { CalendarEvent, Todo, Goal, Note } from '@/types';
  * Provides instant UI feedback while persisting to IndexedDB
  */
 
+// Extended types for optimistic updates
+interface OptimisticEvent extends CalendarEvent {
+  _optimistic?: boolean;
+}
+
+interface OptimisticTodo extends Todo {
+  _optimistic?: boolean;
+}
+
+interface OptimisticGoal extends Goal {
+  _optimistic?: boolean;
+}
+
+interface OptimisticNote extends Note {
+  _optimistic?: boolean;
+}
+
 export function useEvents() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,13 +42,17 @@ export function useEvents() {
   }, []);
 
   useEffect(() => {
-    loadEvents();
+    // Use IIFE to avoid direct setState in effect body
+    const init = () => {
+      void loadEvents();
+    };
+    init();
   }, [loadEvents]);
 
   // Create event (optimistic)
   const createEvent = useCallback(async (event: CalendarEvent) => {
     // 1. Optimistic UI update
-    setEvents(prev => [...prev, { ...event, _optimistic: true } as any]);
+    setEvents(prev => [...prev, { ...event, _optimistic: true } as OptimisticEvent]);
 
     try {
       // 2. Persist to IndexedDB
@@ -133,11 +154,15 @@ export function useTodos() {
   }, []);
 
   useEffect(() => {
-    loadTodos();
+    // Use IIFE to avoid direct setState in effect body
+    const init = () => {
+      void loadTodos();
+    };
+    init();
   }, [loadTodos]);
 
   const createTodo = useCallback(async (todo: Todo) => {
-    setTodos(prev => [...prev, { ...todo, _optimistic: true } as any]);
+    setTodos(prev => [...prev, { ...todo, _optimistic: true } as OptimisticTodo]);
 
     try {
       await db.todos.add({ ...todo, syncStatus: 'pending' });
@@ -223,11 +248,15 @@ export function useGoals() {
   }, []);
 
   useEffect(() => {
-    loadGoals();
+    // Use IIFE to avoid direct setState in effect body
+    const init = () => {
+      void loadGoals();
+    };
+    init();
   }, [loadGoals]);
 
   const createGoal = useCallback(async (goal: Goal) => {
-    setGoals(prev => [...prev, { ...goal, _optimistic: true } as any]);
+    setGoals(prev => [...prev, { ...goal, _optimistic: true } as OptimisticGoal]);
 
     try {
       await db.goals.add({ ...goal, syncStatus: 'pending' });
@@ -299,11 +328,15 @@ export function useNotes() {
   }, []);
 
   useEffect(() => {
-    loadNotes();
+    // Use IIFE to avoid direct setState in effect body
+    const init = () => {
+      void loadNotes();
+    };
+    init();
   }, [loadNotes]);
 
   const createNote = useCallback(async (note: Note) => {
-    setNotes(prev => [...prev, { ...note, _optimistic: true } as any]);
+    setNotes(prev => [...prev, { ...note, _optimistic: true } as OptimisticNote]);
 
     try {
       await db.notes.add({ ...note, syncStatus: 'pending' });

@@ -2,6 +2,21 @@ import { db } from './db';
 import type { Goal } from '@/types';
 import { debug } from './debug';
 
+interface GoalAction {
+  type: string;
+  payload?: unknown;
+}
+
+interface GoalActions {
+  addGoal: (goal: Goal) => GoalAction;
+  updateGoal: (goal: Goal) => GoalAction;
+  deleteGoal: (goalId: string) => GoalAction;
+  updateGoalProgress: (goalId: string, value: number) => GoalAction;
+  toggleMilestone: (goalId: string, milestoneId: string) => GoalAction;
+  addTaskToGoal: (goalId: string, taskId: string) => GoalAction;
+  removeTaskFromGoal: (goalId: string, taskId: string) => GoalAction;
+}
+
 /**
  * Goal Sync Helpers
  * Wraps goal actions with IndexedDB persistence
@@ -12,8 +27,8 @@ import { debug } from './debug';
  */
 export async function addGoalWithSync(
   goal: Goal,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   // Add to local state immediately
   dispatch(actions.addGoal(goal));
@@ -35,8 +50,8 @@ export async function addGoalWithSync(
  */
 export async function updateGoalWithSync(
   goal: Goal,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.updateGoal(goal));
@@ -58,8 +73,8 @@ export async function updateGoalWithSync(
  */
 export async function deleteGoalWithSync(
   goalId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   // Delete from local state immediately
   dispatch(actions.deleteGoal(goalId));
@@ -79,8 +94,8 @@ export async function deleteGoalWithSync(
 export async function updateGoalProgressWithSync(
   goalId: string,
   value: number,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.updateGoalProgress(goalId, value));
@@ -107,8 +122,8 @@ export async function updateGoalProgressWithSync(
 export async function toggleMilestoneWithSync(
   goalId: string,
   milestoneId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   // Toggle in local state immediately
   dispatch(actions.toggleMilestone(goalId, milestoneId));
@@ -140,8 +155,8 @@ export async function toggleMilestoneWithSync(
 export async function addTaskToGoalWithSync(
   goalId: string,
   taskId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   dispatch(actions.addTaskToGoal(goalId, taskId));
   
@@ -169,8 +184,8 @@ export async function addTaskToGoalWithSync(
 export async function removeTaskFromGoalWithSync(
   goalId: string,
   taskId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<void> {
   dispatch(actions.removeTaskFromGoal(goalId, taskId));
   
@@ -195,8 +210,8 @@ export async function removeTaskFromGoalWithSync(
  * Call this on app initialization
  */
 export async function loadGoalsFromDB(
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: GoalAction) => void,
+  actions: GoalActions
 ): Promise<Goal[]> {
   try {
     const goals = await db.goals.toArray();

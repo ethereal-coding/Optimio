@@ -31,7 +31,6 @@ import { AddGoalForm } from '@/components/AddGoalForm';
 import type { Goal } from '@/types';
 import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, addTaskToGoalWithSync, removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 import { toggleTodoWithSync, addTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
-import type { Todo } from '@/types';
 
 
 
@@ -44,13 +43,18 @@ export function Goals() {
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
-  // Auto-open goal from search
+  // Auto-open goal from search - use setTimeout to defer state update and avoid cascading render
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'goal') {
-      const goal = state.goals.find(g => g.id === state.selectedItemToOpen!.id);
+      const itemId = state.selectedItemToOpen.id;
+      const goal = state.goals.find(g => g.id === itemId);
       if (goal) {
-        setSelectedGoal(goal);
-        dispatch(actions.setSelectedItemToOpen(null));
+        // Defer state update to avoid cascading render
+        const timer = setTimeout(() => {
+          setSelectedGoal(goal);
+          dispatch(actions.setSelectedItemToOpen(null));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [state.selectedItemToOpen, state.goals, dispatch]);

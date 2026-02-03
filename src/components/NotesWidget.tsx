@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddNoteForm } from './AddNoteForm';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync } from '@/lib/note-sync';
+import type { Note } from '@/types';
 
 interface NotesWidgetProps {
   className?: string;
@@ -49,7 +50,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
   const pinnedNotes = filteredNotes.filter(n => n.isPinned);
   const recentNotes = filteredNotes.filter(n => !n.isPinned).slice(0, 5);
 
-  const handleAddNote = async (note: any) => {
+  const handleAddNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
     await addNoteWithSync(note, dispatch, actions);
     setShowAddNote(false);
   };
@@ -75,7 +76,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
     setSelectedNote(null);
   };
 
-  const handleUpdateNote = async (note: any) => {
+  const handleUpdateNote = async (note: Note) => {
     await updateNoteWithSync(note, dispatch, actions);
     setEditingNote(null);
     setSelectedNote(note);

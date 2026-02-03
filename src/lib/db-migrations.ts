@@ -3,6 +3,7 @@
  * Handles schema upgrades and data migrations
  */
 
+import type { Dexie } from 'dexie';
 import { logger } from './logger';
 
 const log = logger('db-migrations');
@@ -16,6 +17,11 @@ interface Migration {
   description: string;
   up: () => Promise<void>;
   down?: () => Promise<void>;
+}
+
+interface MetadataRecord {
+  key: string;
+  value: number;
 }
 
 // =============================================================================
@@ -39,10 +45,10 @@ const migrations: Migration[] = [
 // =============================================================================
 
 export class DatabaseMigrator {
-  private db: any; // Dexie instance
+  private db: Dexie;
   private currentVersion: number;
 
-  constructor(db: any, currentVersion: number) {
+  constructor(db: Dexie, currentVersion: number) {
     this.db = db;
     this.currentVersion = currentVersion;
   }
@@ -84,8 +90,9 @@ export class DatabaseMigrator {
    */
   private async getDatabaseVersion(): Promise<number> {
     try {
-      const version = await this.db.metadata?.get('schema_version');
-      return version?.value || 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const version = await (this.db as any).metadata?.get('schema_version');
+      return (version as MetadataRecord | undefined)?.value || 1;
     } catch {
       return 1;
     }
@@ -96,7 +103,8 @@ export class DatabaseMigrator {
    */
   private async setDatabaseVersion(version: number): Promise<void> {
     try {
-      await this.db.metadata?.put({ key: 'schema_version', value: version });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.db as any).metadata?.put({ key: 'schema_version', value: version });
     } catch (error) {
       log.warn('Failed to set database version', { error });
     }
@@ -119,10 +127,10 @@ export class DatabaseMigrator {
 /**
  * Check if a migration is needed
  */
-export async function isMigrationNeeded(db: any, targetVersion: number): Promise<boolean> {
+export async function isMigrationNeeded(db: Dexie, targetVersion: number): Promise<boolean> {
   try {
-    const currentVersion = await db.metadata?.get('schema_version');
-    return (currentVersion?.value || 1) < targetVersion;
+    const currentVersion = await (db as Dexie & { metadata?: Table<MetadataRecord, string> }).metadata?.get('schema_version');
+    return ((currentVersion as MetadataRecord | undefined)?.value || 1) < targetVersion;
   } catch {
     return true;
   }
@@ -131,12 +139,12 @@ export async function isMigrationNeeded(db: any, targetVersion: number): Promise
 /**
  * Get migration status
  */
-export async function getMigrationStatus(db: any): Promise<{
+export async function getMigrationStatus(db: Dexie): Promise<{
   currentVersion: number;
   pendingCount: number;
   migrations: Array<{ version: number; description: string }>;
 }> {
-  const currentVersion = await db.metadata?.get('schema_version').then((v: any) => v?.value || 1);
+  const currentVersion = await (db as Dexie & { metadata?: Table<MetadataRecord, string> }).metadata?.get('schema_version').then((v: MetadataRecord | undefined) => v?.value || 1);
   const pending = migrations.filter(m => m.version > currentVersion);
 
   return {

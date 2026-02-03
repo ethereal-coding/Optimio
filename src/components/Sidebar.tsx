@@ -30,7 +30,9 @@ const navItems = [
   { id: 'notes', label: 'Notes', icon: FileText },
 ];
 
-export function Sidebar({ isOpen: _isOpen = false, onToggle: _onToggle }: SidebarProps) {
+export function Sidebar({ isOpen: _isOpen, onToggle: _onToggle }: SidebarProps) {
+  void _isOpen;
+  void _onToggle;
   const { state, dispatch } = useAppState();
   const { view } = state;
 
@@ -62,7 +64,7 @@ export function Sidebar({ isOpen: _isOpen = false, onToggle: _onToggle }: Sideba
                           ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
                           : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                       )}
-                      onClick={() => dispatch(actions.setView(item.id as any))}
+                      onClick={() => dispatch(actions.setView(item.id as typeof view))}
                     >
                       <Icon className="size-5 flex-shrink-0" />
                     </Button>

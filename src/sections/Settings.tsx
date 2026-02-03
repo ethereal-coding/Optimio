@@ -31,10 +31,10 @@ import { CalendarPreferences } from '@/components/CalendarPreferences';
 export function Settings() {
   const { state, dispatch } = useAppState();
   const currentTheme = state.user?.preferences?.theme || 'dark';
-  const [exportStats, setExportStats] = useState<any>(null);
+  const [exportStats, setExportStats] = useState<{ totalSize: string; events: number; todos: number; goals: number; notes: number } | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
-  const [dbHealth, setDbHealth] = useState<any>(null);
+  const [dbHealth, setDbHealth] = useState<{ healthy: boolean; eventCount: number; todoCount: number; goalCount: number; noteCount: number } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
@@ -145,7 +145,7 @@ export function Settings() {
       alert('All data cleared');
       await loadStats();
       window.location.reload();
-    } catch (error) {
+    } catch {
       alert('Failed to clear data');
     }
   }

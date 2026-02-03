@@ -19,11 +19,12 @@ import {
 import { CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import type { Todo } from '@/types';
 
 interface AddTodoFormProps {
-  onSubmit: (todo: any) => void;
+  onSubmit: (todo: Todo) => void;
   onCancel: () => void;
-  initialTodo?: any;
+  initialTodo?: Partial<Todo>;
 }
 
 export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProps) {
@@ -82,7 +83,7 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label className="text-muted-foreground">Priority</Label>
-          <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+          <Select value={priority} onValueChange={(v: 'low' | 'medium' | 'high') => setPriority(v)}>
             <SelectTrigger className="bg-input border-border text-foreground h-10">
               <SelectValue />
             </SelectTrigger>

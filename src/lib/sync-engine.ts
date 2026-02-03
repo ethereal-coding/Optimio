@@ -24,7 +24,7 @@ export async function queueSync(
   entityType: 'event' | 'todo' | 'goal' | 'note',
   entityId: string,
   operation: 'CREATE' | 'UPDATE' | 'DELETE',
-  payload: any
+  payload: Record<string, unknown>
 ): Promise<void> {
   try {
     await db.syncQueue.add({
@@ -126,7 +126,7 @@ export async function processSyncQueue(): Promise<SyncResult> {
 async function syncEntityToGoogle(entry: SyncQueueEntry): Promise<{
   success: boolean;
   conflict?: boolean;
-  remoteVersion?: any;
+  remoteVersion?: Record<string, unknown>;
   error?: string;
 }> {
   // Simulate API call delay
@@ -147,7 +147,7 @@ async function syncEntityToGoogle(entry: SyncQueueEntry): Promise<{
  */
 async function detectConflict(
   localChange: SyncQueueEntry,
-  remoteVersion: any
+  remoteVersion: Record<string, unknown>
 ): Promise<void> {
   try {
     // Get local version
@@ -183,7 +183,7 @@ async function detectConflict(
 async function getLocalEntity(
   entityType: 'event' | 'todo' | 'goal' | 'note',
   entityId: string
-): Promise<any | null> {
+): Promise<Record<string, unknown> | null> {
   switch (entityType) {
     case 'event':
       return await db.events.get(entityId);
@@ -233,12 +233,13 @@ export async function resolveConflict(
         );
         break;
 
-      case 'merge':
+      case 'merge': {
         // Custom merge logic (entity-specific)
         const merged = mergeEntities(conflict.localVersion, conflict.remoteVersion);
         await updateLocalEntity(conflict.entityType, conflict.entityId, merged);
         await queueSync(conflict.entityType, conflict.entityId, 'UPDATE', merged);
         break;
+      }
     }
 
     // Mark conflict as resolved
@@ -260,7 +261,7 @@ export async function resolveConflict(
 async function updateLocalEntity(
   entityType: 'event' | 'todo' | 'goal' | 'note',
   entityId: string,
-  data: any
+  data: Record<string, unknown>
 ): Promise<void> {
   switch (entityType) {
     case 'event':
@@ -281,7 +282,7 @@ async function updateLocalEntity(
 /**
  * Merge two versions of an entity (simple strategy)
  */
-function mergeEntities(local: any, remote: any): any {
+function mergeEntities(local: Record<string, unknown>, remote: Record<string, unknown>): Record<string, unknown> {
   // Simple merge: use latest timestamp wins
   const localTime = new Date(local.updatedAt || local.createdAt).getTime();
   const remoteTime = new Date(remote.updatedAt || remote.createdAt).getTime();

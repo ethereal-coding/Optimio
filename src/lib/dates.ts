@@ -125,7 +125,7 @@ export function now(): string {
  * @param value - Any date-like value
  * @returns ISO 8601 string
  */
-export function normalizeDate(value: any): string {
+export function normalizeDate(value: unknown): string {
   // Already an ISO string
   if (typeof value === 'string' && isValidDateString(value)) {
     return value;

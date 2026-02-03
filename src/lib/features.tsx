@@ -197,10 +197,12 @@ function evaluateFeature(
 
 let globalOptions: EvaluateOptions = {};
 
-export function initializeFeatureFlags(options: EvaluateOptions): void {
+// eslint-disable-next-line react-refresh/only-export-components
+export function useInitializeFeatureFlags(options: EvaluateOptions): void {
   globalOptions = options;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFeature(featureName: string): boolean {
   const state = useMemo(() => {
     const config = FEATURES[featureName];
@@ -214,6 +216,7 @@ export function useFeature(featureName: string): boolean {
   return state;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useFeatureDetailed(featureName: string): FeatureState {
   const state = useMemo(() => {
     const config = FEATURES[featureName];
@@ -232,6 +235,7 @@ export function useFeatureDetailed(featureName: string): FeatureState {
   return state;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAllFeatures(): Record<string, FeatureState> {
   const states = useMemo(() => {
     const result: Record<string, FeatureState> = {};
@@ -248,14 +252,16 @@ export function useAllFeatures(): Record<string, FeatureState> {
 // Direct Access (for non-React code)
 // =============================================================================
 
-export function isFeatureEnabled(featureName: string, options?: EvaluateOptions): boolean {
+// eslint-disable-next-line react-refresh/only-export-components
+export function useIsFeatureEnabled(featureName: string, options?: EvaluateOptions): boolean {
   const config = FEATURES[featureName];
   if (!config) return false;
   
   return evaluateFeature(featureName, config, options || globalOptions).isEnabled;
 }
 
-export function getFeatureState(featureName: string, options?: EvaluateOptions): FeatureState {
+// eslint-disable-next-line react-refresh/only-export-components
+export function useGetFeatureState(featureName: string, options?: EvaluateOptions): FeatureState {
   const config = FEATURES[featureName];
   if (!config) {
     return {
@@ -274,6 +280,7 @@ export function getFeatureState(featureName: string, options?: EvaluateOptions):
 // Management (for dev tools)
 // =============================================================================
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const FeatureFlagsManager = {
   /** Get all available features */
   getAllFeatures: () => Object.keys(FEATURES),
@@ -314,4 +321,5 @@ export function FeatureFlag({ name, children, fallback = null }: FeatureFlagProp
   return isEnabled ? <>{children}</> : <>{fallback}</>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export default useFeature;

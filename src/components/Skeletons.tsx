@@ -339,7 +339,7 @@ export function CardSkeleton({ className }: SkeletonProps) {
 // Export All
 // =============================================================================
 
-export const Skeletons = {
+const skeletons = {
   Event: EventSkeleton,
   EventList: EventListSkeleton,
   Calendar: CalendarSkeleton,
@@ -353,4 +353,5 @@ export const Skeletons = {
   Card: CardSkeleton,
 };
 
-export default Skeletons;
+// eslint-disable-next-line react-refresh/only-export-components
+export default skeletons;

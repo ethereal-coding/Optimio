@@ -22,7 +22,7 @@ declare namespace google {
         client_id: string;
         scope: string;
         callback: (response: TokenResponse) => void;
-        error_callback?: (error: any) => void;
+        error_callback?: (error: unknown) => void;
       }
 
       function initTokenClient(config: TokenClientConfig): TokenClient;

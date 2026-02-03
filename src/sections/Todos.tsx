@@ -43,6 +43,7 @@ import { format, isPast, isToday, isTomorrow, addDays } from 'date-fns';
 import { AddTodoForm } from '@/components/AddTodoForm';
 import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import type { DragEndEvent } from '@dnd-kit/core';
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low';
 
@@ -67,13 +68,18 @@ export function Todos() {
     })
   );
 
-  // Auto-open todo from search
+  // Auto-open todo from search - use setTimeout to defer state update and avoid cascading render
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'todo') {
-      const todo = state.todos.find(t => t.id === state.selectedItemToOpen!.id);
+      const itemId = state.selectedItemToOpen.id;
+      const todo = state.todos.find(t => t.id === itemId);
       if (todo) {
-        setSelectedTodo(todo);
-        dispatch(actions.setSelectedItemToOpen(null));
+        // Defer state update to avoid cascading render
+        const timer = setTimeout(() => {
+          setSelectedTodo(todo);
+          dispatch(actions.setSelectedItemToOpen(null));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [state.selectedItemToOpen, state.todos, dispatch]);
@@ -140,7 +146,7 @@ export function Todos() {
     }
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
@@ -155,7 +161,7 @@ export function Todos() {
     const todo = todos.find(t => t.id === activeId);
     if (!todo) return;
 
-    let updatedTodo = { ...todo };
+    const updatedTodo = { ...todo };
 
     if (isOverColumn) {
       // Dropped over a column - move to that status

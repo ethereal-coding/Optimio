@@ -606,10 +606,8 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  // Use CSS custom property with a fixed width for hydration stability
+  // The width is set via inline style to ensure consistency between server and client
 
   return (
     <div
@@ -625,13 +623,8 @@ function SidebarMenuSkeleton({
         />
       )}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className="h-4 w-[70%] flex-1"
         data-sidebar="menu-skeleton-text"
-        style={
-          {
-            "--skeleton-width": width,
-          } as React.CSSProperties
-        }
       />
     </div>
   )
@@ -698,6 +691,7 @@ function SidebarMenuSubButton({
   )
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   Sidebar,
   SidebarContent,
@@ -724,3 +718,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+export { SIDEBAR_COOKIE_NAME, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE, SIDEBAR_WIDTH_ICON, SIDEBAR_KEYBOARD_SHORTCUT };
+/* eslint-enable react-refresh/only-export-components */

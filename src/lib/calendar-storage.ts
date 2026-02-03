@@ -6,6 +6,21 @@ import { getAccessToken, getCurrentUser } from './google-auth';
  * Simple operations with clear error handling
  */
 
+interface GoogleCalendarListItem {
+  id: string;
+  summary?: string;
+  description?: string;
+  backgroundColor?: string;
+  foregroundColor?: string;
+  accessRole?: string;
+  primary?: boolean;
+  selected?: boolean;
+}
+
+interface GoogleCalendarListResponse {
+  items?: GoogleCalendarListItem[];
+}
+
 /**
  * Fetch all calendars from Google Calendar API
  * @param accessToken - Valid access token (pass as parameter to avoid race conditions)
@@ -24,7 +39,7 @@ export async function fetchCalendarListFromGoogle(accessToken: string): Promise<
     throw new Error(`Failed to fetch calendar list: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data: GoogleCalendarListResponse = await response.json();
   const items = data.items || [];
 
   console.log(`✅ Received ${items.length} calendars from Google`);
@@ -36,7 +51,7 @@ export async function fetchCalendarListFromGoogle(accessToken: string): Promise<
   }
 
   // Transform Google Calendar format to our format
-  const calendars: GoogleCalendar[] = items.map((item: any) => ({
+  const calendars: GoogleCalendar[] = items.map((item) => ({
     id: item.id,
     summary: item.summary || 'Untitled Calendar',
     description: item.description,

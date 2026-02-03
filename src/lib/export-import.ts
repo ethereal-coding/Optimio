@@ -2,16 +2,18 @@ import { db } from './db';
 import { format } from 'date-fns';
 import { now } from './dates';
 import { debug } from './debug';
+import type { SyncableEvent } from './db';
+import type { Todo, Goal, Note, UserPreferences } from '@/types';
 
-export interface ExportData {
+interface ExportData {
   version: number;
   appName: string;
   exportedAt: string;
-  events: any[];
-  todos: any[];
-  goals: any[];
-  notes: any[];
-  settings: any;
+  events: SyncableEvent[];
+  todos: Todo[];
+  goals: Goal[];
+  notes: Note[];
+  settings: UserPreferences | Record<string, unknown>;
 }
 
 /**
@@ -199,6 +201,7 @@ export async function exportToCSV(
   entityType: 'events' | 'todos' | 'goals' | 'notes'
 ): Promise<void> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any[] = [];
     let filename: string;
     let headers: string[];

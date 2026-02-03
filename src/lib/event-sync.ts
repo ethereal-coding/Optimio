@@ -3,6 +3,7 @@ import { getAccessToken } from './google-auth';
 import { getEnabledCalendars } from './calendar-storage';
 import { logger } from './logger';
 import { analytics } from './analytics';
+import type { GoogleEventType } from '@/schemas/google-calendar';
 
 const log = logger('event-sync');
 
@@ -21,7 +22,7 @@ export async function fetchEventsFromCalendar(
   calendarId: string,
   accessToken: string,
   dateRange?: { start: Date; end: Date }
-): Promise<any[]> {
+): Promise<GoogleEventType[]> {
   // Default date range: 90 days past to 1 year future
   const start = dateRange?.start || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   const end = dateRange?.end || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
@@ -58,7 +59,7 @@ export async function fetchEventsFromCalendar(
  * Create a unique deduplication key for an event
  * This helps identify duplicates across calendars
  */
-function createEventDedupKey(event: any): string {
+function createEventDedupKey(event: GoogleEventType): string {
   // For recurring instances (like birthdays), use the recurringEventId + start time
   // This ensures the same birthday from different calendars is deduplicated
   if (event.recurringEventId) {
@@ -97,7 +98,7 @@ function parseLocalDate(dateStr: string): Date {
 /**
  * Convert Google Calendar event to our event format
  */
-function convertGoogleEventToAppEvent(googleEvent: any, calendarId: string): SyncableEvent {
+function convertGoogleEventToAppEvent(googleEvent: GoogleEventType, calendarId: string): SyncableEvent {
   // Handle start/end times (can be date or dateTime)
   const isAllDay = !googleEvent.start?.dateTime;
   
@@ -384,9 +385,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
       }
       if (removedEventIds.length > 0) {
         console.log(`  🚨 EMERGENCY DEBUG: Total removed events for this calendar: ${removedEventIds.length}`);
-      } else {
-
-      }
+      } // else: no removed events, nothing to log
 
       // Calculate per-calendar stats
       const addedCalendar = appEvents.filter(e => !existingEventIds.has(e.googleEventId || '')).length;

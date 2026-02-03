@@ -2,6 +2,20 @@ import { db } from './db';
 import type { Todo } from '@/types';
 import { debug } from './debug';
 
+/** Action type for dispatch function */
+interface TodoAction {
+  type: string;
+  payload?: unknown;
+}
+
+/** Actions object shape */
+interface TodoActions {
+  addTodo: (todo: Todo) => TodoAction;
+  updateTodo: (todo: Todo) => TodoAction;
+  deleteTodo: (todoId: string) => TodoAction;
+  toggleTodo: (todoId: string) => TodoAction;
+}
+
 /**
  * Todo Sync Helpers
  * Wraps todo actions with IndexedDB persistence
@@ -12,8 +26,8 @@ import { debug } from './debug';
  */
 export async function addTodoWithSync(
   todo: Todo,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
 ): Promise<void> {
   // Add to local state immediately
   dispatch(actions.addTodo(todo));
@@ -35,8 +49,8 @@ export async function addTodoWithSync(
  */
 export async function updateTodoWithSync(
   todo: Todo,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.updateTodo(todo));
@@ -58,8 +72,8 @@ export async function updateTodoWithSync(
  */
 export async function toggleTodoWithSync(
   todoId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
 ): Promise<void> {
   // Toggle in local state immediately
   dispatch(actions.toggleTodo(todoId));
@@ -86,8 +100,8 @@ export async function toggleTodoWithSync(
  */
 export async function deleteTodoWithSync(
   todoId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
 ): Promise<void> {
   // Delete from local state immediately
   dispatch(actions.deleteTodo(todoId));
@@ -106,8 +120,8 @@ export async function deleteTodoWithSync(
  * Call this on app initialization
  */
 export async function loadTodosFromDB(
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
 ): Promise<Todo[]> {
   try {
     const todos = await db.todos.toArray();

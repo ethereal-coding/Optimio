@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAppState, actions } from '@/hooks/useAppState';
+import { useAppState } from '@/hooks/useAppState';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ interface SearchResult {
   description?: string;
   metadata?: string;
   priority?: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color?: string;
 }
 
@@ -192,30 +192,11 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     });
 
     // Sort by score (highest first)
-    return allResults.sort((a, b) => b.score - a.score).map(({ score, ...result }) => result);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return allResults.sort((a, b) => b.score - a.score).map(({ score: _score, ...result }) => result);
   }, [query, state.calendars, state.todos, state.goals, state.notes]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % results.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
-      } else if (e.key === 'Enter' && results.length > 0) {
-        e.preventDefault();
-        handleSelectResult(results[selectedIndex]);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, results, selectedIndex]);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSelectResult = (result: SearchResult) => {
     // Set the item to open
     dispatch(actions.setSelectedItemToOpen({ type: result.type, id: result.id }));
@@ -237,6 +218,27 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     }
     onOpenChange(false);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!open) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % results.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
+      } else if (e.key === 'Enter' && results.length > 0) {
+        e.preventDefault();
+        handleSelectResult(results[selectedIndex]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, results, selectedIndex, handleSelectResult]);
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {

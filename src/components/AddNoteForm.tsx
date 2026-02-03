@@ -7,11 +7,12 @@ import { X, FileText, Plus, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
+import type { Note } from '@/types';
 
 interface AddNoteFormProps {
-  onSubmit: (note: any) => void;
+  onSubmit: (note: Note) => void;
   onCancel: () => void;
-  initialNote?: any;
+  initialNote?: Partial<Note>;
 }
 
 // Use Google Calendar colors for consistency, with Graphite (matching bg-card) first

@@ -106,7 +106,7 @@ export interface SyncQueueEntry {
   entityType: 'event' | 'todo' | 'goal' | 'note';
   entityId: string;
   operation: 'CREATE' | 'UPDATE' | 'DELETE';
-  payload: any;
+  payload: Record<string, unknown> | unknown[] | unknown;
   timestamp: number;
   retryCount: number;
   conflictResolution: 'pending' | 'synced' | 'local-wins' | 'remote-wins';
@@ -118,8 +118,8 @@ export interface Conflict {
   id?: number; // auto-increment
   entityType: 'event' | 'todo' | 'goal' | 'note';
   entityId: string;
-  localVersion: any;
-  remoteVersion: any;
+  localVersion: Record<string, unknown> | unknown[] | unknown;
+  remoteVersion: Record<string, unknown> | unknown[] | unknown;
   detectedAt: number;
   resolvedAt?: number;
   resolution?: 'pending' | 'local-wins' | 'remote-wins' | 'merge';

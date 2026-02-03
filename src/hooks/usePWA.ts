@@ -33,6 +33,20 @@ interface PWAActions {
 
 type PWAHookReturn = PWAState & PWAActions;
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+interface NavigatorStandalone extends Navigator {
+  standalone?: boolean;
+}
+
+interface ServiceWorkerMessage {
+  type?: string;
+  version?: string;
+}
+
 /**
  * Hook for managing PWA functionality
  * 
@@ -57,13 +71,13 @@ export function usePWA(): PWAHookReturn {
   const [version, setVersion] = useState<string | null>(null);
   
   // Store the install prompt event
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   
   // Check if app is installed
   useEffect(() => {
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const isIOSStandalone = (window.navigator as any).standalone === true;
+      const isIOSStandalone = (window.navigator as NavigatorStandalone).standalone === true;
       setIsInstalled(isStandalone || isIOSStandalone);
     };
     
@@ -80,7 +94,7 @@ export function usePWA(): PWAHookReturn {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
     
@@ -132,7 +146,7 @@ export function usePWA(): PWAHookReturn {
         // Get version from service worker
         if (registration.active) {
           const messageChannel = new MessageChannel();
-          messageChannel.port1.onmessage = (event) => {
+          messageChannel.port1.onmessage = (event: MessageEvent<ServiceWorkerMessage>) => {
             if (event.data.version) {
               setVersion(event.data.version);
             }
@@ -155,7 +169,7 @@ export function usePWA(): PWAHookReturn {
         });
         
         // Listen for messages from service worker
-        navigator.serviceWorker.addEventListener('message', (event) => {
+        navigator.serviceWorker.addEventListener('message', (event: MessageEvent<ServiceWorkerMessage>) => {
           if (event.data.type === 'SYNC_COMPLETE') {
             console.log('Background sync completed');
           }
@@ -166,7 +180,7 @@ export function usePWA(): PWAHookReturn {
       }
     };
     
-    registerSW();
+    void registerSW();
   }, []);
   
   // Install app
@@ -191,7 +205,7 @@ export function usePWA(): PWAHookReturn {
   const applyUpdate = useCallback(() => {
     if (!navigator.serviceWorker.controller) return;
     
-    navigator.serviceWorker.ready.then((registration) => {
+    void navigator.serviceWorker.ready.then((registration) => {
       registration.waiting?.postMessage('SKIP_WAITING');
       setUpdateAvailable(false);
       

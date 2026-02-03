@@ -17,14 +17,28 @@ import { debug } from './debug';
  * Wraps calendar actions with Google Calendar sync
  */
 
+// Action type for dispatch function
+interface Action {
+  type: string;
+  payload: unknown;
+}
+
+type DispatchFn = (action: Action) => void;
+
+interface ActionCreators {
+  addEvent: (calendarId: string, event: CalendarEvent) => Action;
+  updateEvent: (calendarId: string, event: CalendarEvent) => Action;
+  deleteEvent: (calendarId: string, eventId: string) => Action;
+}
+
 /**
  * Add event with Google Calendar sync
  */
 export async function addEventWithSync(
   calendarId: string,
   event: CalendarEvent,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: DispatchFn,
+  actions: ActionCreators
 ): Promise<CalendarEvent> {
   // Create local copy with temporary ID if needed
   const localEvent = { ...event };
@@ -92,8 +106,8 @@ export async function addEventWithSync(
 export async function updateEventWithSync(
   calendarId: string,
   event: CalendarEvent,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: DispatchFn,
+  actions: ActionCreators
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.updateEvent(calendarId, event));
@@ -132,8 +146,8 @@ export async function deleteEventWithSync(
   calendarId: string,
   eventId: string,
   event: CalendarEvent | undefined,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: DispatchFn,
+  actions: ActionCreators
 ): Promise<void> {
   // Delete from local state immediately
   dispatch(actions.deleteEvent(calendarId, eventId));
@@ -166,13 +180,13 @@ export async function deleteEventWithSync(
 async function processEventInstance(
   googleEvent: GoogleCalendarEvent,
   localCalendarId: string,
-  dispatch: (action: any) => void,
-  actions: any,
+  dispatch: DispatchFn,
+  actions: ActionCreators,
   sourceCalendarId?: string // Add source calendar ID parameter
 ): Promise<'added' | 'updated' | 'skipped'> {
   try {
     // Check if event already exists in IndexedDB from THIS calendar
-    let existingEvent = await db.events
+    const existingEvent = await db.events
       .where('googleEventId')
       .equals(googleEvent.id)
       .filter(e => !sourceCalendarId || e.sourceCalendarId === sourceCalendarId)
@@ -234,8 +248,8 @@ async function processEventInstance(
  */
 export async function syncFromGoogleCalendar(
   localCalendarId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: DispatchFn,
+  actions: ActionCreators
 ): Promise<CalendarEvent[]> {
   if (!await isAuthenticated()) {
     debug.log('Not authenticated, skipping Google Calendar sync');
@@ -334,8 +348,8 @@ export async function syncFromGoogleCalendar(
  */
 export function setupPeriodicSync(
   calendarId: string,
-  dispatch: (action: any) => void,
-  actions: any,
+  dispatch: DispatchFn,
+  actions: ActionCreators,
   intervalMinutes: number = 5
 ): () => void {
   let consecutiveErrors = 0;

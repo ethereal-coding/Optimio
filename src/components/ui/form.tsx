@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
+// Export FormProvider as Form (re-export for convenience)
 const Form = FormProvider
 
 type FormFieldContextValue<
@@ -155,6 +156,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   )
 }
 
+/* eslint-disable react-refresh/only-export-components */
 export {
   useFormField,
   Form,
@@ -165,3 +167,5 @@ export {
   FormMessage,
   FormField,
 }
+export { FormProvider } from "react-hook-form";
+/* eslint-enable react-refresh/only-export-components */

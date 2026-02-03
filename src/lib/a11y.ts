@@ -332,11 +332,13 @@ export function useFocusReturn() {
  * Hook to detect reduced motion preference
  */
 export function useReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
   
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
     
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
@@ -353,11 +355,13 @@ export function useReducedMotion(): boolean {
  * Hook to detect high contrast preference
  */
 export function useHighContrast(): boolean {
-  const [prefersHighContrast, setPrefersHighContrast] = useState(false);
+  const [prefersHighContrast, setPrefersHighContrast] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-contrast: high)').matches;
+  });
   
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-contrast: high)');
-    setPrefersHighContrast(mediaQuery.matches);
     
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersHighContrast(e.matches);

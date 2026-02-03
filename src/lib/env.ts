@@ -46,7 +46,6 @@ function validateEnv(): Env {
 
     // Log successful load (mask sensitive data)
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
       console.log(
         `%c✓ Environment loaded:\n` +
         `  App: ${env.VITE_APP_NAME} v${env.VITE_APP_VERSION}\n` +
@@ -73,7 +72,6 @@ function validateEnv(): Env {
         '║  Required: VITE_GOOGLE_CLIENT_ID                           ║\n' +
         '╚════════════════════════════════════════════════════════════╝\n';
       
-      // eslint-disable-next-line no-console
       console.error(errorMessage);
       
       throw new Error(`Environment validation failed: ${error.issues.map(i => i.message).join(', ')}`);

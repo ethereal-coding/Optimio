@@ -42,6 +42,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { AddNoteForm } from '@/components/AddNoteForm';
 import type { Note } from '@/types';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
 type FilterMode = 'all' | 'pinned' | 'favorites';
@@ -57,13 +58,18 @@ export function Notes() {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Auto-open note from search
+  // Auto-open note from search - use setTimeout to defer state update and avoid cascading render
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'note') {
-      const note = state.notes.find(n => n.id === state.selectedItemToOpen!.id);
+      const itemId = state.selectedItemToOpen.id;
+      const note = state.notes.find(n => n.id === itemId);
       if (note) {
-        setSelectedNote(note);
-        dispatch(actions.setSelectedItemToOpen(null));
+        // Defer state update to avoid cascading render
+        const timer = setTimeout(() => {
+          setSelectedNote(note);
+          dispatch(actions.setSelectedItemToOpen(null));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [state.selectedItemToOpen, state.notes, dispatch]);
@@ -144,7 +150,7 @@ export function Notes() {
     }
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -848,7 +854,7 @@ function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
                 : "bg-background border-border text-foreground placeholder:text-muted-foreground"
             )}
             style={{
-              ['--tw-ring-color' as any]: color
+              ['--tw-ring-color' as string]: color
             }}
             onFocus={(e) => {
               if (color && color !== 'hsl(var(--card))') {

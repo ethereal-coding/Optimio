@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import type { getExportStats } from '@/lib/export-import';
+import type { getSyncStatus } from '@/lib/sync-engine';
+import type { getDatabaseHealth } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -31,9 +34,9 @@ interface SettingsProps {
 }
 
 export function Settings({ open, onOpenChange }: SettingsProps) {
-  const [exportStats, setExportStats] = useState<any>(null);
-  const [syncStatus, setSyncStatus] = useState<any>(null);
-  const [dbHealth, setDbHealth] = useState<any>(null);
+  const [exportStats, setExportStats] = useState<Awaited<ReturnType<typeof getExportStats>> | null>(null);
+  const [syncStatus, setSyncStatus] = useState<Awaited<ReturnType<typeof getSyncStatus>> | null>(null);
+  const [dbHealth, setDbHealth] = useState<Awaited<ReturnType<typeof getDatabaseHealth>> | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
@@ -58,8 +61,8 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
     try {
       await exportData();
       alert('Data exported successfully!');
-    } catch (error) {
-      alert('Export failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } catch (err) {
+      alert('Export failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   }
 
@@ -76,8 +79,8 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
         const result = await importData(file);
         alert(result.message + `\n\nImported:\n- ${result.imported.events} events\n- ${result.imported.todos} todos\n- ${result.imported.goals} goals\n- ${result.imported.notes} notes`);
         await loadStats();
-      } catch (error) {
-        alert('Import failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      } catch (_error) {
+        alert('Import failed: ' + (_error instanceof Error ? _error.message : 'Unknown error'));
       }
     };
 
@@ -90,7 +93,7 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
       const result = await processSyncQueue();
       alert(result.message);
       await loadStats();
-    } catch (error) {
+    } catch {
       alert('Sync failed');
     } finally {
       setSyncing(false);
@@ -119,7 +122,7 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
       alert('All data cleared');
       await loadStats();
       window.location.reload();
-    } catch (error) {
+    } catch {
       alert('Failed to clear data');
     }
   }

@@ -3,6 +3,8 @@
  * Set DEBUG=true in localStorage to enable debug logging
  */
 
+type DebugArgs = unknown[];
+
 const isDebugEnabled = (): boolean => {
   if (typeof window === 'undefined') return false;
   try {
@@ -13,24 +15,24 @@ const isDebugEnabled = (): boolean => {
 };
 
 export const debug = {
-  log: (...args: any[]) => {
+  log: (...args: DebugArgs) => {
     if (isDebugEnabled()) {
       console.log('[DEBUG]', ...args);
     }
   },
 
-  warn: (...args: any[]) => {
+  warn: (...args: DebugArgs) => {
     if (isDebugEnabled()) {
       console.warn('[DEBUG]', ...args);
     }
   },
 
-  error: (...args: any[]) => {
+  error: (...args: DebugArgs) => {
     // Always log errors
     console.error('[ERROR]', ...args);
   },
 
-  info: (...args: any[]) => {
+  info: (...args: DebugArgs) => {
     if (isDebugEnabled()) {
       console.info('[INFO]', ...args);
     }

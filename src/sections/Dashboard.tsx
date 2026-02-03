@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
+import type { Todo, CalendarEvent, Goal, Note } from '@/types';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { TodayOverview } from '@/components/TodayOverview';
@@ -45,22 +46,22 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
   const [activeDialog, setActiveDialog] = useState<'todo' | 'event' | 'goal' | 'note' | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
-  const handleAddTodo = async (todo: any) => {
+  const handleAddTodo = async (todo: Todo) => {
     await addTodoWithSync(todo, dispatch, actions);
     setActiveDialog(null);
   };
 
-  const handleAddEvent = async (event: any) => {
+  const handleAddEvent = async (event: CalendarEvent) => {
     await addEventWithSync('1', event, dispatch, actions);
     setActiveDialog(null);
   };
 
-  const handleAddGoal = async (goal: any) => {
+  const handleAddGoal = async (goal: Goal) => {
     await addGoalWithSync(goal, dispatch, actions);
     setActiveDialog(null);
   };
 
-  const handleAddNote = async (note: any) => {
+  const handleAddNote = async (note: Note) => {
     await addNoteWithSync(note, dispatch, actions);
     setActiveDialog(null);
   };

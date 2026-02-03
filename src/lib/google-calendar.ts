@@ -27,7 +27,7 @@ export const GOOGLE_CALENDAR_COLORS: Record<string, { hex: string; name: string 
 
 // Reverse mapping: hex to colorId
 export const hexToGoogleColorId = (hex: string): string | undefined => {
-  const entry = Object.entries(GOOGLE_CALENDAR_COLORS).find(([_, color]) =>
+  const entry = Object.entries(GOOGLE_CALENDAR_COLORS).find(([, color]) =>
     color.hex.toLowerCase() === hex.toLowerCase()
   );
   return entry?.[0];
@@ -502,7 +502,7 @@ export async function deleteGoogleCalendarEvent(
 /**
  * List all calendars
  */
-export async function listGoogleCalendars(): Promise<any[]> {
+export async function listGoogleCalendars(): Promise<GoogleCalendarListEntry[]> {
   try {
     const response = await googleApiRequest(
       `${CALENDAR_API_BASE}/users/me/calendarList`
@@ -603,7 +603,7 @@ export function expandRecurringEvent(
       console.error(`Invalid date format for recurring event: ${masterEvent.start.date}`);
       return [masterEvent];
     }
-    const [_, monthStr, dayStr] = parts;
+    const [, monthStr, dayStr] = parts;
     const month = parseInt(monthStr, 10);
     const day = parseInt(dayStr, 10);
 

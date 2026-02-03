@@ -13,12 +13,13 @@ import { CalendarIcon, Clock, MapPin, X } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
+import type { Event } from '@/types';
 
 interface AddEventFormProps {
-  onSubmit: (event: any) => void;
+  onSubmit: (event: Event) => void;
   onCancel: () => void;
   initialDate?: Date | null;
-  initialEvent?: any;
+  initialEvent?: Partial<Event>;
 }
 
 // Use Google Calendar colors for consistency
@@ -35,7 +36,7 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
     return initialDate || new Date();
   };
 
-  const getInitialTime = (time: any, defaultTime: string) => {
+  const getInitialTime = (time: string | Date | undefined, defaultTime: string) => {
     if (!time) return defaultTime;
     const date = typeof time === 'string' ? new Date(time) : time;
     return format(date, 'HH:mm');
@@ -216,7 +217,7 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
         <select
           id="recurrence"
           value={recurrence}
-          onChange={(e) => setRecurrence(e.target.value as any)}
+          onChange={(e) => setRecurrence(e.target.value as 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly')}
           className="w-full h-10 px-3 bg-input border border-border text-foreground rounded-md focus:border-border focus:ring-0"
         >
           <option value="none">Does not repeat</option>

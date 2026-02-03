@@ -40,6 +40,7 @@ import {
 } from 'date-fns';
 import { AddEventForm } from '@/components/AddEventForm';
 import { addEventWithSync, updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
+import type { CalendarEvent } from '@/types';
 
 export function Calendar() {
   const { state, dispatch } = useAppState();
@@ -53,18 +54,23 @@ export function Calendar() {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Auto-open event from search
+  // Auto-open event from search - use setTimeout to defer state update and avoid cascading render
   useEffect(() => {
     if (state.selectedItemToOpen?.type === 'event') {
-      const event = state.calendars.flatMap(cal => cal.events).find(e => e.id === state.selectedItemToOpen!.id);
+      const itemId = state.selectedItemToOpen.id;
+      const event = state.calendars.flatMap(cal => cal.events).find(e => e.id === itemId);
       if (event) {
-        setSelectedEvent(event);
-        dispatch(actions.setSelectedItemToOpen(null));
+        // Defer state update to avoid cascading render
+        const timer = setTimeout(() => {
+          setSelectedEvent(event);
+          dispatch(actions.setSelectedItemToOpen(null));
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [state.selectedItemToOpen, state.calendars, dispatch]);
@@ -76,7 +82,7 @@ export function Calendar() {
     event.location?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddEvent = async (event: any) => {
+  const handleAddEvent = async (event: CalendarEvent) => {
     await addEventWithSync('1', event, dispatch, actions);
     setShowAddEvent(false);
     setSelectedDate(null);
@@ -87,7 +93,7 @@ export function Calendar() {
     setShowAddEvent(true);
   };
 
-  const handleUpdateEvent = async (event: any) => {
+  const handleUpdateEvent = async (event: CalendarEvent) => {
     await updateEventWithSync('1', event, dispatch, actions);
     setEditingEvent(null);
     setSelectedEvent(event);
@@ -312,10 +318,10 @@ export function Calendar() {
 // Month View Component
 interface MonthViewProps {
   currentDate: Date;
-  events: any[];
-  onEventClick: (event: any) => void;
+  events: CalendarEvent[];
+  onEventClick: (event: CalendarEvent) => void;
   onDayClick: (day: Date) => void;
-  getEventsForDay: (day: Date) => any[];
+  getEventsForDay: (day: Date) => CalendarEvent[];
 }
 
 function MonthView({ currentDate, onEventClick, onDayClick, getEventsForDay }: MonthViewProps) {
@@ -550,7 +556,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
   // Group overlapping events
   const getEventGroups = () => {
-    const groups: { event: any; column: number; totalColumns: number }[][] = [];
+    const groups: { event: CalendarEvent; column: number; totalColumns: number }[][] = [];
     
     dayEvents.forEach((event) => {
       const eventStart = typeof event.startTime === 'string' ? parseISO(event.startTime) : event.startTime;
@@ -730,7 +736,7 @@ function DayView({ currentDate, onEventClick, onDayClick, getEventsForDay }: Mon
 
 // View Event Content
 interface ViewEventContentProps {
-  event: any;
+  event: CalendarEvent;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -813,8 +819,8 @@ function ViewEventContent({ event, onEdit, onDelete }: ViewEventContentProps) {
 
 // Edit Event Content
 interface EditEventContentProps {
-  event: any;
-  onSave: (event: any) => void;
+  event: CalendarEvent;
+  onSave: (event: CalendarEvent) => void;
   onCancel: () => void;
 }
 

@@ -12,11 +12,12 @@ import {
 import { CalendarIcon, X, Target, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import type { Goal, Milestone } from '@/types';
 
 interface AddGoalFormProps {
-  onSubmit: (goal: any) => void;
+  onSubmit: (goal: Goal) => void;
   onCancel: () => void;
-  initialGoal?: any;
+  initialGoal?: Partial<Goal>;
 }
 
 export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProps) {
@@ -28,7 +29,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
   const [deadline, setDeadline] = useState<Date | undefined>(initialGoal?.deadline ? new Date(initialGoal.deadline) : undefined);
   const [category, setCategory] = useState(initialGoal?.category || '');
   const [milestones, setMilestones] = useState<{ id: string; title: string; targetValue: string }[]>(
-    initialGoal?.milestones?.map((m: any) => ({
+    initialGoal?.milestones?.map((m: Partial<Milestone>) => ({
       id: m.id,
       title: m.title,
       targetValue: m.targetValue?.toString() || ''
@@ -69,7 +70,7 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
       milestones: milestones
         .filter(m => m.title.trim())
         .map(m => {
-          const existingMilestone = initialGoal?.milestones?.find((em: any) => em.id === m.id);
+          const existingMilestone = initialGoal?.milestones?.find((em: Partial<Milestone>) => em.id === m.id);
           return {
             id: m.id,
             title: m.title.trim(),

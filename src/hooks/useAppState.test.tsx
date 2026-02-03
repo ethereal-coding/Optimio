@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { AppProvider, useAppState, actions } from './useAppState';
 import type { Todo, CalendarEvent, Goal, Note } from '@/types';

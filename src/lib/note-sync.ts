@@ -2,6 +2,18 @@ import { db } from './db';
 import type { Note } from '@/types';
 import { debug } from './debug';
 
+interface NoteAction {
+  type: string;
+  payload?: unknown;
+}
+
+interface NoteActions {
+  addNote: (note: Note) => NoteAction;
+  updateNote: (note: Note) => NoteAction;
+  deleteNote: (noteId: string) => NoteAction;
+  reorderNotes: (notes: Note[]) => NoteAction;
+}
+
 /**
  * Note Sync Helpers
  * Wraps note actions with IndexedDB persistence
@@ -12,8 +24,8 @@ import { debug } from './debug';
  */
 export async function addNoteWithSync(
   note: Note,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   // Add to local state immediately
   dispatch(actions.addNote(note));
@@ -35,8 +47,8 @@ export async function addNoteWithSync(
  */
 export async function updateNoteWithSync(
   note: Note,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.updateNote(note));
@@ -59,8 +71,8 @@ export async function updateNoteWithSync(
  */
 export async function deleteNoteWithSync(
   noteId: string,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   // Delete from local state immediately
   dispatch(actions.deleteNote(noteId));
@@ -79,8 +91,8 @@ export async function deleteNoteWithSync(
  */
 export async function toggleNotePinWithSync(
   note: Note,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   const updatedNote = { ...note, isPinned: !note.isPinned };
   
@@ -104,8 +116,8 @@ export async function toggleNotePinWithSync(
  */
 export async function toggleNoteFavoriteWithSync(
   note: Note,
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   const updatedNote = { ...note, isFavorite: !note.isFavorite };
   
@@ -129,8 +141,8 @@ export async function toggleNoteFavoriteWithSync(
  */
 export async function reorderNotesWithSync(
   notes: Note[],
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<void> {
   // Update local state immediately
   dispatch(actions.reorderNotes(notes));
@@ -154,8 +166,8 @@ export async function reorderNotesWithSync(
  * Call this on app initialization
  */
 export async function loadNotesFromDB(
-  dispatch: (action: any) => void,
-  actions: any
+  dispatch: (action: NoteAction) => void,
+  actions: NoteActions
 ): Promise<Note[]> {
   try {
     const notes = await db.notes.toArray();

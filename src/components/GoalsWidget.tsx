@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddGoalForm } from './AddGoalForm';
 import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, updateGoalProgressWithSync } from '@/lib/goal-sync';
+import type { Goal } from '@/types';
 
 interface GoalsWidgetProps {
   className?: string;
@@ -35,7 +36,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
   const [selectedGoal, setSelectedGoal] = useState<typeof goals[0] | null>(null);
   const [editingGoal, setEditingGoal] = useState<typeof goals[0] | null>(null);
 
-  const handleAddGoal = async (goal: any) => {
+  const handleAddGoal = async (goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>) => {
     await addGoalWithSync(goal, dispatch, actions);
     setShowAddGoal(false);
   };
@@ -50,7 +51,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
     setExpandedGoal(null);
   };
 
-  const handleUpdateGoal = async (goal: any) => {
+  const handleUpdateGoal = async (goal: Goal) => {
     await updateGoalWithSync(goal, dispatch, actions);
     setEditingGoal(null);
     setSelectedGoal(goal);
@@ -291,7 +292,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                   <div>
                     <label className="text-sm text-muted-foreground block mb-2">Milestones</label>
                     <div className="space-y-2">
-                      {selectedGoal.milestones.map((milestone: any) => (
+                      {selectedGoal.milestones.map((milestone) => (
                         <div
                           key={milestone.id}
                           className="flex items-center gap-2 text-sm"
