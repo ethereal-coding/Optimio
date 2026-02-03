@@ -157,7 +157,7 @@ export function Goals() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group w-[240px]">
+          <div className="relative group flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
             <Input
               type="search"

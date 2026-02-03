@@ -120,7 +120,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
         </div>
 
         {/* Search */}
-        <div className="relative group w-[240px] mt-2">
+        <div className="relative group mt-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
           <Input
             type="search"
