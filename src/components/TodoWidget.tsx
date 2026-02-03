@@ -156,10 +156,10 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className={cn(
-                            'h-2 w-2 rounded-full flex-shrink-0',
-                            todo.priority === 'high' && 'bg-red-500',
-                            todo.priority === 'medium' && 'bg-yellow-500',
-                            todo.priority === 'low' && 'bg-blue-500'
+                            'h-2 w-2 rounded-full flex-shrink-0 border',
+                            todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
+                            todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border border-yellow-500',
+                            todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
                           )} />
                           <p className={cn(
                             'text-sm text-foreground truncate',
@@ -189,9 +189,9 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <span className={cn(
                           'px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
-                          todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500/85',
-                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500/85',
-                          todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500/85'
+                          todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
+                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border-yellow-500',
+                          todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
                         )}>
                           {todo.priority}
                         </span>
@@ -270,9 +270,9 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                     <span className="text-muted-foreground">Priority:</span>
                     <span className={cn(
                       'px-2 py-0.5 rounded text-xs font-medium',
-                      selectedTodo.priority === 'high' && 'bg-red-500/20 text-red-400',
-                      selectedTodo.priority === 'medium' && 'bg-yellow-500/20 text-yellow-400',
-                      selectedTodo.priority === 'low' && 'bg-blue-500/20 text-blue-400'
+                      selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
+                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border-yellow-500',
+                      selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
                     )}>
                       {selectedTodo.priority}
                     </span>

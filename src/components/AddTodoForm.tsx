@@ -89,19 +89,19 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
             <SelectContent className="bg-card border-border">
               <SelectItem value="low" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(59, 130, 246)' }} />
+                  <span className="h-2 w-2 rounded-full bg-blue-500/50 border border-blue-500" />
                   Low
                 </span>
               </SelectItem>
               <SelectItem value="medium" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(234, 179, 8)' }} />
+                  <span className="h-2 w-2 rounded-full bg-yellow-500/50 border border-yellow-500" />
                   Medium
                 </span>
               </SelectItem>
               <SelectItem value="high" className="text-foreground/70 hover:text-foreground hover:bg-secondary">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'rgb(239, 68, 68)' }} />
+                  <span className="h-2 w-2 rounded-full bg-red-500/50 border border-red-500" />
                   High
                 </span>
               </SelectItem>

@@ -316,9 +316,9 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            todo.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                            todo.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-blue-500/20 text-blue-400'
+                            todo.priority === 'high' ? 'bg-red-500/50 text-red-400 border border-red-500' :
+                            todo.priority === 'medium' ? 'bg-yellow-500/50 text-yellow-400 border border-yellow-500' :
+                            'bg-blue-500/50 text-blue-400 border border-blue-500'
                           }`}>
                             {todo.priority}
                           </span>

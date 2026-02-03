@@ -186,10 +186,10 @@ export function Todos() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'high': return 'bg-red-500/50 text-red-400 border border-red-500';
+      case 'medium': return 'bg-yellow-500/50 text-yellow-400 border border-yellow-500';
+      case 'low': return 'bg-blue-500/50 text-blue-400 border border-blue-500';
+      default: return 'bg-gray-500/50 text-gray-400 border border-gray-500';
     }
   };
 
@@ -255,7 +255,7 @@ export function Todos() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
-              <span className="h-2 w-2 rounded-full bg-red-500" />
+              <span className="h-2 w-2 rounded-full bg-red-500/50 border border-red-500" />
               High
             </Button>
             <Button
@@ -269,7 +269,7 @@ export function Todos() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
-              <span className="h-2 w-2 rounded-full bg-yellow-500" />
+              <span className="h-2 w-2 rounded-full bg-yellow-500/50 border border-yellow-500" />
               Medium
             </Button>
             <Button
@@ -283,7 +283,7 @@ export function Todos() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
-              <span className="h-2 w-2 rounded-full bg-blue-500" />
+              <span className="h-2 w-2 rounded-full bg-blue-500/50 border border-blue-500" />
               Low
             </Button>
           </div>
@@ -612,7 +612,7 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* Priority badge */}
-          <span className={cn('px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize', getPriorityColor(todo.priority))}>
+          <span className={cn('px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors', getPriorityColor(todo.priority))}>
             {todo.priority}
           </span>
           {/* Goal badge */}
@@ -734,13 +734,13 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoCo
               {/* Priority tag */}
               <span
                 className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90 capitalize",
-                  todo.priority === 'high' && "bg-red-500",
-                  todo.priority === 'medium' && "bg-yellow-500",
-                  todo.priority === 'low' && "bg-blue-500"
+                  "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] capitalize border backdrop-blur-sm",
+                  todo.priority === 'high' && "bg-red-500/50 text-red-400 border border-red-500",
+                  todo.priority === 'medium' && "bg-yellow-500/50 text-yellow-400 border border-yellow-500",
+                  todo.priority === 'low' && "bg-blue-500/50 text-blue-400 border border-blue-500"
                 )}
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {todo.priority}
               </span>
 
