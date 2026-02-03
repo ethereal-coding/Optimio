@@ -484,7 +484,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
     <Card
       onClick={onClick}
       style={{
-        backgroundColor: hasCustomColor ? `${note.color}D9` : undefined, // D9 = 85% opacity in hex
+        backgroundColor: hasCustomColor ? `${note.color}CC` : undefined, // CC = 80% opacity in hex
         borderColor: hasCustomColor ? note.color : undefined // 100% opacity for border
       }}
       className={cn(
