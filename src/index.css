@@ -85,7 +85,6 @@
     --input: 0 0% 10%;               /* #1a1a1a */
     --input-foreground: 0 0% 96%;
     --input-border: 0 0% 20%;        /* #333333 */
-    --input-focus: 219 82% 63%;      /* Primary */
 
     /* Ring/Focus States */
     --ring: 219 82% 63%;
@@ -368,23 +367,6 @@
 
   .btn-ghost:hover {
     background-color: hsl(var(--foreground) / 0.05);
-  }
-
-  /* Input - Outlined style */
-  .input-outlined {
-    background-color: hsl(var(--input));
-    color: hsl(var(--input-foreground));
-    border: 1px solid hsl(var(--input-border));
-    border-radius: var(--radius-md);
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    transition: all 150ms ease;
-  }
-
-  .input-outlined:focus {
-    outline: none;
-    border-color: hsl(var(--input-focus));
-    box-shadow: 0 0 0 2px hsl(var(--input-focus) / 0.2);
   }
 
   /* Badge - Outlined style */

@@ -224,7 +224,7 @@ export function Notes() {
               placeholder="Search notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer group-hover:border-border group-hover:text-foreground/60 transition-colors focus:bg-accent focus:border-border focus:ring-0"
+              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong hover:text-foreground transition-colors focus:bg-secondary/50 focus:border-border-strong focus:ring-0 active:bg-secondary hover:bg-secondary/30"
             />
           </div>
 
