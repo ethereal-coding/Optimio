@@ -164,7 +164,7 @@ export function Goals() {
               placeholder="Search goals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
+              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
             />
           </div>
         </div>

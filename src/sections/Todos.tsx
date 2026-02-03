@@ -231,7 +231,7 @@ export function Todos() {
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md focus:bg-accent focus:border-border focus:ring-0"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
             />
           </div>
 
