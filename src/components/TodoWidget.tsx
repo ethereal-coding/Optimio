@@ -272,7 +272,7 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                     <span className={cn(
                       'px-2 py-0.5 rounded text-xs font-medium',
                       selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
-                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border-yellow-500',
+                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-200 border-yellow-500',
                       selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
                     )}>
                       {selectedTodo.priority}

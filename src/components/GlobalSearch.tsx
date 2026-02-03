@@ -243,7 +243,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'high': return 'text-red-400';
-      case 'medium': return 'text-yellow-400';
+      case 'medium': return 'text-yellow-200';
       case 'low': return 'text-green-400';
       default: return 'text-muted-foreground';
     }

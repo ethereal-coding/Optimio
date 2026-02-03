@@ -742,7 +742,7 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoCo
                 className={cn(
                   "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] capitalize border backdrop-blur-sm",
                   todo.priority === 'high' && "bg-red-500/50 text-red-400 border border-red-500",
-                  todo.priority === 'medium' && "bg-yellow-500/50 text-yellow-400 border border-yellow-500",
+                  todo.priority === 'medium' && "bg-yellow-500/50 text-yellow-200 border border-yellow-500",
                   todo.priority === 'low' && "bg-blue-500/50 text-blue-400 border border-blue-500"
                 )}
               >
