@@ -159,7 +159,7 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                           <span className={cn(
                             'h-2 w-2 rounded-full flex-shrink-0 border',
                             todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
-                            todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border border-yellow-500',
+                            todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-300 border border-yellow-500',
                             todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
                           )} />
                           <p className={cn(
@@ -191,7 +191,7 @@ export function TodoWidget({ className }: TodoWidgetProps) {
                         <span className={cn(
                           'px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
                           todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
-                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-400 border-yellow-500',
+                          todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-300 border-yellow-500',
                           todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
                         )}>
                           {todo.priority}
