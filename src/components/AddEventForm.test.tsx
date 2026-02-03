@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { AddEventForm } from './AddEventForm';
+import { AddEventForm } from './forms/AddEventForm';
 
 describe('AddEventForm', () => {
   it('should render with empty fields when creating new event', () => {

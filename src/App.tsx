@@ -3,13 +3,13 @@ import { AppProvider, useAppState, actions } from '@/hooks/useAppState';
 import { Dashboard } from '@/sections/Dashboard';
 import { debug } from '@/lib/debug';
 
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { GlobalSearch } from '@/components/GlobalSearch';
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { initializeDatabase, db } from '@/lib/db';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { getCurrentUser, isAuthenticated } from '@/lib/google-auth';
-import { AuthWall } from '@/components/AuthWall';
+import { AuthWall } from '@/components/layout/AuthWall';
 import { syncCalendarList } from '@/lib/calendar-storage';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { logger } from '@/lib/logger';

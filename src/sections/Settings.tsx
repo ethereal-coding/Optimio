@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui';
 import { debug } from '@/lib/debug';
 import {
   Settings as SettingsIcon,
@@ -26,7 +34,7 @@ import { syncAllEvents } from '@/lib/event-sync';
 import { SHORTCUTS, getShortcutDisplay } from '@/hooks/useKeyboardShortcuts';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { cn } from '@/lib/utils';
-import { CalendarPreferences } from '@/components/CalendarPreferences';
+import { CalendarPreferences } from '@/components/settings/CalendarPreferences';
 
 export function Settings() {
   const { state, dispatch } = useAppState();

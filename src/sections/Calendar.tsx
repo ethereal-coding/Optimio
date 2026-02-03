@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
-import { Button } from '@/components/ui/button';
-import { debug } from '@/lib/debug';
-import { Input } from '@/components/ui/input';
 import {
+  Button,
+  Input,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/ui';
+import { debug } from '@/lib/debug';
 import {
   Calendar as CalendarIcon,
   Search,
@@ -38,7 +38,7 @@ import {
   isWithinInterval,
   parseISO
 } from 'date-fns';
-import { AddEventForm } from '@/components/AddEventForm';
+import { AddEventForm } from '@/components/forms/AddEventForm';
 import { addEventWithSync, updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
 import type { CalendarEvent } from '@/types';
 
@@ -159,7 +159,7 @@ export function Calendar() {
           </div>
           <Button
             onClick={() => setShowAddEvent(true)}
-            className="bg-white/75 border border-white text-black hover:bg-white hover:border-white h-10 px-4"
+            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Event
@@ -168,14 +168,14 @@ export function Calendar() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
             />
           </div>
 
@@ -757,6 +757,7 @@ function ViewEventContent({ event, onEdit, onDelete }: ViewEventContentProps) {
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
+              aria-label="Edit event"
             >
               <Pen className="h-4 w-4" />
             </Button>
@@ -765,6 +766,7 @@ function ViewEventContent({ event, onEdit, onDelete }: ViewEventContentProps) {
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
               onClick={onDelete}
+              aria-label="Delete event"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

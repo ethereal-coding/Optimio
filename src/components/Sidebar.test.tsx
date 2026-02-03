@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppProvider } from '@/hooks/useAppState';
-import { Sidebar } from './Sidebar';
+import { Sidebar } from './layout/Sidebar';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AppProvider>{children}</AppProvider>

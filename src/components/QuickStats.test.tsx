@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AppProvider } from '@/hooks/useAppState';
-import { QuickStats } from './QuickStats';
+import { QuickStats } from './widgets/QuickStats';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AppProvider>{children}</AppProvider>

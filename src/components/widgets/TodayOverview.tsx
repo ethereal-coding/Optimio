@@ -22,8 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AddEventForm } from './AddEventForm';
-import { AddTodoForm } from './AddTodoForm';
+import { AddEventForm } from '@/components/forms/AddEventForm';
+import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
 import { updateTodoWithSync, deleteTodoWithSync, toggleTodoWithSync } from '@/lib/todo-sync';
 

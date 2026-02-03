@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Button,
+  Input,
+  Card,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/ui';
 import {
   DndContext,
   closestCenter,
@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, addDays } from 'date-fns';
-import { AddTodoForm } from '@/components/AddTodoForm';
+import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -691,6 +691,7 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoCo
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
+              aria-label="Edit task"
             >
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -699,6 +700,7 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoCo
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
               onClick={onDelete}
+              aria-label="Delete task"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

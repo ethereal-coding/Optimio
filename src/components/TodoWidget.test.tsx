@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AppProvider } from '@/hooks/useAppState';
-import { TodoWidget } from './TodoWidget';
+import { TodoWidget } from './widgets/TodoWidget';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AppProvider>{children}</AppProvider>

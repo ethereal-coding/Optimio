@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
+import type { Event } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,15 +33,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AddEventForm } from './AddEventForm';
+import { AddEventForm } from '@/components/forms/AddEventForm';
 
-export function CalendarWidget() {
+interface CalendarWidgetProps {
+  className?: string;
+}
+
+export function CalendarWidget({ className }: CalendarWidgetProps) {
   const { state, dispatch } = useAppState();
   const { calendars, selectedDate } = state;
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const allEvents = calendars.flatMap(cal => cal.events);
 
@@ -56,12 +61,12 @@ export function CalendarWidget() {
     dispatch(actions.setSelectedDate(date));
   };
 
-  const handleAddEvent = (event: any) => {
+  const handleAddEvent = (event: Event) => {
     dispatch(actions.addEvent('1', event));
     setShowAddEvent(false);
   };
 
-  const handleEventClick = (event: any) => {
+  const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
   };
 
@@ -70,7 +75,7 @@ export function CalendarWidget() {
     setSelectedEvent(null);
   };
 
-  const handleUpdateEvent = (event: any) => {
+  const handleUpdateEvent = (event: Event) => {
     dispatch(actions.updateEvent('1', event));
     setEditingEvent(null);
     setSelectedEvent(event);
@@ -97,30 +102,32 @@ export function CalendarWidget() {
   ).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
   return (
-    <Card className="bg-card border-border rounded-lg h-full">
+    <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <CardTitle className="text-sm font-medium text-foreground">Calendar</CardTitle>
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground mr-2">{format(currentMonth, 'MMMM yyyy')}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handlePreviousMonth}>
+            <span className="text-xs text-muted-foreground mr-2 truncate max-w-[100px]">
+              {format(currentMonth, 'MMMM yyyy')}
+            </span>
+            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handlePreviousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handleNextMonth}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handleNextMonth}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 min-w-0">
-        {/* Mini Calendar */}
-        <div className="space-y-2">
+      <CardContent className="flex-1 overflow-hidden min-w-0 flex flex-col">
+        {/* Mini Calendar - Fixed */}
+        <div className="space-y-2 min-w-0 flex-shrink-0">
           {/* Week days header */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 min-w-0">
             {weekDays.map((weekDay, index) => (
               <div
                 key={index}
@@ -131,8 +138,8 @@ export function CalendarWidget() {
             ))}
           </div>
 
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* Calendar grid - responsive day buttons */}
+          <div className="grid grid-cols-7 gap-1 min-w-0">
             {days.map((date) => {
               const isCurrentMonth = isSameMonth(date, currentMonth);
               const isSelected = isSameDay(date, selectedDate);
@@ -144,11 +151,11 @@ export function CalendarWidget() {
                   key={date.toISOString()}
                   onClick={() => handleDateClick(date)}
                   className={cn(
-                    'relative h-7 w-7 mx-auto rounded-md flex items-center justify-center text-sm transition-colors',
+                    'relative aspect-square w-full max-h-7 mx-auto rounded-md flex items-center justify-center text-xs transition-colors',
                     !isCurrentMonth && 'text-muted-foreground',
-                    isCurrentMonth && 'text-foreground hover:bg-secondary/60',
-                    isToday && 'bg-muted text-foreground font-medium',
-                    isSelected && 'bg-primary text-primary-foreground hover:bg-primary',
+                    isCurrentMonth && !isSelected && 'text-foreground hover:bg-white/85 hover:border hover:border-white hover:text-neutral-950',
+                    isToday && !isSelected && 'bg-muted text-foreground font-medium',
+                    isSelected && 'bg-white/75 border border-white text-neutral-950 font-medium',
                     !isSelected && !isToday && 'hover:text-foreground'
                   )}
                 >
@@ -158,7 +165,7 @@ export function CalendarWidget() {
                       {dayEvents.slice(0, 3).map((event, i) => (
                         <div
                           key={i}
-                          className="h-1 w-1 rounded-full"
+                          className="h-1 w-2 rounded-full"
                           style={{ backgroundColor: event.color || '#666' }}
                         />
                       ))}
@@ -170,8 +177,8 @@ export function CalendarWidget() {
           </div>
         </div>
 
-        {/* Selected Date Events */}
-        <div className="border-t border-border pt-3 min-w-0">
+        {/* Selected Date Events - Scrollable */}
+        <div className="border-t border-border pt-3 min-w-0 flex-1 overflow-hidden mt-3">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs text-foreground/50">
               {format(selectedDate, 'EEE, MMM d')}
@@ -180,7 +187,7 @@ export function CalendarWidget() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddEvent(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -194,32 +201,34 @@ export function CalendarWidget() {
             </Dialog>
           </div>
 
-          <ScrollArea className="h-[120px] w-full">
+          <ScrollArea className="h-full pr-3">
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="text-xs">No events for this day</p>
               </div>
             ) : (
-              <div className="space-y-1.5 min-w-0">
+              <div className="space-y-1.5 min-w-0 py-2">
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5 min-w-0 overflow-hidden"
+                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5 min-w-0 max-w-full"
                     onClick={() => handleEventClick(event)}
                   >
                     {/* Top row: Color indicator + Title */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div
                         className="h-2 w-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: event.color || '#666' }}
                       />
-                      <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
+                      </div>
                     </div>
                     
                     {/* Bottom row: Time */}
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
-                      <Clock className="h-3 w-3" />
-                      <span>{format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}</span>
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}</span>
                     </div>
                   </div>
                 ))}
@@ -241,7 +250,7 @@ export function CalendarWidget() {
             <>
               <DialogHeader>
                 <div className="flex items-start justify-between gap-4 pt-4">
-                  <DialogTitle className="text-lg text-foreground flex-1">{selectedEvent.title}</DialogTitle>
+                  <DialogTitle className="text-lg text-foreground flex-1 min-w-0">{selectedEvent.title}</DialogTitle>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
@@ -268,7 +277,7 @@ export function CalendarWidget() {
               <div className="space-y-4 pt-3">
                 <div className="p-4 rounded-lg bg-muted border border-border">
                   <div className="flex items-center gap-2 text-foreground/60 mb-2">
-                    <Clock className="h-4 w-4" />
+                    <Clock className="h-4 w-4 flex-shrink-0" />
                     <span className="text-sm">
                       {format(selectedEvent.startTime, 'EEEE, MMMM d, yyyy')}
                     </span>
@@ -282,7 +291,7 @@ export function CalendarWidget() {
                   <div>
                     <label className="text-sm text-muted-foreground block mb-1">Location</label>
                     <div className="flex items-center gap-2 text-foreground/70">
-                      <MapPin className="h-4 w-4" />
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
                       <p className="text-sm">{selectedEvent.location}</p>
                     </div>
                   </div>

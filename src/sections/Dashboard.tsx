@@ -1,37 +1,35 @@
 import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Todo, CalendarEvent, Goal, Note } from '@/types';
-import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
-import { TodayOverview } from '@/components/TodayOverview';
-import { CalendarWidget } from '@/components/CalendarWidget';
-import { TodoWidget } from '@/components/TodoWidget';
-import { GoalsWidget } from '@/components/GoalsWidget';
-import { NotesWidget } from '@/components/NotesWidget';
-import { QuickStats } from '@/components/QuickStats';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
+import { TodayOverview } from '@/components/widgets/TodayOverview';
+import { CalendarWidget } from '@/components/widgets/CalendarWidget';
+import { TodoWidget } from '@/components/widgets/TodoWidget';
+import { GoalsWidget } from '@/components/widgets/GoalsWidget';
+import { NotesWidget } from '@/components/widgets/NotesWidget';
+import { QuickStats } from '@/components/widgets/QuickStats';
 import { Notes } from '@/sections/Notes';
 import { Goals } from '@/sections/Goals';
 import { Todos } from '@/sections/Todos';
 import { Calendar } from '@/sections/Calendar';
 import { Settings } from '@/sections/Settings';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Plus, Calendar as CalendarIcon, CheckSquare, Target, FileText } from 'lucide-react';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { AddTodoForm } from '@/components/AddTodoForm';
-import { AddEventForm } from '@/components/AddEventForm';
-import { AddGoalForm } from '@/components/AddGoalForm';
-import { AddNoteForm } from '@/components/AddNoteForm';
+} from '@/components/ui';
+import { Plus, Calendar as CalendarIcon, CheckSquare, Target, FileText } from 'lucide-react';
+import { AddTodoForm } from '@/components/forms/AddTodoForm';
+import { AddEventForm } from '@/components/forms/AddEventForm';
+import { AddGoalForm } from '@/components/forms/AddGoalForm';
+import { AddNoteForm } from '@/components/forms/AddNoteForm';
 import { addEventWithSync } from '@/lib/calendar-sync';
 import { addTodoWithSync } from '@/lib/todo-sync';
 import { addGoalWithSync } from '@/lib/goal-sync';

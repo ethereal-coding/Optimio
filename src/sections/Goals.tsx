@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-
-import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Button,
+  Card,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+  Input,
+} from '@/components/ui';
 import {
   Target,
   Search,
@@ -26,9 +26,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
-import { Input } from '@/components/ui/input';
-import { AddGoalForm } from '@/components/AddGoalForm';
-import type { Goal } from '@/types';
+import { AddGoalForm } from '@/components/forms/AddGoalForm';
+import type { Goal, Todo } from '@/types';
 import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, addTaskToGoalWithSync, removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 import { toggleTodoWithSync, addTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 
@@ -157,14 +156,14 @@ export function Goals() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search goals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
             />
           </div>
         </div>
@@ -184,7 +183,7 @@ export function Goals() {
             {!searchQuery && (
               <Button
                 onClick={() => setShowAddGoal(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-white text-black hover:bg-white/90"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Goal
@@ -447,6 +446,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
               onClick={onEdit}
+              aria-label="Edit goal"
             >
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -455,6 +455,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
               onClick={onDelete}
+              aria-label="Delete goal"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

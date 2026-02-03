@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AddTodoForm } from './AddTodoForm';
+import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 
 interface TodoWidgetProps {

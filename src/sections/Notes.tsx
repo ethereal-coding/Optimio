@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import {
+  Button,
+  Input,
+  Textarea,
+  Card,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui';
 import {
   DndContext,
   closestCenter,
@@ -17,13 +22,6 @@ import {
   rectSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   FileText,
   Search,
@@ -39,7 +37,7 @@ import {
 import { PinIcon } from '@/components/icons/PinIcon';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
-import { AddNoteForm } from '@/components/AddNoteForm';
+import { AddNoteForm } from '@/components/forms/AddNoteForm';
 import type { Note } from '@/types';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -217,14 +215,14 @@ export function Notes() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 bg-card border border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
             />
           </div>
 
@@ -290,7 +288,7 @@ export function Notes() {
             {!searchQuery && (
               <Button
                 onClick={() => setShowAddNote(true)}
-                className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white"
+                className="bg-white text-black hover:bg-white/90"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Note
@@ -477,7 +475,8 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
         setIsOverflowing(contentRef.current.scrollHeight > 154); // detect if more than 8 lines
       }
     };
-    requestAnimationFrame(checkOverflow);
+    const rafId = requestAnimationFrame(checkOverflow);
+    return () => cancelAnimationFrame(rafId);
   }, [note.content]);
   
   return (
@@ -655,6 +654,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               size="icon"
               className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
               onClick={onEdit}
+              aria-label="Edit note"
             >
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -663,6 +663,7 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
               size="icon"
               className="h-8 w-8 text-white/80 hover:text-red-500 hover:bg-red-500/10"
               onClick={onDelete}
+              aria-label="Delete note"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

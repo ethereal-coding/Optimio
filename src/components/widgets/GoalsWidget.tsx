@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AddGoalForm } from './AddGoalForm';
+import { AddGoalForm } from '@/components/forms/AddGoalForm';
 import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, updateGoalProgressWithSync } from '@/lib/goal-sync';
 import type { Goal } from '@/types';
 

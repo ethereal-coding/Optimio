@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AppProvider } from '@/hooks/useAppState';
-import { NotesWidget } from './NotesWidget';
+import { NotesWidget } from './widgets/NotesWidget';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AppProvider>{children}</AppProvider>
