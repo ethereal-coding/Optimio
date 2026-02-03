@@ -313,6 +313,7 @@ interface NoteCardProps {
     updatedAt: Date;
     isPinned?: boolean;
     isFavorite?: boolean;
+    color?: string;
   };
   onClick: () => void;
   onTogglePin: (noteId: string, e: React.MouseEvent) => void;
@@ -320,32 +321,60 @@ interface NoteCardProps {
 }
 
 function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
+  // Color support
+  const hasCustomColor = !!note.color;
+  const isGraphite = note.color === 'hsl(var(--card))';
+  const useWhiteText = hasCustomColor && !isGraphite;
+  
   return (
     <div
       onClick={onClick}
-      className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-2"
+      style={{
+        backgroundColor: hasCustomColor ? `${note.color}CC` : undefined, // CC = 80% opacity
+        borderColor: hasCustomColor ? note.color : undefined // 100% opacity
+      }}
+      className={cn(
+        "p-3 rounded-md border transition-all cursor-pointer group flex flex-col gap-2",
+        hasCustomColor 
+          ? "border-2 hover:brightness-110" 
+          : "bg-card border-border hover:border-border-strong hover:bg-secondary/30",
+      )}
     >
       {/* Top row: Title with action buttons */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm text-foreground font-medium truncate">{note.title}</h4>
+          <h4 className={cn("text-sm font-medium truncate", useWhiteText ? "text-white" : "text-foreground")}>
+            {note.title}
+          </h4>
         </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-secondary"
+            className={cn(
+              "h-6 w-6 transition-colors",
+              useWhiteText 
+                ? "text-white/80 hover:text-white hover:bg-white/20" 
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            )}
             onClick={(e) => onTogglePin(note.id, e)}
           >
             <PinIcon className={cn(
-              "h-3 w-3",
-              note.isPinned && "fill-foreground text-foreground"
+              "h-3 w-3 transition-transform duration-200",
+              note.isPinned 
+                ? useWhiteText ? "fill-white text-white rotate-0" : "fill-foreground text-foreground rotate-0"
+                : "-rotate-45"
             )} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-foreground/20 hover:text-yellow-500 hover:bg-yellow-500/10"
+            className={cn(
+              "h-6 w-6 transition-colors",
+              useWhiteText 
+                ? "text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10" 
+                : "text-foreground/20 hover:text-yellow-500 hover:bg-yellow-500/10"
+            )}
             onClick={(e) => onToggleFavorite(note.id, e)}
           >
             <Star className={cn(
@@ -357,22 +386,34 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
       </div>
 
       {/* Content preview */}
-      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+      <p className={cn("text-xs line-clamp-2 leading-relaxed", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
         {note.content}
       </p>
       
       {/* Bottom row: Updated time on left; Tags on right */}
-      <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
+      <div 
+        className={cn(
+          "flex items-center justify-between gap-2 text-[10px] pt-1 border-t mt-auto",
+          useWhiteText ? "text-white/70 border-white/30" : "text-muted-foreground border-border/50"
+        )}
+        style={{ borderColor: hasCustomColor ? note.color : undefined }}
+      >
         <span>{formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
         {note.tags.length > 0 && (
           <div className="flex items-center gap-1 flex-shrink-0">
             {note.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50">
+              <span 
+                key={tag} 
+                className={cn(
+                  "px-1.5 py-0.5 rounded",
+                  useWhiteText ? "bg-white/20 text-white/80" : "bg-secondary text-foreground/50"
+                )}
+              >
                 {tag}
               </span>
             ))}
             {note.tags.length > 2 && (
-              <span className="text-foreground/30">+{note.tags.length - 2}</span>
+              <span className={useWhiteText ? "text-white/50" : "text-foreground/30"}>+{note.tags.length - 2}</span>
             )}
           </div>
         )}
