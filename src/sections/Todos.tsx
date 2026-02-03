@@ -193,7 +193,7 @@ export function Todos() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-red-500/50 text-red-400 border border-red-500';
-      case 'medium': return 'bg-yellow-500/50 text-yellow-300 border border-yellow-500';
+      case 'medium': return 'bg-yellow-500/50 text-yellow-200 border border-yellow-500';
       case 'low': return 'bg-blue-500/50 text-blue-400 border border-blue-500';
       default: return 'bg-gray-500/50 text-gray-400 border border-gray-500';
     }
