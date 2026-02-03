@@ -460,7 +460,6 @@ function SortableNoteCard(props: NoteCardProps) {
 
 function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProps) {
   // Get color style for the note
-  const colorStyle = note.color ? { backgroundColor: note.color } : {};
   const hasCustomColor = !!note.color;
   // Check if this is the light Graphite color - if not, use white text
   const isGraphite = note.color === 'hsl(var(--card))';
@@ -485,15 +484,15 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
     <Card
       onClick={onClick}
       style={{
-        ...colorStyle,
-        borderColor: hasCustomColor ? note.color : undefined
+        backgroundColor: hasCustomColor ? `${note.color}D9` : undefined, // D9 = 85% opacity in hex
+        borderColor: hasCustomColor ? note.color : undefined // 100% opacity for border
       }}
       className={cn(
         "p-4 transition-all cursor-pointer group flex flex-col shadow-none gap-1 h-[280px]",
         hasCustomColor 
           ? "border-2 hover:brightness-110" 
           : "border border-border hover:bg-secondary/50",
-        hasCustomColor ? "bg-opacity-20" : "bg-card"
+        !hasCustomColor && "bg-card"
       )}
     >
       {/* Top: Title only */}
@@ -562,7 +561,13 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
       </div>
 
       {/* Bottom section: Updated, Folder, Images on left; Tags on right */}
-      <div className={cn("flex items-center justify-between gap-2 pt-2 border-t", useWhiteText ? "border-white/30" : "border-border")}>
+      <div 
+        className={cn(
+          "flex items-center justify-between gap-2 pt-2 border-t",
+          !hasCustomColor && (useWhiteText ? "border-white/30" : "border-border")
+        )}
+        style={{ borderColor: hasCustomColor ? note.color : undefined }}
+      >
         <div className="flex items-center gap-2 text-[10px] min-w-0">
           <span>Updated {formatDistanceToNow(note.updatedAt, { addSuffix: true })}</span>
           {note.folder && (
