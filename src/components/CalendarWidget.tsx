@@ -207,7 +207,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                 <p className="text-xs">No events for this day</p>
               </div>
             ) : (
-              <div className="space-y-1.5 min-w-0 pb-2">
+              <div className="space-y-1.5 min-w-0 py-2">
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
