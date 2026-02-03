@@ -332,7 +332,7 @@ export function Todos() {
             }}
             autoScroll={false}
           >
-            <div className="flex h-full min-w-[900px] divide-x divide-border">
+            <div className="flex h-full min-h-0 min-w-[900px] divide-x divide-border">
               {/* Not Started Column */}
               <DroppableColumn 
                 id="not-started" 
