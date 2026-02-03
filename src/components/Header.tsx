@@ -30,9 +30,10 @@ import { initializeGoogleAuth, signOut } from '@/lib/google-auth';
 
 interface HeaderProps {
   onSearchOpen?: () => void;
+  showDateSelector?: boolean;
 }
 
-export function Header({ onSearchOpen }: HeaderProps) {
+export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
   const { state, dispatch } = useAppState();
   const { selectedDate, user } = state;
   const [showSignIn, setShowSignIn] = useState(false);
@@ -84,44 +85,48 @@ export function Header({ onSearchOpen }: HeaderProps) {
 
   return (
     <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-background px-4">
-      {/* Left - Date Navigation */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
-            onClick={handlePreviousDay}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
-            onClick={handleNextDay}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-foreground">
-            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-          </span>
-          {!isToday && (
+      {/* Left - Date Navigation (only on dashboard) */}
+      {showDateSelector ? (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-secondary rounded-md ml-2"
-              onClick={handleToday}
+              size="icon"
+              className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
+              onClick={handlePreviousDay}
             >
-              Today
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
+              onClick={handleNextDay}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-foreground">
+              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </span>
+            {!isToday && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-secondary rounded-md ml-2"
+                onClick={handleToday}
+              >
+                Today
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div /> // Empty spacer to maintain layout
+      )}
 
       {/* Right - Actions */}
       <div className="flex items-center gap-3">
@@ -132,7 +137,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             className="relative group"
           >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
-            <div className="w-[240px] h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground rounded-lg flex items-center cursor-pointer group-hover:border-border group-hover:text-foreground/60 transition-colors">
+            <div className="w-[240px] h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors">
               <span className="text-sm">Search...</span>
             </div>
           </button>

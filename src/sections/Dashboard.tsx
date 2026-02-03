@@ -78,7 +78,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
-          <Header onSearchOpen={onSearchOpen} />
+          <Header onSearchOpen={onSearchOpen} showDateSelector={state.view === 'dashboard'} />
 
           {/* Render different views based on state */}
           {state.view === 'notes' ? (
