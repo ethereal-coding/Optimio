@@ -61,7 +61,7 @@ export function Sidebar({ isOpen: _isOpen, onToggle: _onToggle }: SidebarProps) 
                       className={cn(
                         'w-9 h-9 p-0 flex items-center justify-center transition-colors rounded-lg',
                         isActive
-                          ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
+                          ? 'bg-white/85 border border-white text-neutral-950 hover:bg-white hover:text-black'
                           : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                       )}
                       onClick={() => dispatch(actions.setView(item.id as typeof view))}
@@ -87,7 +87,7 @@ export function Sidebar({ isOpen: _isOpen, onToggle: _onToggle }: SidebarProps) 
                 className={cn(
                   'w-9 h-9 p-0 flex items-center justify-center transition-colors rounded-lg',
                   view === 'settings'
-                    ? 'bg-white/75 border border-white text-neutral-950 hover:bg-white hover:text-black'
+                    ? 'bg-white/85 border border-white text-neutral-950 hover:bg-white hover:text-black'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 )}
                 onClick={() => dispatch(actions.setView('settings'))}

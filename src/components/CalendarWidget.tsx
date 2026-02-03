@@ -155,7 +155,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                     !isCurrentMonth && 'text-muted-foreground',
                     isCurrentMonth && !isSelected && 'text-foreground hover:bg-white/85 hover:border hover:border-white hover:text-neutral-950',
                     isToday && !isSelected && 'bg-muted text-foreground font-medium',
-                    isSelected && 'bg-white/90 border border-white text-neutral-950 font-medium',
+                    isSelected && 'bg-white/75 border border-white text-neutral-950 font-medium',
                     !isSelected && !isToday && 'hover:text-foreground'
                   )}
                 >
