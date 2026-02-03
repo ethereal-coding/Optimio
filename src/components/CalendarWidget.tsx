@@ -201,7 +201,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
             </Dialog>
           </div>
 
-          <ScrollArea className="h-[120px] pr-3">
+          <ScrollArea className="h-full pr-3">
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="text-xs">No events for this day</p>
