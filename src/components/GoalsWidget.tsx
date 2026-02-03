@@ -123,7 +123,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                         <div className="flex items-center gap-2">
                           <h4 className="text-sm text-foreground font-medium truncate">{goal.title}</h4>
                           {progress >= 100 && (
-                            <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                            <Trophy className="h-4 w-4 flex-shrink-0" />
                           )}
                         </div>
                       </div>
@@ -151,8 +151,8 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                         {daysLeft !== null && (
                           <span className={cn(
                             'ml-2',
-                            daysLeft < 7 && 'text-red-400',
-                            daysLeft < 30 && daysLeft >= 7 && 'text-yellow-400'
+                            
+                            
                           )}>
                             • {daysLeft > 0 ? `${daysLeft}d left` : 'Overdue'}
                           </span>
@@ -177,7 +177,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                               milestone.isCompleted ? 'bg-green-500/20' : 'bg-secondary'
                             )}>
                               {milestone.isCompleted ? (
-                                <TrendingUp className="h-2 w-2 text-green-400" />
+                                <TrendingUp className="h-2 w-2" />
                               ) : (
                                 <div className="h-1.5 w-1.5 rounded-full bg-muted" />
                               )}
@@ -302,7 +302,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                             milestone.isCompleted ? 'bg-green-500/20' : 'bg-secondary'
                           )}>
                             {milestone.isCompleted ? (
-                              <TrendingUp className="h-2 w-2 text-green-400" />
+                              <TrendingUp className="h-2 w-2" />
                             ) : (
                               <div className="h-1.5 w-1.5 rounded-full bg-muted" />
                             )}

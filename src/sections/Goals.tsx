@@ -135,7 +135,7 @@ export function Goals() {
   return (
     <div className="flex-1 flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-background px-6 py-4">
+      <div className="border-b border-border bg-background px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
@@ -157,14 +157,14 @@ export function Goals() {
 
         <div className="flex items-center gap-3">
           {/* Search */}
-          <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search goals..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground placeholder:text-muted-foreground rounded-lg flex items-center cursor-pointer hover:border-border-strong hover:text-foreground transition-colors focus:bg-secondary/50 focus:border-border-strong focus:ring-0 active:bg-secondary hover:bg-secondary/30"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:bg-accent focus:border-border focus:ring-0"
             />
           </div>
         </div>
@@ -192,7 +192,7 @@ export function Goals() {
             )}
           </div>
         ) : (
-          <div className="flex h-full min-w-[900px] divide-x divide-border">
+          <div className="flex h-full min-h-0 min-w-[900px] divide-x divide-border">
             {/* Not Started Column */}
             <div className="flex-1 flex flex-col min-w-[280px]">
               <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
@@ -217,7 +217,7 @@ export function Goals() {
             {/* In Progress Column */}
             <div className="flex-1 flex flex-col min-w-[280px]">
               <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
-                <PlayCircle className="h-4 w-4 text-blue-400" />
+                <PlayCircle className="h-4 w-4" />
                 <span>In Progress</span>
                 <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
                   {inProgressGoals.length}
@@ -238,7 +238,7 @@ export function Goals() {
             {/* Completed Column */}
             <div className="flex-1 flex flex-col min-w-[280px]">
               <div className="text-center text-sm font-medium text-muted-foreground py-3 border-b border-border flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                <CheckCircle2 className="h-4 w-4" />
                 <span>Completed</span>
                 <span className="text-xs bg-secondary px-2 py-0.5 rounded-md">
                   {completedGoals.length}
@@ -347,7 +347,7 @@ function GoalCard({ goal, todos, onClick }: GoalCardProps) {
           <div className="flex items-center gap-3 mb-3">
             <div className="h-2 w-2 rounded-full flex-shrink-0 bg-primary" />
             <h3 className="text-sm font-medium text-foreground truncate">{goal.title}</h3>
-            {isCompleted && <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />}
+            {isCompleted && <Trophy className="h-4 w-4 flex-shrink-0" />}
           </div>
 
           {goal.description && (
@@ -389,8 +389,7 @@ function GoalCard({ goal, todos, onClick }: GoalCardProps) {
             {daysLeft !== null && (
               <span className={cn(
                 "flex items-center gap-1.5",
-                daysLeft < 7 && 'text-red-400',
-                daysLeft >= 7 && daysLeft < 30 && 'text-yellow-400'
+                
               )}>
                 <CalendarIcon className="h-3.5 w-3.5" />
                 {daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}
@@ -423,7 +422,6 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
   const totalTasks = goalTasks.length;
   const completedTasks = goalTasks.filter(t => t.completed).length;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const daysLeft = goal.deadline ? differenceInDays(goal.deadline, new Date()) : null;
   const [showAddTask, setShowAddTask] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -653,10 +651,7 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
               {goal.deadline && (
                 <>
                   <span>•</span>
-                  <span className={cn(
-                    daysLeft !== null && daysLeft < 7 && "text-red-400",
-                    daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-yellow-400"
-                  )}>
+                  <span>
                     Due {format(goal.deadline, 'MMM d, yyyy')}
                   </span>
                 </>
