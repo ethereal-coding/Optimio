@@ -127,6 +127,40 @@ export interface Conflict {
   resolution?: 'pending' | 'local-wins' | 'remote-wins' | 'merge';
 }
 
+// Deleted items (Recycling Bin)
+export interface DeletedEvent extends SyncableEvent {
+  deletedAt: string;
+  originalId: string;
+}
+
+export interface DeletedTodo extends SyncableTodo {
+  deletedAt: string;
+  originalId: string;
+}
+
+export interface DeletedGoal extends SyncableGoal {
+  deletedAt: string;
+  originalId: string;
+}
+
+export interface DeletedNote extends SyncableNote {
+  deletedAt: string;
+  originalId: string;
+}
+
+// Archived items (auto-archive after completion + 3 days)
+export interface ArchivedTodo extends Omit<SyncableTodo, 'completedAt'> {
+  archivedAt: string;
+  completedAt: string;
+  originalId: string;
+}
+
+export interface ArchivedGoal extends Omit<SyncableGoal, 'completedAt'> {
+  archivedAt: string;
+  completedAt: string;
+  originalId: string;
+}
+
 // ============================================================================
 // DATABASE CLASS
 // ============================================================================
@@ -151,10 +185,20 @@ export class OptimioDB extends Dexie {
   syncQueue!: Table<SyncQueueEntry, number>;
   conflicts!: Table<Conflict, number>;
 
+  // Deleted items (Recycling Bin)
+  deletedEvents!: Table<DeletedEvent, string>;
+  deletedTodos!: Table<DeletedTodo, string>;
+  deletedGoals!: Table<DeletedGoal, string>;
+  deletedNotes!: Table<DeletedNote, string>;
+
+  // Archived items
+  archivedTodos!: Table<ArchivedTodo, string>;
+  archivedGoals!: Table<ArchivedGoal, string>;
+
   constructor() {
     super('OptimioDB');
 
-    // Single, clean schema version
+    // Schema version 1 - Original schema
     this.version(1).stores({
       // Events indexed by: id, startTime, endTime, googleEventId, calendarId, and sourceCalendarId
       events: 'id, startTime, endTime, googleEventId, calendarId, sourceCalendarId',
@@ -176,6 +220,22 @@ export class OptimioDB extends Dexie {
       // Sync tables
       syncQueue: '++id, entityType, entityId, conflictResolution, timestamp',
       conflicts: '++id, entityType, entityId, detectedAt, resolvedAt'
+    });
+
+    // Schema version 2 - Added recycling bin tables
+    this.version(2).stores({
+      // Deleted items (Recycling Bin) - auto-increment id with deletedAt index
+      deletedEvents: '++id, deletedAt, originalId',
+      deletedTodos: '++id, deletedAt, originalId',
+      deletedGoals: '++id, deletedAt, originalId',
+      deletedNotes: '++id, deletedAt, originalId'
+    });
+
+    // Schema version 3 - Added archive tables
+    this.version(3).stores({
+      // Archived items - auto-increment id with archivedAt and completedAt index
+      archivedTodos: '++id, archivedAt, completedAt, originalId',
+      archivedGoals: '++id, archivedAt, completedAt, originalId'
     });
   }
 }
@@ -233,7 +293,13 @@ export async function clearAllData() {
       db.authTokens.clear(),
       db.users.clear(),
       db.syncQueue.clear(),
-      db.conflicts.clear()
+      db.conflicts.clear(),
+      db.deletedEvents.clear(),
+      db.deletedTodos.clear(),
+      db.deletedGoals.clear(),
+      db.deletedNotes.clear(),
+      db.archivedTodos.clear(),
+      db.archivedGoals.clear()
       // Don't clear settings
     ]);
 

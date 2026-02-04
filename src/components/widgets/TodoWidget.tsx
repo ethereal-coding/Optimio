@@ -12,9 +12,14 @@ import {
   Edit2,
   Calendar,
   ChevronRight,
-  Clock,
-  AlertCircle
+  Circle,
+  PlayCircle,
+  CheckCircle2,
+  Tag,
+  Target,
+  Link2
 } from 'lucide-react';
+import { TaskGoalLinker } from '@/components/TaskGoalLinker';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import {
@@ -25,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import type { Goal } from '@/types';
 
 interface TodoWidgetProps {
   className?: string;
@@ -37,12 +43,14 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
   const [showAddTodo, setShowAddTodo] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<typeof todos[0] | null>(null);
   const [editingTodo, setEditingTodo] = useState<typeof todos[0] | null>(null);
+  const [linkerOpen, setLinkerOpen] = useState(false);
 
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'pending') return !todo.completed;
-    if (filter === 'completed') return todo.completed;
-    return true;
-  }).slice(0, 8);
+  const priorityValue = { high: 3, medium: 2, low: 1 };
+  
+  const filteredTodos = todos
+    .filter(todo => !todo.completed)
+    .sort((a, b) => (priorityValue[b.priority] || 0) - (priorityValue[a.priority] || 0))
+    .slice(0, 8);
 
   const handleToggleTodo = async (todoId: string) => {
     await toggleTodoWithSync(todoId, dispatch, actions);
@@ -63,7 +71,6 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
   };
 
   const pendingCount = todos.filter(t => !t.completed).length;
-  const completedCount = todos.filter(t => t.completed).length;
 
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
@@ -124,7 +131,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                 'ml-1.5 text-[10px] flex-shrink-0',
                 filter === f ? 'text-black/60' : 'text-muted-foreground'
               )}>
-                {f === 'all' ? todos.length : f === 'pending' ? pendingCount : completedCount}
+                {f === 'all' || f === 'pending' ? pendingCount : 0}
               </span>
             </Button>
           ))}
@@ -206,7 +213,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                           {todo.priority}
                         </span>
                         {todo.category && (
-                          <span className="px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] border bg-secondary text-foreground/70 border-border">
                             {todo.category}
                           </span>
                         )}
@@ -228,102 +235,18 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
           setEditingTodo(null);
         }
       }}>
-        <DialogContent className="bg-card border-border rounded-lg max-w-3xl">
+        <DialogContent className="bg-card border-border rounded-lg max-w-2xl" showCloseButton={false}>
           {selectedTodo && (
-            <>
-              <DialogHeader>
-                <div className="flex items-start justify-between gap-4 pt-4">
-                  <DialogTitle className="text-lg text-foreground flex-1 min-w-0">{selectedTodo.title}</DialogTitle>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      onClick={() => setEditingTodo(selectedTodo)}
-                      aria-label={`Edit task: ${selectedTodo.title}`}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                      onClick={() => {
-                        handleDeleteTodo(selectedTodo.id);
-                        setSelectedTodo(null);
-                      }}
-                      aria-label={`Delete task: ${selectedTodo.title}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="border-t border-border -mt-4"></div>
-
-              <div className="space-y-4 pt-3">
-                {/* Status Badge */}
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedTodo.completed}
-                    onCheckedChange={() => handleToggleTodo(selectedTodo.id)}
-                    className="border-muted-foreground/40"
-                    aria-label={`Mark ${selectedTodo.title} as ${selectedTodo.completed ? 'incomplete' : 'complete'}`}
-                  />
-                  <span className="text-sm text-foreground/60">
-                    {selectedTodo.completed ? 'Completed' : 'Not completed'}
-                  </span>
-                </div>
-
-                {/* Priority & Due Date */}
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Priority:</span>
-                    <span 
-                      className={cn(
-                        'px-2 py-0.5 rounded text-xs font-medium',
-                        selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
-                        selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500',
-                        selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
-                      )}
-                      aria-label={`${selectedTodo.priority} priority`}
-                    >
-                      {selectedTodo.priority}
-                    </span>
-                  </div>
-                  {selectedTodo.dueDate && (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Due:</span>
-                      <span className={cn(
-                        'text-foreground/60',
-                        isPast(selectedTodo.dueDate) && !isToday(selectedTodo.dueDate) && !selectedTodo.completed && 'text-red-400'
-                      )}>
-                        {format(selectedTodo.dueDate, 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Category */}
-                {selectedTodo.category && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Category: </span>
-                    <span className="text-foreground/60">{selectedTodo.category}</span>
-                  </div>
-                )}
-
-                {/* Description */}
-                {selectedTodo.description && (
-                  <div>
-                    <label className="text-sm text-muted-foreground block mb-1">Description</label>
-                    <p className="text-sm text-foreground/70 leading-relaxed">{selectedTodo.description}</p>
-                  </div>
-                )}
-              </div>
-            </>
+            <ViewTodoContent
+              todo={selectedTodo}
+              onEdit={() => setEditingTodo(selectedTodo)}
+              onDelete={() => {
+                handleDeleteTodo(selectedTodo.id);
+                setSelectedTodo(null);
+              }}
+              onToggle={() => handleToggleTodo(selectedTodo.id)}
+              onLinkGoal={() => setLinkerOpen(true)}
+            />
           )}
         </DialogContent>
       </Dialog>
@@ -349,6 +272,189 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Task Goal Linker Dialog */}
+      {selectedTodo && (
+        <TaskGoalLinker
+          todoId={selectedTodo.id}
+          open={linkerOpen}
+          onOpenChange={(open) => {
+            setLinkerOpen(open);
+            if (!open && !selectedTodo) {
+              setSelectedTodo(null);
+            }
+          }}
+        />
+      )}
     </Card>
   );
 });
+
+// View Todo Content Component
+interface ViewTodoContentProps {
+  todo: Todo;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+  onLinkGoal: () => void;
+}
+
+function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewTodoContentProps) {
+  const { state } = useAppState();
+  const { goals } = state;
+  const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
+  const linkedGoal = goals.find((g: Goal) => g.taskIds?.includes(todo.id));
+
+  // Determine status
+  const getStatus = () => {
+    if (todo.completed) return { label: 'Completed', icon: CheckCircle2, color: 'text-green-400' };
+    if (isOverdue) return { label: 'In Progress', icon: PlayCircle, color: 'text-blue-400' };
+    return { label: 'Not Started', icon: Circle, color: 'text-muted-foreground' };
+  };
+
+  const status = getStatus();
+  const StatusIcon = status.icon;
+
+  return (
+    <>
+      <DialogHeader>
+        <div className="flex items-start justify-between gap-4 pt-4">
+          <div className="flex-1 flex items-start gap-3 min-w-0">
+            <Checkbox
+              checked={todo.completed}
+              onClick={onToggle}
+              className="mt-1 border-muted-foreground/40 flex-shrink-0"
+              aria-label={`Mark ${todo.title} as ${todo.completed ? 'incomplete' : 'complete'}`}
+            />
+            <DialogTitle className={cn(
+              "text-lg text-foreground break-words",
+              todo.completed && "line-through text-muted-foreground"
+            )}>
+              {todo.title}
+            </DialogTitle>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              onClick={onLinkGoal}
+              aria-label="Link task to goal"
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              onClick={onEdit}
+              aria-label="Edit task"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+              onClick={onDelete}
+              aria-label="Delete task"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="max-h-[50vh] pr-2 overflow-y-auto custom-scrollbar">
+        <div className="space-y-3">
+          {/* Status Badge */}
+          <div className="flex items-center gap-2">
+            <span className={cn("flex items-center gap-1.5 text-xs", status.color)}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              {status.label}
+            </span>
+          </div>
+
+          {/* Description */}
+          {todo.description && (
+            <div className="prose prose-invert max-w-none">
+              <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{todo.description}</p>
+            </div>
+          )}
+
+          {/* Bottom section: Dates on left; Category, Priority and Goal on right */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs pt-3 text-muted-foreground border-t border-border">
+            {/* Left side: Dates */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span>Created {format(todo.createdAt, 'MMM d, yyyy')}</span>
+              {todo.dueDate && (
+                <>
+                  <span>•</span>
+                  <span className={cn(isOverdue && "text-red-400")}>
+                    Due {format(todo.dueDate, 'MMM d, yyyy')}
+                  </span>
+                </>
+              )}
+              {todo.completedAt && (
+                <>
+                  <span>•</span>
+                  <span className="text-green-400">Completed {format(todo.completedAt, 'MMM d, yyyy')}</span>
+                </>
+              )}
+            </div>
+
+            {/* Right side: Priority, Goal and Category */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Priority tag */}
+              <span
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] capitalize border backdrop-blur-sm",
+                  todo.priority === 'high' && "bg-red-500/50 text-red-400 border-red-500",
+                  todo.priority === 'medium' && "bg-yellow-500/50 text-yellow-500 border-yellow-500",
+                  todo.priority === 'low' && "bg-blue-500/50 text-blue-400 border-blue-500"
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {todo.priority}
+              </span>
+
+              {/* Goal tag */}
+              {linkedGoal && (
+                <span
+                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90"
+                  style={{ backgroundColor: linkedGoal.color }}
+                >
+                  <Target className="h-3 w-3" />
+                  <span className="truncate max-w-[100px]">{linkedGoal.title}</span>
+                </span>
+              )}
+
+              {/* Category tag */}
+              {todo.category && (
+                <span className="flex items-center gap-1 px-2 py-1 rounded bg-secondary text-foreground/50 text-[10px]">
+                  <Tag className="h-3 w-3" />
+                  {todo.category}
+                </span>
+              )}
+
+              {/* Tags */}
+              {todo.tags && todo.tags.length > 0 && (
+                <>
+                  {todo.tags.slice(0, 2).map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 px-2 py-1 rounded bg-secondary text-foreground/50 text-[10px]">
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </span>
+                  ))}
+                  {todo.tags.length > 2 && (
+                    <span className="text-[10px]">+{todo.tags.length - 2}</span>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

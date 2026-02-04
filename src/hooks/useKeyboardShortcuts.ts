@@ -79,8 +79,8 @@ export function useKeyboardShortcuts(handlers?: {
         return;
       }
 
-      // G key navigation (Gmail-style)
-      if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // G key navigation (Gmail-style) - only when not in input
+      if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !isInputFocused()) {
         gPressed = true;
         clearTimeout(gTimeout);
         gTimeout = setTimeout(() => {
@@ -89,8 +89,8 @@ export function useKeyboardShortcuts(handlers?: {
         return;
       }
 
-      // G + [key] navigation
-      if (gPressed) {
+      // G + [key] navigation - skip if input is focused
+      if (gPressed && !isInputFocused()) {
         gPressed = false;
         clearTimeout(gTimeout);
 

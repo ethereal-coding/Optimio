@@ -127,6 +127,9 @@ function DialogDescription({
   )
 }
 
+// Re-export DynamicDialogContent from dynamic-dialog.tsx for convenience
+export { DynamicDialogContent } from "./dynamic-dialog"
+
 export {
   Dialog,
   DialogClose,

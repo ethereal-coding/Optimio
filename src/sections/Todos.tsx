@@ -36,10 +36,12 @@ import {
   PlayCircle,
   CheckCircle2,
   Target,
-  Tag
+  Tag,
+  Link2
 } from 'lucide-react';
+import { TaskGoalLinker } from '@/components/TaskGoalLinker';
 import { cn } from '@/lib/utils';
-import { format, isPast, isToday, isTomorrow, addDays } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, addDays, isSameDay } from 'date-fns';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
@@ -55,6 +57,7 @@ export function Todos() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [showAddTodo, setShowAddTodo] = useState(false);
+  const [linkerOpen, setLinkerOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -128,6 +131,24 @@ export function Todos() {
   };
 
   const handleUpdateTodo = async (todo: Todo) => {
+    // Find the original todo to preserve status-determining fields
+    const originalTodo = todos.find(t => t.id === todo.id);
+    if (originalTodo) {
+      // Preserve completed status
+      todo.completed = originalTodo.completed;
+      todo.completedAt = originalTodo.completedAt;
+      
+      // If dueDate wasn't explicitly changed to a different day, preserve the original timestamp
+      // This ensures overdue status (based on specific time) is maintained
+      if (todo.dueDate && originalTodo.dueDate) {
+        const newDate = new Date(todo.dueDate);
+        const origDate = new Date(originalTodo.dueDate);
+        if (isSameDay(newDate, origDate)) {
+          todo.dueDate = originalTodo.dueDate;
+        }
+      }
+    }
+    
     await updateTodoWithSync(todo, dispatch, actions);
     setEditingTodo(null);
     setSelectedTodo(todo);
@@ -451,6 +472,7 @@ export function Todos() {
               onEdit={() => setEditingTodo(selectedTodo)}
               onDelete={() => handleDeleteTodo(selectedTodo.id)}
               onToggle={() => handleToggleTodo(selectedTodo.id)}
+              onLinkGoal={() => setLinkerOpen(true)}
             />
           )}
         </DialogContent>
@@ -477,6 +499,20 @@ export function Todos() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Task Goal Linker Dialog */}
+      {selectedTodo && (
+        <TaskGoalLinker
+          todoId={selectedTodo.id}
+          open={linkerOpen}
+          onOpenChange={(open) => {
+            setLinkerOpen(open);
+            if (!open && !selectedTodo) {
+              setSelectedTodo(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -662,9 +698,10 @@ interface ViewTodoContentProps {
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
+  onLinkGoal: () => void;
 }
 
-function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoContentProps) {
+function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, onLinkGoal }: ViewTodoContentProps) {
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
   const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
 
@@ -686,6 +723,15 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle }: ViewTodoCo
             </DialogTitle>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              onClick={onLinkGoal}
+              aria-label="Link task to goal"
+            >
+              <Link2 className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
