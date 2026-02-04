@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { signIn, initializeGoogleAuth, isAuthenticated, getCurrentUser } from '@/lib/google-auth';
+import { signIn, initializeGoogleAuth, isAuthenticated, getCurrentUser, validateAuthEvent } from '@/lib/google-auth';
 import { Loader2 } from 'lucide-react';
 import { useAppState, actions } from '@/hooks/useAppState';
 
@@ -53,8 +53,13 @@ export function AuthWall({ children }: AuthWallProps) {
 
     checkAuth();
 
-    // Listen for auth state changes from other components
+    // Listen for auth state changes from other components (with CSRF protection)
     const handleAuthChange = (event: CustomEvent) => {
+      // Validate the event token to prevent spoofing
+      if (!validateAuthEvent(event.detail)) {
+        console.warn('AuthWall: Ignoring spoofed auth-state-changed event');
+        return;
+      }
       if (event.detail.isAuthenticated) {
         dispatch(actions.setUser(event.detail.user || null));
         setAuthState('authenticated');

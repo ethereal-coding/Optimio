@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { sanitizeText, sanitizeHtml } from '@/lib/sanitize';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 import type { Event } from '@/types';
+
+// Zod validation schema for event form
+const eventSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
+  description: z.string().max(5000, 'Description is too long').optional(),
+  location: z.string().max(500, 'Location is too long').optional(),
+  startTime: z.date(),
+  endTime: z.date(),
+  isAllDay: z.boolean()
+}).refine((data) => {
+  if (data.isAllDay) return true;
+  return data.endTime > data.startTime;
+}, {
+  message: 'End time must be after start time',
+  path: ['endTime']
+});
 
 interface AddEventFormProps {
   onSubmit: (event: Event) => void;
@@ -55,11 +72,9 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
     initialEvent?.recurrence || 'none'
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const sanitizedTitle = sanitizeText(title);
-    if (!sanitizedTitle) return;
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const validateForm = () => {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const [endHour, endMinute] = endTime.split(':').map(Number);
 
@@ -70,6 +85,35 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
     const endDateTime = isAllDay
       ? new Date(date.setHours(23, 59, 59, 999))
       : setMinutes(setHours(new Date(date), endHour), endMinute);
+
+    const result = eventSchema.safeParse({
+      title: sanitizeText(title),
+      description: sanitizeHtml(description),
+      location: sanitizeText(location),
+      startTime: startDateTime,
+      endTime: endDateTime,
+      isAllDay
+    });
+
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        formattedErrors[issue.path[0] as string] = issue.message;
+      });
+      setErrors(formattedErrors);
+      return null;
+    }
+
+    setErrors({});
+    return { startDateTime, endDateTime };
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validated = validateForm();
+    if (!validated) return;
+    
+    const { startDateTime, endDateTime } = validated;
 
     onSubmit({
       id: initialEvent?.id || uuidv4(),
@@ -99,8 +143,13 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What's the event?"
           autoFocus
-          className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 h-10"
+          className={`bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-border focus:ring-0 h-10 ${errors.title ? 'border-destructive' : ''}`}
+          aria-invalid={!!errors.title}
+          aria-describedby={errors.title ? 'title-error' : undefined}
         />
+        {errors.title && (
+          <p id="title-error" className="text-sm text-destructive">{errors.title}</p>
+        )}
       </div>
 
       <div className="space-y-2">

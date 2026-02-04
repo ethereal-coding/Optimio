@@ -2,6 +2,9 @@ import { db } from './db';
 import type { Goal } from '@/types';
 import { debug } from './debug';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from './logger';
+
+const log = logger('goal-sync');
 
 // Action type for dispatch function - using generic to avoid type conflicts
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +57,7 @@ export async function addGoalWithSync(
     });
     debug.log('💾 Goal saved to IndexedDB:', fullGoal.id);
   } catch (dbError) {
-    console.error('Failed to save goal to IndexedDB:', dbError);
+    log.error('Failed to save goal to IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -77,7 +80,7 @@ export async function updateGoalWithSync(
     });
     debug.log('💾 Goal updated in IndexedDB:', goal.id);
   } catch (dbError) {
-    console.error('Failed to update goal in IndexedDB:', dbError);
+    log.error('Failed to update goal in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -97,7 +100,7 @@ export async function deleteGoalWithSync(
     await db.goals.delete(goalId);
     debug.log('🗑️ Goal deleted from IndexedDB:', goalId);
   } catch (dbError) {
-    console.error('Failed to delete goal from IndexedDB:', dbError);
+    log.error('Failed to delete goal from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -125,7 +128,7 @@ export async function updateGoalProgressWithSync(
       debug.log('💾 Goal progress updated in IndexedDB:', goalId);
     }
   } catch (dbError) {
-    console.error('Failed to update goal progress in IndexedDB:', dbError);
+    log.error('Failed to update goal progress in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -158,7 +161,7 @@ export async function toggleMilestoneWithSync(
       debug.log('💾 Milestone toggled in IndexedDB:', milestoneId);
     }
   } catch (dbError) {
-    console.error('Failed to toggle milestone in IndexedDB:', dbError);
+    log.error('Failed to toggle milestone in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -187,7 +190,7 @@ export async function addTaskToGoalWithSync(
       }
     }
   } catch (dbError) {
-    console.error('Failed to add task to goal in IndexedDB:', dbError);
+    log.error('Failed to add task to goal in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -214,7 +217,7 @@ export async function removeTaskFromGoalWithSync(
       debug.log('💾 Task removed from goal in IndexedDB:', taskId);
     }
   } catch (dbError) {
-    console.error('Failed to remove task from goal in IndexedDB:', dbError);
+    log.error('Failed to remove task from goal in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -237,7 +240,7 @@ export async function loadGoalsFromDB(
     debug.log('✅ Loaded', goals.length, 'goals from IndexedDB');
     return goals;
   } catch (error) {
-    console.error('Failed to load goals from IndexedDB:', error);
+    log.error('Failed to load goals from IndexedDB', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

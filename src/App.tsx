@@ -159,7 +159,6 @@ function AppContent() {
         debug.log('✅ Hydration complete');
       } catch (error) {
         log.error('Failed to hydrate from IndexedDB', error instanceof Error ? error : new Error(String(error)));
-        console.error('Failed to hydrate from IndexedDB:', error);
       }
     }
 
@@ -218,7 +217,6 @@ function AppContent() {
           debug.log('✅ Initial calendar sync complete');
         } catch (error) {
           log.error('Initial calendar sync failed', error instanceof Error ? error : new Error(String(error)));
-          console.error('Failed to sync calendar list:', error);
         }
       } else {
         log.info('User not authenticated');
@@ -265,7 +263,6 @@ function App() {
         debug.log('✅ Optimio ready!');
       } catch (error) {
         log.error('Failed to initialize database', error instanceof Error ? error : new Error(String(error)));
-        console.error('❌ Failed to initialize database:', error);
         // Don't block the UI - just skip database features for now
         setDbError(error instanceof Error ? error.message : 'Unknown error');
         setDbReady(true); // Allow app to load anyway

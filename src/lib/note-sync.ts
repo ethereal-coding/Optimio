@@ -2,6 +2,9 @@ import { db } from './db';
 import type { Note } from '@/types';
 import { debug } from './debug';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from './logger';
+
+const log = logger('note-sync');
 
 // Action type for dispatch function - using generic to avoid type conflicts
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +53,7 @@ export async function addNoteWithSync(
     });
     debug.log('💾 Note saved to IndexedDB:', fullNote.id);
   } catch (dbError) {
-    console.error('Failed to save note to IndexedDB:', dbError);
+    log.error('Failed to save note to IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -74,7 +77,7 @@ export async function updateNoteWithSync(
     });
     debug.log('💾 Note updated in IndexedDB:', note.id);
   } catch (dbError) {
-    console.error('Failed to update note in IndexedDB:', dbError);
+    log.error('Failed to update note in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -94,7 +97,7 @@ export async function deleteNoteWithSync(
     await db.notes.delete(noteId);
     debug.log('🗑️ Note deleted from IndexedDB:', noteId);
   } catch (dbError) {
-    console.error('Failed to delete note from IndexedDB:', dbError);
+    log.error('Failed to delete note from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -119,7 +122,7 @@ export async function toggleNotePinWithSync(
     });
     debug.log('💾 Note pin toggled in IndexedDB:', note.id);
   } catch (dbError) {
-    console.error('Failed to toggle note pin in IndexedDB:', dbError);
+    log.error('Failed to toggle note pin in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -144,7 +147,7 @@ export async function toggleNoteFavoriteWithSync(
     });
     debug.log('💾 Note favorite toggled in IndexedDB:', note.id);
   } catch (dbError) {
-    console.error('Failed to toggle note favorite in IndexedDB:', dbError);
+    log.error('Failed to toggle note favorite in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -169,7 +172,7 @@ export async function reorderNotesWithSync(
     }
     debug.log('💾 Notes reordered in IndexedDB');
   } catch (dbError) {
-    console.error('Failed to reorder notes in IndexedDB:', dbError);
+    log.error('Failed to reorder notes in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -197,7 +200,7 @@ export async function loadNotesFromDB(
     debug.log('✅ Loaded', notes.length, 'notes from IndexedDB');
     return notes;
   } catch (error) {
-    console.error('Failed to load notes from IndexedDB:', error);
+    log.error('Failed to load notes from IndexedDB', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

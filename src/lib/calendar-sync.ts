@@ -11,6 +11,9 @@ import { isAuthenticated } from './google-auth';
 import { db } from './db';
 import type { CalendarEvent } from '@/types';
 import { debug } from './debug';
+import { logger } from './logger';
+
+const log = logger('calendar-sync');
 
 /**
  * Calendar Sync Helpers
@@ -54,7 +57,7 @@ export async function addEventWithSync(
     });
     debug.log('💾 Event saved to IndexedDB:', localEvent.id);
   } catch (dbError) {
-    console.error('Failed to save event to IndexedDB:', dbError);
+    log.error('Failed to save event to IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 
   // Try to sync with Google Calendar if signed in
@@ -86,13 +89,13 @@ export async function addEventWithSync(
         });
         debug.log('💾 Synced event updated in IndexedDB:', syncedEvent.id);
       } catch (dbError) {
-        console.error('Failed to update synced event in IndexedDB:', dbError);
+        log.error('Failed to update synced event in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
       }
 
       debug.log('✅ Event created in Google Calendar:', googleEvent.id, 'with color:', googleEvent.colorId);
       return syncedEvent;
     } catch (error) {
-      console.error('Failed to sync event to Google Calendar:', error);
+      log.error('Failed to sync event to Google Calendar', error instanceof Error ? error : new Error(String(error)));
       // Event is still saved locally even if Google sync fails
     }
   }
@@ -120,7 +123,7 @@ export async function updateEventWithSync(
     });
     debug.log('💾 Event updated in IndexedDB:', event.id);
   } catch (dbError) {
-    console.error('Failed to update event in IndexedDB:', dbError);
+    log.error('Failed to update event in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 
   // Sync with Google Calendar if this event was synced
@@ -133,7 +136,7 @@ export async function updateEventWithSync(
       const updatedGoogleEvent = await updateGoogleCalendarEvent(event.googleEventId, event, googleCalendarId);
       debug.log('✅ Event updated in Google Calendar:', event.googleEventId, 'with color:', updatedGoogleEvent.colorId);
     } catch (error) {
-      console.error('Failed to update event in Google Calendar:', error);
+      log.error('Failed to update event in Google Calendar', error instanceof Error ? error : new Error(String(error)));
       // Local update still succeeds even if Google sync fails
     }
   }
@@ -157,7 +160,7 @@ export async function deleteEventWithSync(
     await db.events.delete(eventId);
     debug.log('🗑️ Event deleted from IndexedDB:', eventId);
   } catch (dbError) {
-    console.error('Failed to delete event from IndexedDB:', dbError);
+    log.error('Failed to delete event from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 
   // Delete from Google Calendar if this event was synced
@@ -168,7 +171,7 @@ export async function deleteEventWithSync(
       await deleteGoogleCalendarEvent(event.googleEventId, googleCalendarId);
       debug.log('✅ Event deleted from Google Calendar:', event.googleEventId);
     } catch (error) {
-      console.error('Failed to delete event from Google Calendar:', error);
+      log.error('Failed to delete event from Google Calendar', error instanceof Error ? error : new Error(String(error)));
       // Local deletion still succeeds even if Google sync fails
     }
   }
@@ -236,7 +239,7 @@ async function processEventInstance(
       return 'added';
     }
   } catch (error) {
-    console.error('Failed to process event instance:', error);
+    log.error('Failed to process event instance', error instanceof Error ? error : new Error(String(error)));
     return 'skipped';
   }
 }
@@ -326,7 +329,7 @@ export async function syncFromGoogleCalendar(
         totalAdded += addedCount;
         totalUpdated += updatedCount;
       } catch (calendarError) {
-        console.error(`Failed to sync calendar ${calendar.summary}:`, calendarError);
+        log.error(`Failed to sync calendar ${calendar.summary}`, calendarError instanceof Error ? calendarError : new Error(String(calendarError)));
         // Continue with other calendars
       }
     }
@@ -337,7 +340,7 @@ export async function syncFromGoogleCalendar(
     const allEvents = await db.events.toArray();
     return allEvents;
   } catch (error) {
-    console.error('Failed to sync from Google Calendar:', error);
+    log.error('Failed to sync from Google Calendar', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }
@@ -363,7 +366,7 @@ export function setupPeriodicSync(
       await syncFromGoogleCalendar(calendarId, dispatch, actions);
       consecutiveErrors = 0;
     } catch (error) {
-      console.error('Initial sync failed:', error);
+      log.error('Initial sync failed', error instanceof Error ? error : new Error(String(error)));
       consecutiveErrors++;
     }
   })();
@@ -377,7 +380,7 @@ export function setupPeriodicSync(
 
     // Stop syncing if too many consecutive errors
     if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-      console.error('🛑 Too many consecutive sync errors. Stopping periodic sync.');
+      log.error('Too many consecutive sync errors. Stopping periodic sync.');
       isActive = false;
       clearInterval(intervalId);
       return;
@@ -388,7 +391,7 @@ export function setupPeriodicSync(
         await syncFromGoogleCalendar(calendarId, dispatch, actions);
         consecutiveErrors = 0; // Reset error count on success
       } catch (error) {
-        console.error('Periodic sync failed:', error);
+        log.error('Periodic sync failed', error instanceof Error ? error : new Error(String(error)));
         consecutiveErrors++;
       }
     }

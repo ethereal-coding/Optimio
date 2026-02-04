@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Event } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,6 +102,14 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
     isSameDay(new Date(event.startTime), selectedDate)
   ).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
+  // Virtual scrolling setup for event list
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: selectedDateEvents.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72, // estimated row height (p-3 padding + content)
+  });
+
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
       <CardHeader className="pb-3 flex-shrink-0">
@@ -113,10 +122,22 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
             <span className="text-xs text-muted-foreground mr-2 truncate max-w-[100px]">
               {format(currentMonth, 'MMMM yyyy')}
             </span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handlePreviousMonth}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" 
+              onClick={handlePreviousMonth}
+              aria-label="Previous month"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" onClick={handleNextMonth}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary" 
+              onClick={handleNextMonth}
+              aria-label="Next month"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -139,17 +160,25 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
           </div>
 
           {/* Calendar grid - responsive day buttons */}
-          <div className="grid grid-cols-7 gap-1 min-w-0">
+          <div className="grid grid-cols-7 gap-1 min-w-0" role="grid">
             {days.map((date) => {
               const isCurrentMonth = isSameMonth(date, currentMonth);
               const isSelected = isSameDay(date, selectedDate);
               const isToday = isSameDay(date, new Date());
               const dayEvents = allEvents.filter(e => isSameDay(new Date(e.startTime), date));
+              const eventCount = dayEvents.length;
+              
+              const ariaLabel = isToday
+                ? `Today, ${format(date, 'MMMM d, yyyy')}${eventCount > 0 ? `, ${eventCount} event${eventCount !== 1 ? 's' : ''}` : ''}`
+                : `${format(date, 'MMMM d, yyyy')}${eventCount > 0 ? `, ${eventCount} event${eventCount !== 1 ? 's' : ''}` : ''}`;
 
               return (
                 <button
                   key={date.toISOString()}
                   onClick={() => handleDateClick(date)}
+                  aria-label={ariaLabel}
+                  aria-selected={isSelected}
+                  role="gridcell"
                   className={cn(
                     'group relative aspect-square w-full max-h-7 mx-auto rounded-md flex items-center justify-center text-xs transition-colors',
                     !isCurrentMonth && 'text-muted-foreground',
@@ -161,7 +190,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
                 >
                   {format(date, 'd')}
                   {dayEvents.length > 0 && !isSelected && (
-                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5 group-hover:opacity-0 transition-opacity">
+                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5 group-hover:opacity-0 transition-opacity" aria-hidden="true">
                       {dayEvents.slice(0, 3).map((event, i) => (
                         <div
                           key={i}
@@ -192,6 +221,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
                 size="icon"
                 className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddEvent(true)}
+                aria-label="Add new event"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -204,37 +234,51 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
             </Dialog>
           </div>
 
-          <ScrollArea className="h-full pr-3">
+          <ScrollArea className="h-full pr-3" ref={parentRef}>
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <p className="text-xs">No events for this day</p>
               </div>
             ) : (
-              <div className="space-y-2 min-w-0 py-2">
-                {selectedDateEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2 min-w-0 max-w-full"
-                    onClick={() => handleEventClick(event)}
-                  >
-                    {/* Top row: Color indicator + Title */}
-                    <div className="flex items-center gap-2 min-w-0">
+              <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const event = selectedDateEvents[virtualItem.index];
+                  return (
+                    <div
+                      key={event.id}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                      className="pr-1"
+                    >
                       <div
-                        className="h-2 w-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: event.color || '#666' }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
+                        className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2 min-w-0 max-w-full"
+                        onClick={() => handleEventClick(event)}
+                      >
+                        {/* Top row: Color indicator + Title */}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div
+                            className="h-2 w-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: event.color || '#666' }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground font-medium truncate">{event.title}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Bottom row: Time */}
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}</span>
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* Bottom row: Time */}
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
-                      <Clock className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
@@ -260,6 +304,8 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingEvent(selectedEvent)}
+                      aria-label={`Edit event: ${selectedEvent.title}`}
+                      aria-describedby={selectedEvent.description ? `event-desc-${selectedEvent.id}` : undefined}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -268,6 +314,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                       onClick={() => handleDeleteEvent(selectedEvent.id)}
+                      aria-label={`Delete event: ${selectedEvent.title}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -303,7 +350,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
                 {selectedEvent.description && (
                   <div>
                     <label className="text-sm text-muted-foreground block mb-1">Description</label>
-                    <p className="text-sm text-foreground/70 leading-relaxed">{selectedEvent.description}</p>
+                    <p id={`event-desc-${selectedEvent.id}`} className="text-sm text-foreground/70 leading-relaxed">{selectedEvent.description}</p>
                   </div>
                 )}
               </div>

@@ -1,6 +1,8 @@
 import Dexie, { type Table } from 'dexie';
 import type { CalendarEvent, Todo, Goal, Note } from '@/types';
-import { debug } from './debug';
+import { logger } from './logger';
+
+const log = logger('db');
 
 /**
  * CLEAN REBUILD - Simple database schema with no version migrations
@@ -206,12 +208,12 @@ export async function initializeDatabase() {
         syncInterval: 15
       });
 
-      debug.log('✅ Default settings created');
+      log.info('✅ Default settings created');
     }
 
-    debug.log('✅ Database initialized');
+    log.info('✅ Database initialized');
   } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
+    log.error('❌ Failed to initialize database', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -235,9 +237,9 @@ export async function clearAllData() {
       // Don't clear settings
     ]);
 
-    console.log('✅ All data cleared');
+    log.info('✅ All data cleared');
   } catch (error) {
-    console.error('❌ Failed to clear data:', error);
+    log.error('❌ Failed to clear data', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -271,7 +273,7 @@ export async function getDatabaseHealth(): Promise<{
       calendarCount: calendars
     };
   } catch (error) {
-    console.error('Database health check failed:', error);
+    log.error('Database health check failed', error instanceof Error ? error : new Error(String(error)));
     return {
       healthy: false,
       eventCount: 0,

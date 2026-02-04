@@ -2,6 +2,9 @@ import { db } from './db';
 import type { Todo } from '@/types';
 import { debug } from './debug';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from './logger';
+
+const log = logger('todo-sync');
 
 /** Action type for dispatch function - using generic to avoid type conflicts */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +52,7 @@ export async function addTodoWithSync(
     });
     debug.log('💾 Todo saved to IndexedDB:', fullTodo.id);
   } catch (dbError) {
-    console.error('Failed to save todo to IndexedDB:', dbError);
+    log.error('Failed to save todo to IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -72,7 +75,7 @@ export async function updateTodoWithSync(
     });
     debug.log('💾 Todo updated in IndexedDB:', todo.id);
   } catch (dbError) {
-    console.error('Failed to update todo in IndexedDB:', dbError);
+    log.error('Failed to update todo in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -100,7 +103,7 @@ export async function toggleTodoWithSync(
       debug.log('💾 Todo toggled in IndexedDB:', todoId);
     }
   } catch (dbError) {
-    console.error('Failed to toggle todo in IndexedDB:', dbError);
+    log.error('Failed to toggle todo in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -120,7 +123,7 @@ export async function deleteTodoWithSync(
     await db.todos.delete(todoId);
     debug.log('🗑️ Todo deleted from IndexedDB:', todoId);
   } catch (dbError) {
-    console.error('Failed to delete todo from IndexedDB:', dbError);
+    log.error('Failed to delete todo from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }
 
@@ -143,7 +146,7 @@ export async function loadTodosFromDB(
     debug.log('✅ Loaded', todos.length, 'todos from IndexedDB');
     return todos;
   } catch (error) {
-    console.error('Failed to load todos from IndexedDB:', error);
+    log.error('Failed to load todos from IndexedDB', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

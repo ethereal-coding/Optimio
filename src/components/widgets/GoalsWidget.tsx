@@ -72,6 +72,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                 size="icon" 
                 className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddGoal(true)}
+                aria-label="Add new goal"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -87,6 +88,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
               size="sm"
               className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
               onClick={() => dispatch(actions.setView('goals'))}
+              aria-label="View all goals"
             >
               View All
               <ChevronRight className="h-4 w-4" />
@@ -104,7 +106,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
               <p className="text-xs mt-1 text-foreground/20">Set your first goal to get started</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2" role="list">
               {goals.map((goal) => {
                 const progress = Math.round(((goal.currentValue ?? 0) / (goal.targetValue || 1)) * 100);
                 const daysLeft = goal.deadline ? differenceInDays(goal.deadline, new Date()) : null;
@@ -116,6 +118,8 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                     key={goal.id}
                     className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2"
                     onClick={() => setSelectedGoal(goal)}
+                    role="listitem"
+                    aria-label={`${goal.title}, ${progress}% complete`}
                   >
                     {/* Top row: Title + Progress percentage */}
                     <div className="flex items-start justify-between gap-2">
@@ -133,7 +137,14 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="relative h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div 
+                      className="relative h-1.5 bg-secondary rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={progress}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${goal.title} progress: ${progress}%`}
+                    >
                       <div
                         className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 bg-primary"
                         style={{ width: `${Math.min(progress, 100)}%` }}
@@ -205,6 +216,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                                   e.stopPropagation();
                                   handleUpdateProgress(goal.id, Math.round(goal.targetValue * pct / 100));
                                 }}
+                                aria-label={`Set ${goal.title} progress to ${pct}%`}
                               >
                                 {pct}%
                               </Button>
@@ -241,6 +253,8 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingGoal(selectedGoal)}
+                      aria-label={`Edit goal: ${selectedGoal.title}`}
+                      aria-describedby={selectedGoal.description ? `goal-desc-${selectedGoal.id}` : undefined}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -249,6 +263,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                       onClick={() => handleDeleteGoal(selectedGoal.id)}
+                      aria-label={`Delete goal: ${selectedGoal.title}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -267,7 +282,14 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                       {Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}%
                     </span>
                   </div>
-                  <div className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3">
+                  <div 
+                    className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3"
+                    role="progressbar"
+                    aria-valuenow={Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${selectedGoal.title} progress`}
+                  >
                     <div
                       className="absolute inset-y-0 left-0 rounded-full transition-all"
                       style={{
@@ -284,7 +306,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                 {selectedGoal.description && (
                   <div>
                     <label className="text-sm text-muted-foreground block mb-1">Description</label>
-                    <p className="text-sm text-foreground/70 leading-relaxed">{selectedGoal.description}</p>
+                    <p id={`goal-desc-${selectedGoal.id}`} className="text-sm text-foreground/70 leading-relaxed">{selectedGoal.description}</p>
                   </div>
                 )}
 

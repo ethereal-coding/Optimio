@@ -8,12 +8,15 @@ import { syncAllEvents } from '@/lib/event-sync';
 import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { useAppState, actions } from './useAppState';
-import { isAuthenticated } from '@/lib/google-auth';
+import { isAuthenticated, validateAuthEvent } from '@/lib/google-auth';
 
 const log = logger('useCalendarSync');
 
 // Sync interval: 10 seconds
 const SYNC_INTERVAL = 10000;
+
+// Global pending sync promise for deduplication across hook instances
+let pendingSyncPromise: Promise<boolean> | null = null;
 
 export interface SyncStatus {
   /** Last successful sync result */
@@ -112,8 +115,13 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
     // Initial check only
     checkAuth();
 
-    // Listen for auth state changes (no polling needed)
+    // Listen for auth state changes (no polling needed, with CSRF protection)
     const handleAuthChange = (event: CustomEvent) => {
+      // Validate the event token to prevent spoofing
+      if (!validateAuthEvent(event.detail)) {
+        log.warn('Ignoring spoofed auth-state-changed event');
+        return;
+      }
       if (isMountedRef.current) {
         setIsAuth(event.detail.isAuthenticated);
       }
@@ -129,72 +137,85 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
 
   // Perform sync
   const performSync = useCallback(async (): Promise<boolean> => {
-    // Prevent concurrent syncs
-    if (syncState.isPending) {
-      log.debug('Sync already in progress, skipping');
-      return false;
+    // Return existing promise if sync is already in progress (global deduplication)
+    if (pendingSyncPromise) {
+      log.debug('Sync already in progress, returning existing promise');
+      return pendingSyncPromise;
     }
 
-    // Check auth before syncing
-    const auth = await isAuthenticated();
-    if (!auth) {
-      log.debug('Not authenticated, skipping sync');
-      setIsAuth(false);
-      return false;
-    }
+    // Create the sync promise
+    const syncPromise = (async (): Promise<boolean> => {
+      // Check auth before syncing
+      const auth = await isAuthenticated();
+      if (!auth) {
+        log.debug('Not authenticated, skipping sync');
+        setIsAuth(false);
+        return false;
+      }
 
-    // Update state to pending
-    setSyncState(prev => ({ ...prev, isPending: true, isError: false, error: null }));
+      // Update state to pending
+      setSyncState(prev => ({ ...prev, isPending: true, isError: false, error: null }));
 
-    const startTime = Date.now();
-    
-    try {
-      log.info('Starting calendar sync');
-      const result = await syncAllEvents();
-      const duration = Date.now() - startTime;
+      const startTime = Date.now();
       
-      log.info('Sync completed', {
-        durationMs: duration,
-        added: result.added,
-        updated: result.updated,
-        removed: result.removed,
-        errorCount: result.errors.length,
-      });
+      try {
+        log.info('Starting calendar sync');
+        const result = await syncAllEvents();
+        const duration = Date.now() - startTime;
+        
+        log.info('Sync completed', {
+          durationMs: duration,
+          added: result.added,
+          updated: result.updated,
+          removed: result.removed,
+          errorCount: result.errors.length,
+        });
 
-      // Update sync state
-      const newSyncState: SyncStatus = {
-        lastSync: result,
-        isPending: false,
-        isError: result.errors.length > 0 && result.added === 0 && result.updated === 0 && result.removed === 0,
-        error: result.errors.length > 0 ? new Error(result.errors.join(', ')) : null,
-        lastSyncTime: new Date().toISOString(),
-      };
-
-      if (isMountedRef.current) {
-        setSyncState(newSyncState);
-        lastSyncRef.current = Date.now();
-      }
-
-      // Update local state with synced events
-      await updateLocalState(dispatch);
-
-      return true;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      log.error('Sync failed', error instanceof Error ? error : new Error(String(error)), { duration });
-
-      if (isMountedRef.current) {
-        setSyncState(prev => ({
-          ...prev,
+        // Update sync state
+        const newSyncState: SyncStatus = {
+          lastSync: result,
           isPending: false,
-          isError: true,
-          error: error instanceof Error ? error : new Error(String(error)),
-        }));
-      }
+          isError: result.errors.length > 0 && result.added === 0 && result.updated === 0 && result.removed === 0,
+          error: result.errors.length > 0 ? new Error(result.errors.join(', ')) : null,
+          lastSyncTime: new Date().toISOString(),
+        };
 
-      return false;
+        if (isMountedRef.current) {
+          setSyncState(newSyncState);
+          lastSyncRef.current = Date.now();
+        }
+
+        // Update local state with synced events
+        await updateLocalState(dispatch);
+
+        return true;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        log.error('Sync failed', error instanceof Error ? error : new Error(String(error)), { duration });
+
+        if (isMountedRef.current) {
+          setSyncState(prev => ({
+            ...prev,
+            isPending: false,
+            isError: true,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }));
+        }
+
+        return false;
+      }
+    })();
+
+    // Store the promise globally for deduplication
+    pendingSyncPromise = syncPromise;
+
+    try {
+      return await syncPromise;
+    } finally {
+      // Clear the global promise when sync completes (success or error)
+      pendingSyncPromise = null;
     }
-  }, [dispatch, syncState.isPending]);
+  }, [dispatch]);
 
   // Automatic background sync every 10 seconds when authenticated
   useEffect(() => {

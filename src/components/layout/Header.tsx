@@ -103,6 +103,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                   size="icon"
                   className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
                   onClick={handlePreviousDay}
+                  aria-label="Previous day"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -116,6 +117,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                   size="icon"
                   className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
                   onClick={handleNextDay}
+                  aria-label="Next day"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -135,6 +137,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                 size="sm"
                 className="h-7 text-xs text-foreground/60 hover:text-foreground hover:bg-secondary rounded-md ml-2"
                 onClick={handleToday}
+                aria-label="Go to today"
               >
                 Today
               </Button>
@@ -151,8 +154,9 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
             onClick={onSearchOpen}
             className="relative group"
             aria-label="Open search"
+            role="button"
           >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/30 pointer-events-none" aria-hidden="true" />
             <div className="w-[240px] h-9 pl-9 pr-3 bg-card border border-border text-muted-foreground rounded-md flex items-center cursor-pointer hover:border-border-strong hover:bg-secondary/30 transition-colors">
               <span className="text-sm">Search...</span>
             </div>
@@ -184,6 +188,8 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
               <Button
                 variant="ghost"
                 className="flex flex-col items-end h-auto py-0.5 px-2 hover:bg-secondary leading-none gap-0.5"
+                aria-label={`User menu for ${user.name}`}
+                aria-haspopup="menu"
               >
                 <span className="text-sm text-foreground font-medium leading-tight">
                   Hello, {user.name.split(' ')[0]}
@@ -193,18 +199,18 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+            <DropdownMenuContent align="end" className="w-56 bg-card border-border" role="menu">
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium text-foreground">{user.name}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem onClick={() => dispatch(actions.setView('settings'))}>
-                <UserIcon className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => dispatch(actions.setView('settings'))} role="menuitem">
+                <UserIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={handleSignOut} role="menuitem">
+                <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -214,6 +220,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
             variant="outline"
             className="h-9 px-4 bg-transparent border-border text-foreground/90 hover:bg-secondary hover:text-foreground hover:border-border rounded-lg transition-colors"
             onClick={() => setShowSignIn(true)}
+            aria-label="Sign in"
           >
             Sign In
           </Button>

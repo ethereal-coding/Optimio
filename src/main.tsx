@@ -1,10 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider, type PersistedClient } from '@tanstack/react-query-persist-client'
+import { get, set, del } from 'idb-keyval'
 import './index.css'
 import App from './App.tsx'
 import { initializeGoogleAuth } from './lib/google-auth'
 import { initSentry } from './lib/sentry'
+import { logger } from './lib/logger';
+
+const log = logger('main');
 
 // Initialize Sentry error tracking before app starts
 initSentry()
@@ -13,6 +18,7 @@ initSentry()
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours (cacheTime is renamed to gcTime in v5)
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -20,15 +26,28 @@ const queryClient = new QueryClient({
   },
 })
 
+// Create IndexedDB persister for larger storage
+const idbPersister = {
+  persistClient: async (client: PersistedClient) => {
+    await set('react-query', client)
+  },
+  restoreClient: async () => {
+    return await get<PersistedClient>('react-query')
+  },
+  removeClient: async () => {
+    await del('react-query')
+  },
+}
+
 // Initialize Google Auth when the script is loaded
 function initApp() {
   // Wait for Google Identity Services to be available
   const checkGoogle = () => {
     if (typeof google !== 'undefined' && google.accounts) {
-      console.log('✅ Google Identity Services loaded');
+      log.info('✅ Google Identity Services loaded');
       initializeGoogleAuth();
     } else {
-      console.log('⏳ Waiting for Google Identity Services...');
+      log.info('⏳ Waiting for Google Identity Services...');
       setTimeout(checkGoogle, 100);
     }
   };
@@ -39,9 +58,12 @@ function initApp() {
   // Render the app
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister: idbPersister }}
+      >
         <App />
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </StrictMode>,
   );
 }

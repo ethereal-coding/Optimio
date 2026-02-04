@@ -5,9 +5,11 @@
  */
 
 import { db } from './db';
-import { debug } from './debug';
+import { logger } from './logger';
 
-const log = debug.log;
+const log = logger('auth-state');
+
+
 
 // Auth state constants
 const AUTH_STATE_KEY = 'optimio_auth_state';
@@ -26,9 +28,9 @@ export interface AuthState {
 export function saveAuthState(state: AuthState): void {
   try {
     sessionStorage.setItem(AUTH_STATE_KEY, JSON.stringify(state));
-    log('💾 Auth state saved to sessionStorage');
+    log.debug('💾 Auth state saved to sessionStorage');
   } catch (error) {
-    console.error('Failed to save auth state:', error);
+    log.error('Failed to save auth state', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -41,7 +43,7 @@ export function loadAuthState(): AuthState | null {
     if (!stored) return null;
     return JSON.parse(stored) as AuthState;
   } catch (error) {
-    console.error('Failed to load auth state:', error);
+    log.error('Failed to load auth state', error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }
@@ -52,9 +54,9 @@ export function loadAuthState(): AuthState | null {
 export function clearAuthState(): void {
   try {
     sessionStorage.removeItem(AUTH_STATE_KEY);
-    log('🗑️ Auth state cleared');
+    log.debug('🗑️ Auth state cleared');
   } catch (error) {
-    console.error('Failed to clear auth state:', error);
+    log.error('Failed to clear auth state', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -99,11 +101,11 @@ export async function initializeAuthState(): Promise<AuthState> {
         lastVerifiedAt: Date.now(),
       };
       saveAuthState(state);
-      log('✅ Auth state initialized from existing session');
+      log.debug('✅ Auth state initialized from existing session');
       return state;
     }
   } catch (error) {
-    console.error('Failed to initialize auth state from DB:', error);
+    log.error('Failed to initialize auth state from DB', error instanceof Error ? error : new Error(String(error)));
   }
   
   // Check sessionStorage as fallback

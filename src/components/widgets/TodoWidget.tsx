@@ -80,6 +80,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                 size="icon" 
                 className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddTodo(true)}
+                aria-label="Add new task"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -95,6 +96,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
               size="sm"
               className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
               onClick={() => dispatch(actions.setView('todos'))}
+              aria-label="View all tasks"
             >
               View All
               <ChevronRight className="h-4 w-4" />
@@ -137,7 +139,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
               <p className="text-sm">No {filter} tasks</p>
             </div>
           ) : (
-            <div className="space-y-2 min-w-0">
+            <div className="space-y-2 min-w-0" role="list">
               {filteredTodos.map((todo) => {
                 const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
                 return (
@@ -145,6 +147,8 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                     key={todo.id}
                     className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer group flex flex-col gap-2 min-w-0 overflow-hidden"
                     onClick={() => setSelectedTodo(todo)}
+                    role="listitem"
+                    aria-label={`${todo.completed ? 'Completed' : 'Pending'} task: ${todo.title}${todo.priority ? `, ${todo.priority} priority` : ''}`}
                   >
                     {/* Top row: Checkbox + Priority dot + Title */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -153,15 +157,20 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                         onCheckedChange={() => handleToggleTodo(todo.id)}
                         onClick={(e) => e.stopPropagation()}
                         className="border-muted-foreground/40 flex-shrink-0"
+                        aria-label={`Mark ${todo.title} as ${todo.completed ? 'incomplete' : 'complete'}`}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={cn(
-                            'h-2 w-2 rounded-full flex-shrink-0 border',
-                            todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
-                            todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border border-yellow-500',
-                            todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
-                          )} />
+                          <span 
+                            className={cn(
+                              'h-2 w-2 rounded-full flex-shrink-0 border',
+                              todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',
+                              todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border border-yellow-500',
+                              todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border border-blue-500'
+                            )}
+                            aria-label={`${todo.priority} priority`}
+                            role="img"
+                          />
                           <p className={cn(
                             'text-sm text-foreground truncate',
                             todo.completed && 'line-through text-muted-foreground'
@@ -231,6 +240,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingTodo(selectedTodo)}
+                      aria-label={`Edit task: ${selectedTodo.title}`}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -242,6 +252,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                         handleDeleteTodo(selectedTodo.id);
                         setSelectedTodo(null);
                       }}
+                      aria-label={`Delete task: ${selectedTodo.title}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -258,6 +269,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                     checked={selectedTodo.completed}
                     onCheckedChange={() => handleToggleTodo(selectedTodo.id)}
                     className="border-muted-foreground/40"
+                    aria-label={`Mark ${selectedTodo.title} as ${selectedTodo.completed ? 'incomplete' : 'complete'}`}
                   />
                   <span className="text-sm text-foreground/60">
                     {selectedTodo.completed ? 'Completed' : 'Not completed'}
@@ -269,12 +281,15 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                   <div className="flex items-center gap-2 min-w-0">
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Priority:</span>
-                    <span className={cn(
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
-                      selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500',
-                      selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
-                    )}>
+                    <span 
+                      className={cn(
+                        'px-2 py-0.5 rounded text-xs font-medium',
+                        selectedTodo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
+                        selectedTodo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500',
+                        selectedTodo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
+                      )}
+                      aria-label={`${selectedTodo.priority} priority`}
+                    >
                       {selectedTodo.priority}
                     </span>
                   </div>

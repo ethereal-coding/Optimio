@@ -152,7 +152,7 @@ function convertGoogleEventToAppEvent(googleEvent: GoogleEventType, calendarId: 
   const color = colorMap[googleEvent.colorId as keyof typeof colorMap] || '#5484ed';
   
   if (googleEvent.colorId) {
-    console.log(`  🎨 Event "${googleEvent.summary}" - Google colorId: ${googleEvent.colorId} → ${color}`);
+    log.debug(`Event color mapped: ${googleEvent.summary} - colorId: ${googleEvent.colorId} → ${color}`);
   }
 
   return {
@@ -285,7 +285,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
   errors: string[];
 }> {
   const syncStartTime = Date.now();
-  console.log('🚨 EMERGENCY DEBUG: syncAllEvents() STARTED at', new Date().toISOString());
+  log.debug('Sync started', { timestamp: new Date().toISOString() });
 
   const accessToken = await getAccessToken();
   if (!accessToken) {
@@ -295,7 +295,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
   const enabledCalendars = await getEnabledCalendars();
 
   if (enabledCalendars.length === 0) {
-    console.log('⚠️ No enabled calendars found');
+    log.info('No enabled calendars found');
     return {
       success: true,
       added: 0,
@@ -305,7 +305,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
     };
   }
 
-  console.log(`📅 Syncing ${enabledCalendars.length} calendar(s): ${enabledCalendars.map(c => c.summary).join(', ')}`);
+  log.info(`Syncing ${enabledCalendars.length} calendar(s)`);
 
   let totalAdded = 0;
   let totalUpdated = 0;
@@ -318,21 +318,20 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
   // Sync each calendar sequentially (no parallel requests)
   for (const calendar of enabledCalendars) {
     try {
-      console.log(`  📥 Fetching events from: ${calendar.summary} (${calendar.id})`);
+      log.debug(`Fetching events from: ${calendar.summary}`);
 
       const googleEvents = await fetchEventsFromCalendar(calendar.id, accessToken, dateRange);
-      console.log(`  📥 Received ${googleEvents.length} events from Google`);
+      log.debug(`Received ${googleEvents.length} events from Google`);
 
       // Get existing events for this calendar to track updates vs adds
       const existingEvents = await db.events
         .where('sourceCalendarId')
         .equals(calendar.id)
         .toArray();
-      console.log(`  📊 Found ${existingEvents.length} existing events in DB for calendar ${calendar.summary}`);
+      log.debug(`Found ${existingEvents.length} existing events in DB`);
       
       const existingEventIds = new Set(existingEvents.map(e => e.googleEventId).filter((id): id is string => !!id));
-      console.log(`  🚨 EMERGENCY DEBUG: ${existingEventIds.size} existing events have googleEventId`);
-      console.log(`  🚨 EMERGENCY DEBUG: existingEventIds =`, Array.from(existingEventIds).slice(0, 10));
+      log.debug(`Found ${existingEventIds.size} events with googleEventId`);
       
       const newEventIds = new Set<string>();
 
@@ -349,7 +348,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
         
         // Skip if we've already seen this event (from another calendar)
         if (seenEventKeys.has(dedupKey)) {
-          console.log(`    ⏭️ Skipping duplicate: ${event.summary} (${dedupKey})`);
+          log.debug(`Skipping duplicate: ${event.summary}`);
           skippedCount++;
           continue;
         }
@@ -380,22 +379,22 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
         if (!isInNewEvents) {
           totalRemoved++;
           removedEventIds.push(existingId);
-          console.log(`    🗑️🗑️🗑️ EVENT DETECTED AS REMOVED: ${existingId}`);
+          log.debug(`Event detected as removed: ${existingId}`);
         }
       }
       if (removedEventIds.length > 0) {
-        console.log(`  🚨 EMERGENCY DEBUG: Total removed events for this calendar: ${removedEventIds.length}`);
+        log.debug(`${removedEventIds.length} events to be removed for this calendar`);
       } // else: no removed events, nothing to log
 
       // Calculate per-calendar stats
       const addedCalendar = appEvents.filter(e => !existingEventIds.has(e.googleEventId || '')).length;
       const updatedCalendar = appEvents.filter(e => existingEventIds.has(e.googleEventId || '')).length;
       
-      console.log(`  📝 Processed ${appEvents.length} unique events (${skippedCount} duplicates skipped)`);
-      console.log(`  📊 Stats for this calendar: ${addedCalendar} added, ${updatedCalendar} updated, ${removedEventIds.length} to be removed`);
+      log.info(`Processed ${appEvents.length} unique events (${skippedCount} duplicates skipped)`);
+      log.info(`Calendar stats: ${addedCalendar} added, ${updatedCalendar} updated, ${removedEventIds.length} to be removed`);
       
       const saveResult = await saveEventsForCalendar(calendar.id, appEvents, removedEventIds);
-      console.log(`  💾 Save result: ${saveResult.deleted} deleted, ${saveResult.added} added to DB`);
+      log.debug(`Save result: ${saveResult.deleted} deleted, ${saveResult.added} added to DB`);
 
       // Update calendar's lastSyncedAt
       await db.calendars.update(calendar.id, {
@@ -403,7 +402,7 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
       });
     } catch (error) {
       const errorMsg = `Failed to sync ${calendar.summary}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      console.error(`  ❌ ${errorMsg}`);
+      log.error(`Sync failed for ${calendar.summary}`, error instanceof Error ? error : new Error(String(error)));
       errors.push(errorMsg);
       // Continue with other calendars
     }

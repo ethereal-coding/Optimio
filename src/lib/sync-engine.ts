@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
-import { db, type SyncQueueEntry } from './db';
+import { db, type SyncQueueEntry, type Conflict } from './db';
 import { now } from './dates';
 import { debug } from './debug';
 
@@ -17,6 +15,9 @@ export interface SyncResult {
   errors: number;
   message: string;
 }
+
+// Type for entity data (used for conflict resolution)
+type EntityRecord = Record<string, unknown>;
 
 /**
  * Queue a change for future sync
@@ -36,7 +37,7 @@ export async function queueSync(
       payload,
       timestamp: Date.now(),
       retryCount: 0,
-      conflictResolution: 'pending' as const
+      conflictResolution: 'pending'
     });
 
     debug.log(`📝 Queued ${operation} for ${entityType}:${entityId}`);
@@ -81,10 +82,10 @@ export async function processSyncQueue(): Promise<SyncResult> {
         if (result.success) {
           // Mark as synced
           await db.syncQueue.update(entry.id!, {
-            conflictResolution: 'local-wins' // Placeholder
+            conflictResolution: 'local-wins'
           });
           synced++;
-        } else if (result.conflict) {
+        } else if (result.conflict && result.remoteVersion) {
           // Conflict detected
           await detectConflict(entry, result.remoteVersion);
           conflicts++;
@@ -128,7 +129,7 @@ export async function processSyncQueue(): Promise<SyncResult> {
 async function syncEntityToGoogle(entry: SyncQueueEntry): Promise<{
   success: boolean;
   conflict?: boolean;
-  remoteVersion?: Record<string, unknown>;
+  remoteVersion?: EntityRecord;
   error?: string;
 }> {
   // Simulate API call delay
@@ -149,7 +150,7 @@ async function syncEntityToGoogle(entry: SyncQueueEntry): Promise<{
  */
 async function detectConflict(
   localChange: SyncQueueEntry,
-  remoteVersion: Record<string, unknown>
+  remoteVersion: EntityRecord
 ): Promise<void> {
   try {
     // Get local version
@@ -164,14 +165,16 @@ async function detectConflict(
     }
 
     // Record conflict
-    await db.conflicts.add({
+    const conflict: Omit<Conflict, 'id'> = {
       entityType: localChange.entityType,
       entityId: localChange.entityId,
       localVersion: localEntity,
       remoteVersion: remoteVersion,
       detectedAt: Date.now(),
       resolution: 'pending'
-    });
+    };
+
+    await db.conflicts.add(conflict);
 
     debug.log(`⚠️ Conflict detected for ${localChange.entityType}:${localChange.entityId}`);
   } catch (error) {
@@ -185,19 +188,27 @@ async function detectConflict(
 async function getLocalEntity(
   entityType: 'event' | 'todo' | 'goal' | 'note',
   entityId: string
-): Promise<Record<string, unknown> | null> {
+): Promise<EntityRecord | null> {
+  let entity: object | undefined;
+
   switch (entityType) {
     case 'event':
-      return await db.events.get(entityId);
+      entity = await db.events.get(entityId);
+      break;
     case 'todo':
-      return await db.todos.get(entityId);
+      entity = await db.todos.get(entityId);
+      break;
     case 'goal':
-      return await db.goals.get(entityId);
+      entity = await db.goals.get(entityId);
+      break;
     case 'note':
-      return await db.notes.get(entityId);
+      entity = await db.notes.get(entityId);
+      break;
     default:
       return null;
   }
+
+  return entity ? (entity as EntityRecord) : null;
 }
 
 /**
@@ -214,6 +225,10 @@ export async function resolveConflict(
       throw new Error('Conflict not found');
     }
 
+    // Cast to EntityRecord since we know entities are objects in this context
+    const localVersion = conflict.localVersion as EntityRecord;
+    const remoteVersion = conflict.remoteVersion as EntityRecord;
+
     // Apply resolution
     switch (resolution) {
       case 'local-wins':
@@ -222,7 +237,7 @@ export async function resolveConflict(
           conflict.entityType,
           conflict.entityId,
           'UPDATE',
-          conflict.localVersion
+          localVersion
         );
         break;
 
@@ -231,13 +246,13 @@ export async function resolveConflict(
         await updateLocalEntity(
           conflict.entityType,
           conflict.entityId,
-          conflict.remoteVersion
+          remoteVersion
         );
         break;
 
       case 'merge': {
         // Custom merge logic (entity-specific)
-        const merged = mergeEntities(conflict.localVersion, conflict.remoteVersion);
+        const merged = mergeEntities(localVersion, remoteVersion);
         await updateLocalEntity(conflict.entityType, conflict.entityId, merged);
         await queueSync(conflict.entityType, conflict.entityId, 'UPDATE', merged);
         break;
@@ -263,20 +278,22 @@ export async function resolveConflict(
 async function updateLocalEntity(
   entityType: 'event' | 'todo' | 'goal' | 'note',
   entityId: string,
-  data: Record<string, unknown>
+  data: EntityRecord
 ): Promise<void> {
+  const entityData = { ...data, id: entityId } as unknown;
+
   switch (entityType) {
     case 'event':
-      await db.events.put({ ...data, id: entityId });
+      await db.events.put(entityData as Parameters<typeof db.events.put>[0]);
       break;
     case 'todo':
-      await db.todos.put({ ...data, id: entityId });
+      await db.todos.put(entityData as Parameters<typeof db.todos.put>[0]);
       break;
     case 'goal':
-      await db.goals.put({ ...data, id: entityId });
+      await db.goals.put(entityData as Parameters<typeof db.goals.put>[0]);
       break;
     case 'note':
-      await db.notes.put({ ...data, id: entityId });
+      await db.notes.put(entityData as Parameters<typeof db.notes.put>[0]);
       break;
   }
 }
@@ -284,10 +301,21 @@ async function updateLocalEntity(
 /**
  * Merge two versions of an entity (simple strategy)
  */
-function mergeEntities(local: Record<string, unknown>, remote: Record<string, unknown>): Record<string, unknown> {
+function mergeEntities(local: EntityRecord, remote: EntityRecord): EntityRecord {
+  // Safe date extraction helper
+  const getTime = (value: unknown): number => {
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date.getTime();
+      }
+    }
+    return 0;
+  };
+
   // Simple merge: use latest timestamp wins
-  const localTime = new Date(local.updatedAt || local.createdAt).getTime();
-  const remoteTime = new Date(remote.updatedAt || remote.createdAt).getTime();
+  const localTime = getTime(local.updatedAt ?? local.createdAt);
+  const remoteTime = getTime(remote.updatedAt ?? remote.createdAt);
 
   if (localTime > remoteTime) {
     return { ...remote, ...local };

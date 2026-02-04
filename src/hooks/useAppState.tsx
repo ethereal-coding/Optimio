@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, useMemo, type ReactNode } from 'react';
 import type { 
   Calendar, CalendarEvent, Todo, Goal, Note, User, 
-  UserPreferences, AppState 
+  UserPreferences, AppState, CalendarView, GoalsViewMode, NotesViewMode, TodosViewMode 
 } from '@/types';
 
 // Initial state with no sample data
@@ -60,10 +60,10 @@ type Action =
   | { type: 'SET_VIEW'; payload: AppState['view'] }
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'UPDATE_USER_PREFERENCES'; payload: Partial<UserPreferences> }
-  | { type: 'SET_GOALS_VIEW_MODE'; payload: 'grid' | 'list' }
-  | { type: 'SET_NOTES_VIEW_MODE'; payload: 'grid' | 'list' }
-  | { type: 'SET_TODOS_VIEW_MODE'; payload: 'grid' | 'list' }
-  | { type: 'SET_CALENDAR_VIEW'; payload: 'month' | 'week' | 'day' }
+  | { type: 'SET_GOALS_VIEW_MODE'; payload: GoalsViewMode }
+  | { type: 'SET_NOTES_VIEW_MODE'; payload: NotesViewMode }
+  | { type: 'SET_TODOS_VIEW_MODE'; payload: TodosViewMode }
+  | { type: 'SET_CALENDAR_VIEW'; payload: CalendarView }
   | { type: 'SET_SELECTED_ITEM_TO_OPEN'; payload: { type: 'event' | 'todo' | 'goal' | 'note'; id: string } | null }
   | { type: 'SET_THEME'; payload: 'dark' | 'light' | 'auto' };
 
@@ -532,10 +532,10 @@ export const actions = {
     type: 'SET_THEME',
     payload: theme
   }),
-  setGoalsViewMode: (mode: 'grid' | 'list'): Action => ({ type: 'SET_GOALS_VIEW_MODE', payload: mode }),
-  setNotesViewMode: (mode: 'grid' | 'list'): Action => ({ type: 'SET_NOTES_VIEW_MODE', payload: mode }),
-  setTodosViewMode: (mode: 'grid' | 'list'): Action => ({ type: 'SET_TODOS_VIEW_MODE', payload: mode }),
-  setCalendarView: (view: 'month' | 'week' | 'day'): Action => ({ type: 'SET_CALENDAR_VIEW', payload: view }),
+  setGoalsViewMode: (mode: GoalsViewMode): Action => ({ type: 'SET_GOALS_VIEW_MODE', payload: mode }),
+  setNotesViewMode: (mode: NotesViewMode): Action => ({ type: 'SET_NOTES_VIEW_MODE', payload: mode }),
+  setTodosViewMode: (mode: TodosViewMode): Action => ({ type: 'SET_TODOS_VIEW_MODE', payload: mode }),
+  setCalendarView: (view: CalendarView): Action => ({ type: 'SET_CALENDAR_VIEW', payload: view }),
   setSelectedItemToOpen: (item: { type: 'event' | 'todo' | 'goal' | 'note'; id: string } | null): Action => ({
     type: 'SET_SELECTED_ITEM_TO_OPEN',
     payload: item

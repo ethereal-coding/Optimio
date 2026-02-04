@@ -1,5 +1,8 @@
 import { db, type GoogleCalendar } from './db';
 import { getAccessToken, getCurrentUser } from './google-auth';
+import { logger } from './logger';
+
+const log = logger('calendar-storage');
 
 /**
  * CLEAN REBUILD - Calendar storage and retrieval
@@ -26,7 +29,7 @@ interface GoogleCalendarListResponse {
  * @param accessToken - Valid access token (pass as parameter to avoid race conditions)
  */
 export async function fetchCalendarListFromGoogle(accessToken: string): Promise<GoogleCalendar[]> {
-  console.log('📅 Fetching calendar list from Google...');
+  log.debug('Fetching calendar list from Google...');
 
   const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
     headers: {
@@ -42,7 +45,7 @@ export async function fetchCalendarListFromGoogle(accessToken: string): Promise<
   const data: GoogleCalendarListResponse = await response.json();
   const items = data.items || [];
 
-  console.log(`✅ Received ${items.length} calendars from Google`);
+  log.debug(`Received ${items.length} calendars from Google`);
 
   // Get current user for userId
   const user = await getCurrentUser();
@@ -73,13 +76,13 @@ export async function fetchCalendarListFromGoogle(accessToken: string): Promise<
  * Replaces all existing calendars
  */
 export async function saveCalendarsToDatabase(calendars: GoogleCalendar[]): Promise<void> {
-  console.log(`💾 Saving ${calendars.length} calendars to database...`);
+  log.debug(`Saving ${calendars.length} calendars to database...`);
 
   // Clear old calendars and add new ones
   await db.calendars.clear();
   await db.calendars.bulkAdd(calendars);
 
-  console.log('✅ Calendars saved to database');
+  log.debug('Calendars saved to database');
 }
 
 /**
@@ -124,7 +127,7 @@ export async function getEnabledCalendars(): Promise<GoogleCalendar[]> {
     .equals(1)
     .toArray();
 
-  console.log(`📅 Found ${calendars.length} enabled calendars`);
+  log.debug(`Found ${calendars.length} enabled calendars`);
 
   // Sort: primary first, then by name
   calendars.sort((a, b) => {
@@ -141,7 +144,7 @@ export async function getEnabledCalendars(): Promise<GoogleCalendar[]> {
  */
 export async function toggleCalendar(calendarId: string, enabled: boolean): Promise<void> {
   await db.calendars.update(calendarId, { enabled: enabled ? 1 : 0 });
-  console.log(`✅ Calendar ${calendarId} ${enabled ? 'enabled' : 'disabled'}`);
+  log.debug(`Calendar ${calendarId} ${enabled ? 'enabled' : 'disabled'}`);
 }
 
 /**

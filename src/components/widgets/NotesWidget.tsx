@@ -90,6 +90,7 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                 size="icon" 
                 className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 onClick={() => setShowAddNote(true)}
+                aria-label="Add new note"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -105,6 +106,7 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
               size="sm"
               className="text-muted-foreground hover:text-foreground hover:bg-secondary h-7 gap-1"
               onClick={() => dispatch(actions.setView('notes'))}
+              aria-label="View all notes"
             >
               View All
               <ChevronRight className="h-4 w-4" />
@@ -122,15 +124,15 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
               <p className="text-sm">No notes found</p>
             </div>
           ) : (
-            <div className="space-y-3" data-slot="widget-items-container">
+            <div className="space-y-3" data-slot="widget-items-container" role="list">
               {/* Pinned Notes */}
               {pinnedNotes.length > 0 && (
                 <div>
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
-                    <PinIcon className="h-3 w-3" />
+                    <PinIcon className="h-3 w-3" aria-hidden="true" />
                     Pinned
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-2" role="list">
                     {pinnedNotes.map((note) => (
                       <NoteCard
                         key={note.id}
@@ -150,7 +152,7 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
                     Recent
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-2" role="list">
                     {recentNotes.map((note) => (
                       <NoteCard
                         key={note.id}
@@ -188,6 +190,8 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={(e) => handleTogglePin(selectedNote.id, e)}
+                      aria-label={selectedNote.isPinned ? `Unpin note: ${selectedNote.title}` : `Pin note: ${selectedNote.title}`}
+                      aria-pressed={selectedNote.isPinned}
                     >
                       <PinIcon className={cn(
                         "h-4 w-4",
@@ -199,6 +203,8 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={(e) => handleToggleFavorite(selectedNote.id, e)}
+                      aria-label={selectedNote.isFavorite ? `Remove from favorites: ${selectedNote.title}` : `Add to favorites: ${selectedNote.title}`}
+                      aria-pressed={selectedNote.isFavorite}
                     >
                       <Star className={cn(
                         "h-4 w-4",
@@ -210,6 +216,7 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingNote(selectedNote)}
+                      aria-label={`Edit note: ${selectedNote.title}`}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -218,6 +225,7 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                       onClick={() => handleDeleteNote(selectedNote.id)}
+                      aria-label={`Delete note: ${selectedNote.title}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -311,6 +319,8 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
   return (
     <div
       onClick={onClick}
+      role="listitem"
+      aria-label={`${note.title}${note.isPinned ? ', pinned' : ''}${note.isFavorite ? ', favorited' : ''}`}
       style={{
         backgroundColor: hasCustomColor ? `${note.color}CC` : undefined, // CC = 80% opacity
         borderColor: hasCustomColor ? note.color : undefined // 100% opacity
@@ -340,6 +350,8 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
             onClick={(e) => onTogglePin(note.id, e)}
+            aria-label={note.isPinned ? `Unpin note: ${note.title}` : `Pin note: ${note.title}`}
+            aria-pressed={note.isPinned}
           >
             <PinIcon className={cn(
               "h-3 w-3 transition-transform duration-200",
@@ -358,6 +370,8 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
                 : "text-foreground/20 hover:text-yellow-500 hover:bg-yellow-500/10"
             )}
             onClick={(e) => onToggleFavorite(note.id, e)}
+            aria-label={note.isFavorite ? `Remove from favorites: ${note.title}` : `Add to favorites: ${note.title}`}
+            aria-pressed={note.isFavorite}
           >
             <Star className={cn(
               "h-3 w-3",

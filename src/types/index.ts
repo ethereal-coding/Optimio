@@ -132,6 +132,12 @@ export interface GoalProgress {
   color: string;
 }
 
+// View Mode Types
+export type CalendarView = 'month' | 'week' | 'day';
+export type GoalsViewMode = 'grid' | 'list';
+export type NotesViewMode = 'grid' | 'list';
+export type TodosViewMode = 'grid' | 'list';
+
 // App State
 export interface AppState {
   user: User | null;
@@ -142,10 +148,10 @@ export interface AppState {
   selectedDate: Date;
   view: 'dashboard' | 'calendar' | 'todos' | 'goals' | 'notes' | 'settings';
   isSidebarOpen: boolean;
-  goalsViewMode: 'grid' | 'list';
-  notesViewMode: 'grid' | 'list';
-  todosViewMode: 'grid' | 'list';
-  calendarView: 'month' | 'week' | 'day';
+  goalsViewMode: GoalsViewMode;
+  notesViewMode: NotesViewMode;
+  todosViewMode: TodosViewMode;
+  calendarView: CalendarView;
   selectedItemToOpen: { type: 'event' | 'todo' | 'goal' | 'note'; id: string } | null;
 }
 

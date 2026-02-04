@@ -7,7 +7,7 @@
  */
 
 import { db } from './db';
-import { debug } from './debug';
+import { logger } from './logger';
 import { encrypt, decrypt, clearEncryptionKey } from './crypto';
 import { 
   saveAuthState, 
@@ -17,7 +17,7 @@ import {
   type AuthState 
 } from './auth-state';
 
-const log = debug.log;
+const log = logger('google-auth');
 
 // Google OAuth Configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -38,6 +38,19 @@ export interface GoogleUser {
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 let initPromise: Promise<void> | null = null;
 
+// CSRF Protection: Secure random token for auth-state-changed events
+// This prevents malicious scripts from spoofing auth state changes
+const AUTH_TOKEN = crypto.randomUUID();
+
+/**
+ * Validate that an auth-state-changed event was dispatched by this module
+ * @param eventDetail - The event detail object to validate
+ * @returns true if the event is authentic, false otherwise
+ */
+export function validateAuthEvent(eventDetail: { _token?: string }): boolean {
+  return eventDetail._token === AUTH_TOKEN;
+}
+
 /**
  * Initialize Google Identity Services (setup only, no auth)
  * This does NOT trigger any popups - just prepares the client
@@ -47,7 +60,7 @@ export function initializeGoogleAuth(): Promise<void> {
   if (tokenClient) return Promise.resolve();
   
   if (typeof google === 'undefined' || !google.accounts) {
-    console.error('❌ Google Identity Services not loaded');
+    log.error('❌ Google Identity Services not loaded', new Error('Google Identity Services not loaded'));
     return Promise.reject(new Error('Google Identity Services not loaded'));
   }
 
@@ -60,21 +73,21 @@ export function initializeGoogleAuth(): Promise<void> {
         prompt: '', 
         callback: async (response: { error?: string; access_token?: string; expires_in?: string; scope?: string }) => {
           if (response.error) {
-            console.error('❌ OAuth error:', response.error);
+            log.error('❌ OAuth error', new Error(response.error));
             return;
           }
           try {
             await handleSuccessfulAuth(response as google.accounts.oauth2.TokenResponse);
           } catch (error) {
-            console.error('❌ Failed to process auth response:', error);
+            log.error('❌ Failed to process auth response', error instanceof Error ? error : new Error(String(error)));
           }
         },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
-      log('✅ Google Auth client initialized (no popup)');
+      log.debug('✅ Google Auth client initialized (no popup)');
       resolve();
     } catch (error) {
-      console.error('❌ Failed to initialize Google Auth:', error);
+      log.error('❌ Failed to initialize Google Auth', error instanceof Error ? error : new Error(String(error)));
       reject(error);
     }
   });
@@ -119,18 +132,18 @@ async function handleSuccessfulAuth(response: google.accounts.oauth2.TokenRespon
       lastVerifiedAt: Date.now(),
     });
 
-    log('✅ Auth successful for:', userInfo.email);
+    log.info('✅ Auth successful for:', { email: userInfo.email });
 
     // Fetch calendar list in background
-    fetchAndStoreCalendarList(userInfo.id).catch(console.error);
+    fetchAndStoreCalendarList(userInfo.id).catch(err => log.error('Failed to fetch calendar list', err instanceof Error ? err : new Error(String(err))));
 
-    // Notify app of auth change
+    // Notify app of auth change (with CSRF protection token)
     window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-      detail: { isAuthenticated: true, user: userInfo } 
+      detail: { isAuthenticated: true, user: userInfo, _token: AUTH_TOKEN } 
     }));
 
   } catch (error) {
-    console.error('❌ Failed to complete sign-in:', error);
+    log.error('❌ Failed to complete sign-in', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -146,7 +159,7 @@ export async function signIn(): Promise<void> {
     throw new Error('Token client not initialized');
   }
 
-  log('🔐 User-initiated sign-in...');
+  log.info('🔐 User-initiated sign-in...');
   
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -206,23 +219,23 @@ export async function signOut(): Promise<void> {
         await fetch(`https://oauth2.googleapis.com/revoke?token=${tokenToRevoke}`, {
           method: 'POST'
         });
-        log('✅ Token revoked with Google');
+        log.info('✅ Token revoked with Google');
       } catch (error) {
-        console.warn('⚠️ Token revocation failed:', error);
+        log.warn('⚠️ Token revocation failed:', { error: String(error) });
       }
     }
 
-    log('✅ Signed out successfully');
+    log.info('✅ Signed out successfully');
     
-    // Notify app
+    // Notify app (with CSRF protection token)
     window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-      detail: { isAuthenticated: false } 
+      detail: { isAuthenticated: false, _token: AUTH_TOKEN } 
     }));
     
     // Reload to clear any cached state
     window.location.reload();
   } catch (error) {
-    console.error('❌ Sign out failed:', error);
+    log.error('❌ Sign out failed', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -255,10 +268,10 @@ export async function isAuthenticated(): Promise<boolean> {
     
     if (isExpired) {
       // Token expired - log user out, NO auto-refresh popup
-      log('⏰ Token expired, user needs to sign in again');
+      log.warn('⏰ Token expired, user needs to sign in again');
       await clearAllAuthData();
       window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-        detail: { isAuthenticated: false } 
+        detail: { isAuthenticated: false, _token: AUTH_TOKEN } 
       }));
       return false;
     }
@@ -266,7 +279,7 @@ export async function isAuthenticated(): Promise<boolean> {
     updateLastVerified();
     return true;
   } catch (error) {
-    console.error('Failed to check auth status:', error);
+    log.error('Failed to check auth status', error instanceof Error ? error : new Error(String(error)));
     return false;
   }
 }
@@ -289,7 +302,7 @@ export async function getAccessToken(): Promise<string | null> {
     
     if (isExpired) {
       // Token expired - DON'T try to refresh, just return null
-      log('⏰ Token expired, returning null (no auto-refresh)');
+      log.warn('⏰ Token expired, returning null (no auto-refresh)');
       return null;
     }
 
@@ -297,7 +310,7 @@ export async function getAccessToken(): Promise<string | null> {
     const decryptedToken = await decrypt(tokens.accessToken);
     return decryptedToken;
   } catch (error) {
-    console.error('Failed to get access token:', error);
+    log.error('Failed to get access token', error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }
@@ -315,7 +328,7 @@ export async function getCurrentUser(): Promise<GoogleUser | null> {
       picture: users[0].picture
     } : null;
   } catch (error) {
-    console.error('Failed to get current user:', error);
+    log.error('Failed to get current user', error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }
@@ -349,7 +362,7 @@ async function fetchAndStoreCalendarList(userId: string): Promise<void> {
     const { fetchCalendarList } = await import('./google-calendar');
     const calendars = await fetchCalendarList();
 
-    log(`📅 Found ${calendars.length} calendars`);
+    log.info(`📅 Found ${calendars.length} calendars`);
 
     for (const calendar of calendars) {
       await db.calendars.put({
@@ -367,9 +380,9 @@ async function fetchAndStoreCalendarList(userId: string): Promise<void> {
       });
     }
 
-    log(`✅ Stored ${calendars.length} calendars in database`);
+    log.info(`✅ Stored ${calendars.length} calendars in database`);
   } catch (error) {
-    console.error('Failed to fetch calendar list:', error);
+    log.error('Failed to fetch calendar list', error instanceof Error ? error : new Error(String(error)));
   }
 }
 

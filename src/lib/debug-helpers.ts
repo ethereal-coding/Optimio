@@ -4,6 +4,9 @@
  */
 
 import { db } from './db';
+import { logger } from './logger';
+
+const log = logger('debug-helpers');
 import { isAuthenticated, getAccessToken, getCurrentUser, signIn, signOut } from './google-auth';
 import { syncCalendarList, getAllCalendars, getEnabledCalendars } from './calendar-storage';
 import { syncAllEvents, getEvents } from './event-sync';
@@ -37,94 +40,94 @@ export const debugHelpers = {
 
   // Quick test
   async testSync() {
-    console.log('🧪 Testing Google Calendar sync...\n');
+    log.info('🧪 Testing Google Calendar sync...\n');
 
     // 1. Check auth
-    console.log('1️⃣ Checking authentication...');
+    log.info('1️⃣ Checking authentication...');
     const authenticated = await isAuthenticated();
-    console.log('   Authenticated:', authenticated);
+    log.info('   Authenticated:', { authenticated });
 
     if (!authenticated) {
-      console.log('   ❌ Not authenticated. Run debugCRM.signIn() first.');
+      log.info('   ❌ Not authenticated. Run debugCRM.signIn() first.');
       return;
     }
 
     // 2. Get user
-    console.log('\n2️⃣ Getting current user...');
+    log.info('\n2️⃣ Getting current user...');
     const user = await getCurrentUser();
-    console.log('   User:', user);
+    log.info('   User:', { user });
 
     // 3. Sync calendar list
-    console.log('\n3️⃣ Syncing calendar list...');
+    log.info('\n3️⃣ Syncing calendar list...');
     try {
       const calendars = await syncCalendarList();
-      console.log('   ✅ Found', calendars.length, 'calendars');
+      log.info('   ✅ Found ' + calendars.length + ' calendars');
       calendars.forEach(cal => {
-        console.log(`      - ${cal.summary} (${cal.id}) - Enabled: ${cal.enabled}`);
+        log.info(`      - ${cal.summary} (${cal.id}) - Enabled: ${cal.enabled}`);
       });
     } catch (error) {
-      console.error('   ❌ Failed:', error);
+      log.error('   ❌ Failed to sync calendar list', error instanceof Error ? error : new Error(String(error)));
       return;
     }
 
     // 4. Get enabled calendars
-    console.log('\n4️⃣ Getting enabled calendars...');
+    log.info('\n4️⃣ Getting enabled calendars...');
     const enabled = await getEnabledCalendars();
-    console.log('   Enabled calendars:', enabled.length);
+    log.info('   Enabled calendars:', { count: enabled.length });
     enabled.forEach(cal => {
-      console.log(`      - ${cal.summary} (${cal.id})`);
+      log.info(`      - ${cal.summary} (${cal.id})`);
     });
 
     // 5. Sync events
-    console.log('\n5️⃣ Syncing events...');
+    log.info('\n5️⃣ Syncing events...');
     try {
       const result = await syncAllEvents();
-      console.log('   ✅ Sync result:', result);
+      log.info('   ✅ Sync result:', { result });
     } catch (error) {
-      console.error('   ❌ Failed:', error);
+      log.error('   ❌ Failed to sync events', error instanceof Error ? error : new Error(String(error)));
       return;
     }
 
     // 6. Get events from DB
-    console.log('\n6️⃣ Getting events from database...');
+    log.info('\n6️⃣ Getting events from database...');
     const events = await getEvents();
-    console.log('   Total events in DB:', events.length);
+    log.info('   Total events in DB:', { count: events.length });
     if (events.length > 0) {
-      console.log('   Sample event:');
-      console.log('      Title:', events[0].title);
-      console.log('      Start:', events[0].startTime);
-      console.log('      End:', events[0].endTime);
-      console.log('      Calendar:', events[0].sourceCalendarId);
+      log.info('   Sample event:');
+      log.info('      Title:', { title: events[0].title });
+      log.info('      Start:', { startTime: events[0].startTime });
+      log.info('      End:', { endTime: events[0].endTime });
+      log.info('      Calendar:', { sourceCalendarId: events[0].sourceCalendarId });
     }
 
-    console.log('\n✅ Test complete!');
+    log.info('\n✅ Test complete!');
   },
 
   // Clear all data
   async clearAll() {
-    console.log('🗑️ Clearing all data...');
+    log.info('🗑️ Clearing all data...');
     await db.events.clear();
     await db.calendars.clear();
     await db.authTokens.clear();
     await db.users.clear();
-    console.log('✅ All data cleared. Refresh the page.');
+    log.info('✅ All data cleared. Refresh the page.');
   },
 
   // Show database stats
   async stats() {
-    console.log('📊 Database Stats:');
-    console.log('   Events:', await db.events.count());
-    console.log('   Calendars:', await db.calendars.count());
-    console.log('   Todos:', await db.todos.count());
-    console.log('   Goals:', await db.goals.count());
-    console.log('   Notes:', await db.notes.count());
-    console.log('   Users:', await db.users.count());
-    console.log('   Auth Tokens:', await db.authTokens.count());
+    log.info('📊 Database Stats:');
+    log.info('   Events:', { count: await db.events.count() });
+    log.info('   Calendars:', { count: await db.calendars.count() });
+    log.info('   Todos:', { count: await db.todos.count() });
+    log.info('   Goals:', { count: await db.goals.count() });
+    log.info('   Notes:', { count: await db.notes.count() });
+    log.info('   Users:', { count: await db.users.count() });
+    log.info('   Auth Tokens:', { count: await db.authTokens.count() });
   }
 };
 
 // Auto-mount to window
 if (typeof window !== 'undefined') {
   window.debugCRM = debugHelpers;
-  console.log('🔧 Debug helpers loaded! Run debugCRM.testSync() to test Google Calendar sync.');
+  log.info('🔧 Debug helpers loaded! Run debugCRM.testSync() to test Google Calendar sync.');
 }
