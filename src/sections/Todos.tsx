@@ -40,6 +40,7 @@ import {
   Link2
 } from 'lucide-react';
 import { TaskGoalLinker } from '@/components/TaskGoalLinker';
+import { FeatureUtilities } from '@/components/FeatureUtilities';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, addDays, isSameDay } from 'date-fns';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
@@ -314,6 +315,9 @@ export function Todos() {
             <Plus className="h-4 w-4 mr-2" />
             New Task
           </Button>
+
+          {/* Utilities Dropdown */}
+          <FeatureUtilities type="todos" />
         </div>
       </div>
 

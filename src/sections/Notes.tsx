@@ -40,6 +40,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { AddNoteForm } from '@/components/forms/AddNoteForm';
 import type { Note } from '@/types';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync, reorderNotesWithSync } from '@/lib/note-sync';
+import { FeatureUtilities } from '@/components/FeatureUtilities';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
@@ -273,6 +274,9 @@ export function Notes() {
             <Plus className="h-4 w-4 mr-2" />
             New Note
           </Button>
+
+          {/* Utilities Dropdown */}
+          <FeatureUtilities type="notes" />
         </div>
       </div>
 

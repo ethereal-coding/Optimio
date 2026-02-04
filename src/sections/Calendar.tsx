@@ -40,6 +40,7 @@ import {
 } from 'date-fns';
 import { AddEventForm } from '@/components/forms/AddEventForm';
 import { addEventWithSync, updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
+import { FeatureUtilities } from '@/components/FeatureUtilities';
 import type { CalendarEvent } from '@/types';
 
 export function Calendar() {
@@ -253,6 +254,9 @@ export function Calendar() {
             <Plus className="h-4 w-4 mr-2" />
             New Event
           </Button>
+
+          {/* Utilities Dropdown */}
+          <FeatureUtilities type="events" />
         </div>
       </div>
 

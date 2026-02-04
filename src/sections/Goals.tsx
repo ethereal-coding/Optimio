@@ -29,6 +29,7 @@ import { format, differenceInDays } from 'date-fns';
 import { AddGoalForm } from '@/components/forms/AddGoalForm';
 import type { Goal, Todo } from '@/types';
 import { addGoalWithSync, updateGoalWithSync, deleteGoalWithSync, addTaskToGoalWithSync, removeTaskFromGoalWithSync } from '@/lib/goal-sync';
+import { FeatureUtilities } from '@/components/FeatureUtilities';
 import { toggleTodoWithSync, addTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
 
 
@@ -166,6 +167,9 @@ export function Goals() {
             <Plus className="h-4 w-4 mr-2" />
             New Goal
           </Button>
+
+          {/* Utilities Dropdown */}
+          <FeatureUtilities type="goals" />
         </div>
       </div>
 
