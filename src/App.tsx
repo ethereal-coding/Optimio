@@ -13,6 +13,7 @@ import { AuthWall } from '@/components/layout/AuthWall';
 import { syncCalendarList } from '@/lib/calendar-storage';
 import { useCalendarSync } from '@/hooks/useCalendarSync';
 import { logger } from '@/lib/logger';
+import { runAutoArchive } from '@/lib/archive';
 import '@/lib/debug-helpers'; // Loads debug helpers into window.debugCRM
 
 const log = logger('App');
@@ -258,6 +259,15 @@ function App() {
 
         log.info('Database initialized');
         debug.log('✅ Database initialized');
+
+        // Run auto-archive for completed items older than 3 days
+        debug.log('📦 Running auto-archive check...');
+        const archiveResult = await runAutoArchive();
+        if (archiveResult.archivedTodos > 0 || archiveResult.archivedGoals > 0) {
+          debug.log(`📦 Auto-archived ${archiveResult.archivedTodos} todos and ${archiveResult.archivedGoals} goals`);
+        } else {
+          debug.log('📦 No items to archive');
+        }
 
         setDbReady(true);
         debug.log('✅ Optimio ready!');
