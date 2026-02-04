@@ -9,7 +9,7 @@ import { TodoWidget } from '@/components/widgets/TodoWidget';
 import { GoalsWidget } from '@/components/widgets/GoalsWidget';
 import { NotesWidget } from '@/components/widgets/NotesWidget';
 import { QuickStats } from '@/components/widgets/QuickStats';
-import { Skeleton } from '@/components/ui/skeleton';
+
 
 // Lazy load sections for code splitting
 const Notes = lazy(() => import('@/sections/Notes').then(m => ({ default: m.Notes })));
@@ -84,13 +84,7 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
           {/* Render different views based on state */}
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center">
-              <div className="space-y-4 w-full max-w-4xl px-6">
-                <Skeleton className="h-24 w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Skeleton className="h-64" />
-                  <Skeleton className="h-64" />
-                </div>
-              </div>
+              <div className="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin" />
             </div>
           }>
           {state.view === 'notes' ? (
