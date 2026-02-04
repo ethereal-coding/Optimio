@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Todo, CalendarEvent, Goal, Note } from '@/types';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -9,14 +9,11 @@ import { TodoWidget } from '@/components/widgets/TodoWidget';
 import { GoalsWidget } from '@/components/widgets/GoalsWidget';
 import { NotesWidget } from '@/components/widgets/NotesWidget';
 import { QuickStats } from '@/components/widgets/QuickStats';
-
-
-// Lazy load sections for code splitting
-const Notes = lazy(() => import('@/sections/Notes').then(m => ({ default: m.Notes })));
-const Goals = lazy(() => import('@/sections/Goals').then(m => ({ default: m.Goals })));
-const Todos = lazy(() => import('@/sections/Todos').then(m => ({ default: m.Todos })));
-const Calendar = lazy(() => import('@/sections/Calendar').then(m => ({ default: m.Calendar })));
-const Settings = lazy(() => import('@/sections/Settings').then(m => ({ default: m.Settings })));
+import { Notes } from '@/sections/Notes';
+import { Goals } from '@/sections/Goals';
+import { Todos } from '@/sections/Todos';
+import { Calendar } from '@/sections/Calendar';
+import { Settings } from '@/sections/Settings';
 import {
   Button,
   Tooltip,
@@ -82,11 +79,6 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
           <Header onSearchOpen={onSearchOpen} showDateSelector={state.view === 'dashboard'} />
 
           {/* Render different views based on state */}
-          <Suspense fallback={
-            <div className="flex-1 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin" />
-            </div>
-          }>
           {state.view === 'notes' ? (
             <Notes />
           ) : state.view === 'goals' ? (
@@ -134,7 +126,6 @@ export function Dashboard({ onSearchOpen }: DashboardProps) {
               </div>
             </main>
           )}
-          </Suspense>
 
           {/* Quick Add Backdrop */}
           {isQuickAddOpen && (
