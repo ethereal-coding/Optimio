@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Archive, RotateCcw, CheckSquare, Target, Trash2 } from 'lucide-react';
+import { Archive as ArchiveIcon, RotateCcw, CheckSquare, Target, Trash2 } from 'lucide-react';
 import { db } from '@/lib/db';
 import type { ArchivedTodo, ArchivedGoal } from '@/lib/db';
 import { restoreArchivedTodo, restoreArchivedGoal } from '@/lib/archive';
@@ -109,7 +109,7 @@ export function Archive({ open, onOpenChange, type }: ArchiveProps) {
       <DialogContent className="bg-card border-border rounded-lg max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
-            <Archive className="h-5 w-5" />
+            <ArchiveIcon className="h-5 w-5" />
             Archive
           </DialogTitle>
         </DialogHeader>
