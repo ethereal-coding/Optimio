@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -39,8 +40,14 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo
     });
 
-    // TODO: Send to error tracking service (Sentry, LogRocket, etc.)
-    // logErrorToService(error, errorInfo);
+    // Send to Sentry for tracking
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+    });
   }
 
   handleReload = () => {
@@ -180,6 +187,17 @@ export class WidgetErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Widget error:', error, errorInfo);
+    // Send to Sentry
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        component: 'widget',
+      },
+    });
   }
 
   render() {

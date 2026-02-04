@@ -12,6 +12,7 @@ export * from './label';
 export * from './checkbox';
 export * from './select';
 export * from './calendar';
+export * from './search-input';
 
 // Overlays
 export * from './dialog';

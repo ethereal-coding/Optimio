@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ interface GoalsWidgetProps {
   className?: string;
 }
 
-export function GoalsWidget({ className }: GoalsWidgetProps) {
+export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsWidgetProps) {
   const { state, dispatch } = useAppState();
   const { goals } = state;
   const [showAddGoal, setShowAddGoal] = useState(false);
@@ -114,7 +114,7 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
                 return (
                   <div
                     key={goal.id}
-                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-2"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2"
                     onClick={() => setSelectedGoal(goal)}
                   >
                     {/* Top row: Title + Progress percentage */}
@@ -347,4 +347,4 @@ export function GoalsWidget({ className }: GoalsWidgetProps) {
       </Dialog>
     </Card>
   );
-}
+});

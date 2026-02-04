@@ -106,7 +106,7 @@ export interface SyncQueueEntry {
   entityType: 'event' | 'todo' | 'goal' | 'note';
   entityId: string;
   operation: 'CREATE' | 'UPDATE' | 'DELETE';
-  payload: Record<string, unknown> | unknown[] | unknown;
+  payload: object;
   timestamp: number;
   retryCount: number;
   conflictResolution: 'pending' | 'synced' | 'local-wins' | 'remote-wins';

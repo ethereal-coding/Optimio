@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
 import { initializeGoogleAuth } from './lib/google-auth'
+import { initSentry } from './lib/sentry'
+
+// Initialize Sentry error tracking before app starts
+initSentry()
 
 // Create QueryClient for TanStack Query
 const queryClient = new QueryClient({

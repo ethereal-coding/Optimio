@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import {
   CheckSquare,
@@ -8,7 +9,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 
-export function QuickStats() {
+export const QuickStats = React.memo(function QuickStats() {
   const { 
     getTodayEvents, 
     getTodayTodos, 
@@ -106,4 +107,4 @@ export function QuickStats() {
       })}
     </div>
   );
-}
+});

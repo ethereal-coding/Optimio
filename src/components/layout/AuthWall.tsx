@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { signIn, initializeGoogleAuth, isAuthenticated, getCurrentUser, type GoogleUser } from '@/lib/google-auth';
+import { signIn, initializeGoogleAuth, isAuthenticated, getCurrentUser } from '@/lib/google-auth';
 import { Loader2 } from 'lucide-react';
+import { useAppState, actions } from '@/hooks/useAppState';
 
 interface AuthWallProps {
   children: React.ReactNode;
 }
 
 export function AuthWall({ children }: AuthWallProps) {
+  const { dispatch } = useAppState();
   const [authState, setAuthState] = useState<'loading' | 'unauthenticated' | 'authenticated'>('loading');
-  const [, setUser] = useState<GoogleUser | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,17 +32,20 @@ export function AuthWall({ children }: AuthWallProps) {
         if (authenticated) {
           const currentUser = await getCurrentUser();
           if (isMounted) {
-            setUser(currentUser);
+            // Update global app state with user
+            dispatch(actions.setUser(currentUser));
             setAuthState('authenticated');
           }
         } else {
           if (isMounted) {
+            dispatch(actions.setUser(null));
             setAuthState('unauthenticated');
           }
         }
       } catch (err) {
         console.error('Auth check failed:', err);
         if (isMounted) {
+          dispatch(actions.setUser(null));
           setAuthState('unauthenticated');
         }
       }
@@ -52,10 +56,10 @@ export function AuthWall({ children }: AuthWallProps) {
     // Listen for auth state changes from other components
     const handleAuthChange = (event: CustomEvent) => {
       if (event.detail.isAuthenticated) {
-        setUser(event.detail.user || null);
+        dispatch(actions.setUser(event.detail.user || null));
         setAuthState('authenticated');
       } else {
-        setUser(null);
+        dispatch(actions.setUser(null));
         setAuthState('unauthenticated');
       }
     };
@@ -66,7 +70,7 @@ export function AuthWall({ children }: AuthWallProps) {
       isMounted = false;
       window.removeEventListener('auth-state-changed', handleAuthChange as EventListener);
     };
-  }, []);
+  }, [dispatch]);
 
   // Handle sign in
   const handleSignIn = useCallback(async () => {
@@ -75,14 +79,17 @@ export function AuthWall({ children }: AuthWallProps) {
     
     try {
       await signIn();
-      // Auth state will be updated via the event listener
+      // Auth successful - update state immediately
+      const currentUser = await getCurrentUser();
+      dispatch(actions.setUser(currentUser));
+      setAuthState('authenticated');
     } catch (err) {
       console.error('Sign in failed:', err);
       setError('Sign in failed. Please try again.');
     } finally {
       setIsSigningIn(false);
     }
-  }, []);
+  }, [dispatch]);
 
   // Loading state - show spinner without blocking UI
   if (authState === 'loading') {

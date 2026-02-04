@@ -305,7 +305,7 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         user: state.user
-          ? { ...state.user, preferences: { ...state.user.preferences, ...action.payload } }
+          ? { ...state.user, preferences: { ...(state.user.preferences ?? { theme: 'auto' }), ...action.payload } }
           : null
       };
 
@@ -330,7 +330,9 @@ function appReducer(state: AppState, action: Action): AppState {
                 startOfWeek: 0,
                 dateFormat: 'MM/dd/yyyy',
                 timeFormat: '12h',
-                notifications: false
+                notifications: false,
+                weekStartsOn: 0,
+                defaultCalendarView: 'month'
               }
             }
       };

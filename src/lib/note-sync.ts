@@ -1,17 +1,22 @@
 import { db } from './db';
 import type { Note } from '@/types';
 import { debug } from './debug';
+import { v4 as uuidv4 } from 'uuid';
 
-interface NoteAction {
-  type: string;
-  payload?: unknown;
-}
+// Action type for dispatch function - using generic to avoid type conflicts
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NoteAction = any;
 
+ 
 interface NoteActions {
-  addNote: (note: Note) => NoteAction;
-  updateNote: (note: Note) => NoteAction;
-  deleteNote: (noteId: string) => NoteAction;
-  reorderNotes: (notes: Note[]) => NoteAction;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addNote: (note: Note) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateNote: (note: Note) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deleteNote: (noteId: string) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reorderNotes: (notes: Note[]) => any;
 }
 
 /**
@@ -23,20 +28,27 @@ interface NoteActions {
  * Add note with IndexedDB persistence
  */
 export async function addNoteWithSync(
-  note: Note,
+  note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>,
   dispatch: (action: NoteAction) => void,
   actions: NoteActions
 ): Promise<void> {
+  const now = new Date();
+  const fullNote: Note = {
+    ...note,
+    id: uuidv4(),
+    createdAt: now,
+    updatedAt: now
+  };
   // Add to local state immediately
-  dispatch(actions.addNote(note));
+  dispatch(actions.addNote(fullNote));
 
   // Also save to IndexedDB so it persists after refresh
   try {
     await db.notes.put({
-      ...note,
+      ...fullNote,
       lastSyncedAt: new Date().toISOString()
     });
-    debug.log('💾 Note saved to IndexedDB:', note.id);
+    debug.log('💾 Note saved to IndexedDB:', fullNote.id);
   } catch (dbError) {
     console.error('Failed to save note to IndexedDB:', dbError);
   }

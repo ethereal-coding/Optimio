@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Todo, CalendarEvent } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import {
   CheckSquare,
   Clock,
   MapPin,
-  ChevronRight,
   Edit2,
   Trash2,
   AlertCircle
@@ -31,7 +30,7 @@ interface TodayOverviewProps {
   className?: string;
 }
 
-export function TodayOverview({ className }: TodayOverviewProps) {
+export const TodayOverview = React.memo(function TodayOverview({ className }: TodayOverviewProps) {
   const { state, dispatch, getTodayEvents, getTodayTodos } = useAppState();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -72,26 +71,12 @@ export function TodayOverview({ className }: TodayOverviewProps) {
 
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">
-              {format(state.selectedDate, 'EEEE, MMMM d, yyyy')}
-            </span>
-            <span className="text-xs text-muted-foreground mt-0.5">Overview</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary h-8"
-            onClick={() => {
-              dispatch(actions.setCalendarView('day'));
-              dispatch(actions.setView('calendar'));
-            }}
-          >
-            View All
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+      <CardHeader className="pb-3 flex-shrink-0">
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-foreground">
+            {format(state.selectedDate, 'EEEE, MMMM d, yyyy')}
+          </span>
+          <span className="text-xs text-muted-foreground mt-0.5">Overview</span>
         </div>
       </CardHeader>
 
@@ -109,11 +94,11 @@ export function TodayOverview({ className }: TodayOverviewProps) {
               <p className="text-sm text-muted-foreground">No events scheduled for today</p>
             </div>
           ) : (
-            <div className="space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
+            <div className="space-y-2 overflow-y-auto max-h-[180px] pr-1">
               {todayEvents.slice(0, 4).map((event) => (
                 <div
                   key={event.id}
-                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5"
+                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2"
                   onClick={() => handleEventClick(event)}
                 >
                   {/* Top row: Color indicator + Title */}
@@ -168,11 +153,11 @@ export function TodayOverview({ className }: TodayOverviewProps) {
               <p className="text-sm text-muted-foreground">No tasks due today</p>
             </div>
           ) : (
-            <div className="space-y-1.5 overflow-y-auto max-h-[180px] pr-1">
+            <div className="space-y-2 overflow-y-auto max-h-[180px] pr-1">
               {todayTodos.slice(0, 5).map((todo) => (
                 <div
                   key={todo.id}
-                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5"
+                  className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2"
                   onClick={() => setSelectedTodo(todo)}
                 >
                   {/* Top row: Checkbox + Priority dot + Title */}
@@ -452,4 +437,4 @@ export function TodayOverview({ className }: TodayOverviewProps) {
       </Dialog>
     </Card>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Todo } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,7 @@ interface TodoWidgetProps {
   className?: string;
 }
 
-export function TodoWidget({ className }: TodoWidgetProps) {
+export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidgetProps) {
   const { state, dispatch } = useAppState();
   const { todos } = state;
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -67,7 +67,7 @@ export function TodoWidget({ className }: TodoWidgetProps) {
 
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <CheckSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -130,20 +130,20 @@ export function TodoWidget({ className }: TodoWidgetProps) {
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden min-w-0">
-        <ScrollArea className="h-full pr-3">
+        <ScrollArea className="h-full w-full pr-3">
           <div className="pb-2 min-w-0">
           {filteredTodos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">No {filter} tasks</p>
             </div>
           ) : (
-            <div className="space-y-1.5 min-w-0">
+            <div className="space-y-2 min-w-0">
               {filteredTodos.map((todo) => {
                 const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
                 return (
                   <div
                     key={todo.id}
-                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer group flex flex-col gap-1.5 min-w-0 overflow-hidden"
+                    className="p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer group flex flex-col gap-2 min-w-0 overflow-hidden"
                     onClick={() => setSelectedTodo(todo)}
                   >
                     {/* Top row: Checkbox + Priority dot + Title */}
@@ -336,4 +336,4 @@ export function TodoWidget({ className }: TodoWidgetProps) {
       </Dialog>
     </Card>
   );
-}
+});

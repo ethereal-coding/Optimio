@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import type { Event } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ interface CalendarWidgetProps {
   className?: string;
 }
 
-export function CalendarWidget({ className }: CalendarWidgetProps) {
+export const CalendarWidget = React.memo(function CalendarWidget({ className }: CalendarWidgetProps) {
   const { state, dispatch } = useAppState();
   const { calendars, selectedDate } = state;
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -103,7 +103,7 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
 
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -151,9 +151,9 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                   key={date.toISOString()}
                   onClick={() => handleDateClick(date)}
                   className={cn(
-                    'relative aspect-square w-full max-h-7 mx-auto rounded-md flex items-center justify-center text-xs transition-colors',
+                    'group relative aspect-square w-full max-h-7 mx-auto rounded-md flex items-center justify-center text-xs transition-colors',
                     !isCurrentMonth && 'text-muted-foreground',
-                    isCurrentMonth && !isSelected && 'text-foreground hover:bg-white/85 hover:border hover:border-white hover:text-neutral-950',
+                    isCurrentMonth && !isSelected && 'text-foreground hover:bg-secondary/30',
                     isToday && !isSelected && 'bg-muted text-foreground font-medium',
                     isSelected && 'bg-white/75 border border-white text-neutral-950 font-medium',
                     !isSelected && !isToday && 'hover:text-foreground'
@@ -161,12 +161,15 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                 >
                   {format(date, 'd')}
                   {dayEvents.length > 0 && !isSelected && (
-                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5 group-hover:opacity-0 transition-opacity">
                       {dayEvents.slice(0, 3).map((event, i) => (
                         <div
                           key={i}
-                          className="h-1 w-2 rounded-full"
-                          style={{ backgroundColor: event.color || '#666' }}
+                          className="h-1 w-2 rounded-full border"
+                          style={{ 
+                            backgroundColor: event.color ? `${event.color}80` : '#66666680',
+                            borderColor: event.color || '#666'
+                          }}
                         />
                       ))}
                     </div>
@@ -207,11 +210,11 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
                 <p className="text-xs">No events for this day</p>
               </div>
             ) : (
-              <div className="space-y-1.5 min-w-0 py-2">
+              <div className="space-y-2 min-w-0 py-2">
                 {selectedDateEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="group p-2.5 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-all cursor-pointer flex flex-col gap-1.5 min-w-0 max-w-full"
+                    className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2 min-w-0 max-w-full"
                     onClick={() => handleEventClick(event)}
                   >
                     {/* Top row: Color indicator + Title */}
@@ -332,4 +335,4 @@ export function CalendarWidget({ className }: CalendarWidgetProps) {
       </Dialog>
     </Card>
   );
-}
+});

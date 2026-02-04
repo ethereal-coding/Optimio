@@ -157,9 +157,16 @@ export async function importData(file: File): Promise<{
 
       // Import settings (always replace)
       if (data.settings) {
+        const settings = data.settings as Record<string, unknown>;
         await db.settings.put({
-          ...data.settings,
-          id: 'user-preferences'
+          id: 'user-preferences',
+          theme: (settings.theme as 'dark' | 'light' | 'auto') ?? 'auto',
+          weekStartsOn: (settings.weekStartsOn as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? 0,
+          defaultCalendarView: (settings.defaultCalendarView as 'day' | 'week' | 'month') ?? 'month',
+          timeFormat: (settings.timeFormat as '12h' | '24h') ?? '12h',
+          dateFormat: (settings.dateFormat as string) ?? 'MM/dd/yyyy',
+          autoSync: (settings.autoSync as boolean) ?? true,
+          syncInterval: (settings.syncInterval as number) ?? 5
         });
       }
     });

@@ -19,6 +19,7 @@ import {
 import { CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeText, sanitizeHtml } from '@/lib/sanitize';
 import type { Todo } from '@/types';
 
 interface AddTodoFormProps {
@@ -38,15 +39,16 @@ export function AddTodoForm({ onSubmit, onCancel, initialTodo }: AddTodoFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    const sanitizedTitle = sanitizeText(title);
+    if (!sanitizedTitle) return;
 
     onSubmit({
       id: initialTodo?.id || uuidv4(),
-      title: title.trim(),
-      description: description.trim() || undefined,
+      title: sanitizedTitle,
+      description: sanitizeHtml(description) || undefined,
       completed: initialTodo?.completed || false,
       priority,
-      category: category.trim() || undefined,
+      category: sanitizeText(category) || undefined,
       dueDate,
       createdAt: initialTodo?.createdAt || new Date(),
       completedAt: initialTodo?.completedAt,

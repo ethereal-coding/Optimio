@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+
 import {
   FileText,
   Plus,
   Star,
-  Search,
   ChevronRight,
   Clock,
   Folder,
@@ -33,22 +32,16 @@ interface NotesWidgetProps {
   className?: string;
 }
 
-export function NotesWidget({ className }: NotesWidgetProps) {
+export const NotesWidget = React.memo(function NotesWidget({ className }: NotesWidgetProps) {
   const { state, dispatch } = useAppState();
   const { notes } = state;
-  const [searchQuery, setSearchQuery] = useState('');
+
   const [showAddNote, setShowAddNote] = useState(false);
   const [selectedNote, setSelectedNote] = useState<typeof notes[0] | null>(null);
   const [editingNote, setEditingNote] = useState<typeof notes[0] | null>(null);
 
-  const filteredNotes = notes.filter(note => 
-    note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  const pinnedNotes = filteredNotes.filter(n => n.isPinned);
-  const recentNotes = filteredNotes.filter(n => !n.isPinned).slice(0, 5);
+  const pinnedNotes = notes.filter(n => n.isPinned);
+  const recentNotes = notes.filter(n => !n.isPinned).slice(0, 5);
 
   const handleAddNote = async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
     await addNoteWithSync(note, dispatch, actions);
@@ -84,7 +77,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
 
   return (
     <Card className={cn("bg-card border-border rounded-lg w-full h-full flex flex-col", className)}>
-      <CardHeader className="pb-3 flex-shrink-0">
+      <CardHeader className="pb-3 flex-shrink-0" data-slot="widget-header">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -119,28 +112,17 @@ export function NotesWidget({ className }: NotesWidgetProps) {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative mt-2 flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
-          />
-        </div>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-hidden min-w-0">
-        <ScrollArea className="h-full w-full pr-3">
-          <div className="pb-2">
-          {filteredNotes.length === 0 ? (
+      <CardContent className="flex-1 overflow-hidden min-w-0" data-slot="widget-content">
+        <ScrollArea className="h-full w-full pr-3" data-slot="widget-scroll">
+          <div className="pb-2" data-slot="widget-inner">
+          {notes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">No notes found</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3" data-slot="widget-items-container">
               {/* Pinned Notes */}
               {pinnedNotes.length > 0 && (
                 <div>
@@ -148,7 +130,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
                     <PinIcon className="h-3 w-3" />
                     Pinned
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {pinnedNotes.map((note) => (
                       <NoteCard
                         key={note.id}
@@ -168,7 +150,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
                     Recent
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {recentNotes.map((note) => (
                       <NoteCard
                         key={note.id}
@@ -302,7 +284,7 @@ export function NotesWidget({ className }: NotesWidgetProps) {
       </Dialog>
     </Card>
   );
-}
+});
 
 interface NoteCardProps {
   note: {
@@ -337,7 +319,7 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
         "p-3 rounded-md border transition-all cursor-pointer group flex flex-col gap-2",
         hasCustomColor 
           ? "border-2 hover:brightness-110" 
-          : "bg-card border-border hover:border-border-strong hover:bg-secondary/30",
+          : "bg-card border-border hover:border-border-strong hover:bg-secondary/30 transition-colors",
       )}
     >
       {/* Top row: Title with action buttons */}

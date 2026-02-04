@@ -43,7 +43,7 @@ import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinW
 import type { DragEndEvent } from '@dnd-kit/core';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 
-type FilterMode = 'all' | 'pinned' | 'favorites';
+type FilterMode = 'all' | 'recent' | 'pinned' | 'favorites';
 
 export function Notes() {
   const { state, dispatch } = useAppState();
@@ -95,6 +95,11 @@ export function Notes() {
 
     if (filterMode === 'pinned') return note.isPinned;
     if (filterMode === 'favorites') return note.isFavorite;
+    if (filterMode === 'recent') {
+      // Show notes updated in the last 7 days
+      // eslint-disable-next-line react-hooks/purity
+      return new Date(note.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    }
     return true;
   });
 
@@ -194,23 +199,14 @@ export function Notes() {
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 h-auto min-h-[100px] border-b border-border bg-background px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-              <FileText className="h-5 w-5 text-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Notes</h1>
-              <p className="text-xs text-muted-foreground">{filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}</p>
-            </div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
+            <FileText className="h-5 w-5 text-foreground" />
           </div>
-          <Button
-            onClick={() => setShowAddNote(true)}
-            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Note
-          </Button>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Notes</h1>
+            <p className="text-xs text-muted-foreground">{filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -222,7 +218,7 @@ export function Notes() {
               placeholder="Search notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/20 transition-colors shadow-none"
             />
           </div>
 
@@ -244,6 +240,19 @@ export function Notes() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setFilterMode('recent')}
+              className={cn(
+                "h-8 text-xs transition-colors",
+                filterMode === 'recent'
+                  ? 'bg-white/75 border border-white text-black hover:bg-white hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              )}
+            >
+              Recent
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setFilterMode('pinned')}
               className={cn(
                 "h-8 text-xs transition-colors",
@@ -252,25 +261,18 @@ export function Notes() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               )}
             >
-              <PinIcon className="h-3 w-3 mr-1" />
               Pinned
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilterMode('favorites')}
-              className={cn(
-                "h-8 text-xs transition-colors",
-                filterMode === 'favorites'
-                  ? 'bg-white/75 border border-white text-black hover:bg-white hover:text-black'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              )}
-            >
-              <Star className="h-3 w-3 mr-1" />
-              Favorites
             </Button>
           </div>
 
+          {/* New Note Button */}
+          <Button
+            onClick={() => setShowAddNote(true)}
+            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4 ml-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Note
+          </Button>
         </div>
       </div>
 

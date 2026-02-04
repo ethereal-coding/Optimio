@@ -129,7 +129,8 @@ export class DatabaseMigrator {
  */
 export async function isMigrationNeeded(db: Dexie, targetVersion: number): Promise<boolean> {
   try {
-    const currentVersion = await (db as Dexie & { metadata?: Table<MetadataRecord, string> }).metadata?.get('schema_version');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentVersion = await (db as any).metadata?.get('schema_version');
     return ((currentVersion as MetadataRecord | undefined)?.value || 1) < targetVersion;
   } catch {
     return true;
@@ -144,7 +145,8 @@ export async function getMigrationStatus(db: Dexie): Promise<{
   pendingCount: number;
   migrations: Array<{ version: number; description: string }>;
 }> {
-  const currentVersion = await (db as Dexie & { metadata?: Table<MetadataRecord, string> }).metadata?.get('schema_version').then((v: MetadataRecord | undefined) => v?.value || 1);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentVersion = await (db as any).metadata?.get('schema_version').then((v: MetadataRecord | undefined) => v?.value || 1);
   const pending = migrations.filter(m => m.version > currentVersion);
 
   return {

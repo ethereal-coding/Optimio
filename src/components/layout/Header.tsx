@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Search,
   Bell,
   Calendar as CalendarIcon,
@@ -84,27 +90,38 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
   return (
+    <TooltipProvider delayDuration={300}>
     <header className="fixed top-0 left-16 right-0 h-14 flex items-center justify-between gap-4 border-b border-border bg-background px-4 z-40">
       {/* Left - Date Navigation (only on dashboard) */}
       {showDateSelector && (
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="flex items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
-              onClick={handlePreviousDay}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
-              onClick={handleNextDay}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
+                  onClick={handlePreviousDay}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Previous day</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-foreground/50 hover:text-foreground hover:bg-secondary rounded-lg"
+                  onClick={handleNextDay}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Next day</TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="flex items-center gap-2">
@@ -146,14 +163,19 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
         <div className="h-6 w-px bg-border" />
 
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-9 w-9 rounded-lg text-foreground/50 hover:text-foreground hover:bg-secondary"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-9 w-9 rounded-lg text-foreground/50 hover:text-foreground hover:bg-secondary"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Notifications</TooltipContent>
+        </Tooltip>
 
         {/* User Greeting or Sign In Button */}
         {user ? (
@@ -177,17 +199,11 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem
-                className="text-foreground hover:bg-secondary cursor-pointer"
-                onClick={() => dispatch(actions.setView('settings'))}
-              >
+              <DropdownMenuItem onClick={() => dispatch(actions.setView('settings'))}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-foreground hover:bg-secondary cursor-pointer"
-                onClick={handleSignOut}
-              >
+              <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </DropdownMenuItem>
@@ -257,5 +273,6 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
         </DialogContent>
       </Dialog>
     </header>
+    </TooltipProvider>
   );
 }

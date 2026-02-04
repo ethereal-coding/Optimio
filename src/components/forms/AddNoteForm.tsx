@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, FileText, Plus, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { sanitizeText, sanitizeHtml } from '@/lib/sanitize';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 import type { Note } from '@/types';
 
@@ -80,14 +81,15 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    const sanitizedTitle = sanitizeText(title);
+    if (!sanitizedTitle) return;
 
     onSubmit({
       id: initialNote?.id || uuidv4(),
-      title: title.trim(),
-      content: content.trim(),
-      tags,
-      folder: folder.trim() || undefined,
+      title: sanitizedTitle,
+      content: sanitizeHtml(content),
+      tags: tags.map(sanitizeText).filter(Boolean),
+      folder: sanitizeText(folder) || undefined,
       createdAt: initialNote?.createdAt || new Date(),
       updatedAt: new Date(),
       isPinned: initialNote?.isPinned || false,

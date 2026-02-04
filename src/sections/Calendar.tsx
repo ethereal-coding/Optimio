@@ -147,23 +147,14 @@ export function Calendar() {
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-border bg-background px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
-              <CalendarIcon className="h-5 w-5 text-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
-              <p className="text-xs text-muted-foreground">{filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}</p>
-            </div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center">
+            <CalendarIcon className="h-5 w-5 text-foreground" />
           </div>
-          <Button
-            onClick={() => setShowAddEvent(true)}
-            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Event
-          </Button>
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
+            <p className="text-xs text-muted-foreground">{filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'}</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -175,7 +166,7 @@ export function Calendar() {
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/30 transition-colors"
+              className="pl-9 h-10 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-md hover:border-border-strong focus:border-border-strong hover:bg-secondary/20 transition-colors shadow-none"
             />
           </div>
 
@@ -253,6 +244,15 @@ export function Calendar() {
               Day
             </Button>
           </div>
+
+          {/* New Event Button */}
+          <Button
+            onClick={() => setShowAddEvent(true)}
+            className="bg-white/75 border border-white text-neutral-950 hover:bg-white hover:border-white h-10 px-4 ml-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Event
+          </Button>
         </div>
       </div>
 

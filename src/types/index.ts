@@ -103,7 +103,7 @@ export interface User {
   email: string;
   avatar?: string;
   picture?: string; // Google profile picture
-  preferences: UserPreferences;
+  preferences?: UserPreferences;
   createdAt?: Date;
 }
 

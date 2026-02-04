@@ -149,7 +149,7 @@ function convertGoogleEventToAppEvent(googleEvent: GoogleEventType, calendarId: 
     '9': '#5484ed', '10': '#51b749', '11': '#dc2127'
   };
 
-  const color = colorMap[googleEvent.colorId] || '#5484ed';
+  const color = colorMap[googleEvent.colorId as keyof typeof colorMap] || '#5484ed';
   
   if (googleEvent.colorId) {
     console.log(`  🎨 Event "${googleEvent.summary}" - Google colorId: ${googleEvent.colorId} → ${color}`);
@@ -356,10 +356,10 @@ export async function syncAllEvents(dateRange?: { start: Date; end: Date }): Pro
         
         // Mark as seen
         seenEventKeys.add(dedupKey);
-        newEventIds.add(event.id);
+        newEventIds.add(event.id as string);
         
         // Track if this is an update or add
-        if (existingEventIds.has(event.id)) {
+        if (existingEventIds.has(event.id as string)) {
           totalUpdated++;
         } else {
           totalAdded++;

@@ -12,6 +12,7 @@ import {
 import { CalendarIcon, X, Target, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeText, sanitizeHtml } from '@/lib/sanitize';
 import type { Goal, Milestone } from '@/types';
 
 interface AddGoalFormProps {
@@ -29,11 +30,15 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
   const [deadline, setDeadline] = useState<Date | undefined>(initialGoal?.deadline ? new Date(initialGoal.deadline) : undefined);
   const [category, setCategory] = useState(initialGoal?.category || '');
   const [milestones, setMilestones] = useState<{ id: string; title: string; targetValue: string }[]>(
-    initialGoal?.milestones?.map((m: Partial<Milestone>) => ({
-      id: m.id,
-      title: m.title,
-      targetValue: m.targetValue?.toString() || ''
-    })) || []
+    initialGoal?.milestones
+      ?.filter((m): m is Milestone => 
+        typeof m.id === 'string' && typeof m.title === 'string' && m.id !== '' && m.title !== ''
+      )
+      .map(m => ({
+        id: m.id,
+        title: m.title,
+        targetValue: m.targetValue?.toString() || ''
+      })) || []
   );
 
   const addMilestone = () => {
@@ -52,28 +57,29 @@ export function AddGoalForm({ onSubmit, onCancel, initialGoal }: AddGoalFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !targetValue.trim()) return;
+    const sanitizedTitle = sanitizeText(title);
+    if (!sanitizedTitle || !targetValue.trim()) return;
 
     const target = parseFloat(targetValue);
     const current = parseFloat(currentValue) || 0;
 
     onSubmit({
       id: initialGoal?.id || uuidv4(),
-      title: title.trim(),
-      description: description.trim() || undefined,
+      title: sanitizedTitle,
+      description: sanitizeHtml(description) || undefined,
       targetValue: target,
       currentValue: current,
-      unit: unit.trim() || undefined,
+      unit: sanitizeText(unit) || undefined,
       deadline,
-      category: category.trim() || undefined,
-      color: undefined,
+      category: sanitizeText(category) || undefined,
+      color: initialGoal?.color || '#8b5cf6',
       milestones: milestones
-        .filter(m => m.title.trim())
+        .filter(m => sanitizeText(m.title))
         .map(m => {
           const existingMilestone = initialGoal?.milestones?.find((em: Partial<Milestone>) => em.id === m.id);
           return {
             id: m.id,
-            title: m.title.trim(),
+            title: sanitizeText(m.title),
             targetValue: parseFloat(m.targetValue) || 0,
             isCompleted: existingMilestone?.isCompleted || false,
             completedAt: existingMilestone?.completedAt

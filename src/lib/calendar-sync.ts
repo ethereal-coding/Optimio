@@ -17,18 +17,18 @@ import { debug } from './debug';
  * Wraps calendar actions with Google Calendar sync
  */
 
-// Action type for dispatch function
-interface Action {
-  type: string;
-  payload: unknown;
-}
+// Action type for dispatch function - using generic to avoid type conflicts
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DispatchFn = (action: any) => void;
 
-type DispatchFn = (action: Action) => void;
-
+ 
 interface ActionCreators {
-  addEvent: (calendarId: string, event: CalendarEvent) => Action;
-  updateEvent: (calendarId: string, event: CalendarEvent) => Action;
-  deleteEvent: (calendarId: string, eventId: string) => Action;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addEvent: (calendarId: string, event: CalendarEvent) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateEvent: (calendarId: string, event: CalendarEvent) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deleteEvent: (calendarId: string, eventId: string) => any;
 }
 
 /**

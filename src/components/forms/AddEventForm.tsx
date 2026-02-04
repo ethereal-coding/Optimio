@@ -12,6 +12,7 @@ import {
 import { CalendarIcon, Clock, MapPin, X } from 'lucide-react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeText, sanitizeHtml } from '@/lib/sanitize';
 import { GOOGLE_CALENDAR_COLORS } from '@/lib/google-calendar';
 import type { Event } from '@/types';
 
@@ -56,7 +57,8 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    const sanitizedTitle = sanitizeText(title);
+    if (!sanitizedTitle) return;
 
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const [endHour, endMinute] = endTime.split(':').map(Number);
@@ -71,9 +73,9 @@ export function AddEventForm({ onSubmit, onCancel, initialDate, initialEvent }: 
 
     onSubmit({
       id: initialEvent?.id || uuidv4(),
-      title: title.trim(),
-      description: description.trim() || undefined,
-      location: location.trim() || undefined,
+      title: sanitizeText(title),
+      description: sanitizeHtml(description) || undefined,
+      location: sanitizeText(location) || undefined,
       startTime: startDateTime,
       endTime: endDateTime,
       color,

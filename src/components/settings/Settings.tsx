@@ -1,7 +1,4 @@
 import { useState, useEffect } from 'react';
-import type { getExportStats } from '@/lib/export-import';
-import type { getSyncStatus } from '@/lib/sync-engine';
-import type { getDatabaseHealth } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

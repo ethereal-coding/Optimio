@@ -81,7 +81,6 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
   
   // Auth state
   const [isAuth, setIsAuth] = useState(false);
-  const authCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Sync state
   const [syncState, setSyncState] = useState<SyncStatus>({
@@ -98,7 +97,8 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
   // Track last sync time to prevent duplicate syncs
   const lastSyncRef = useRef<number>(0);
 
-  // Check auth status periodically (every 30 seconds)
+  // Check auth status - only on mount and when auth events fire
+  // No polling - we trust the auth state events
   useEffect(() => {
     isMountedRef.current = true;
 
@@ -109,13 +109,10 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
       }
     };
 
-    // Initial check
+    // Initial check only
     checkAuth();
 
-    // Periodic auth check (less frequent than sync)
-    authCheckIntervalRef.current = setInterval(checkAuth, 30000);
-
-    // Listen for auth state changes
+    // Listen for auth state changes (no polling needed)
     const handleAuthChange = (event: CustomEvent) => {
       if (isMountedRef.current) {
         setIsAuth(event.detail.isAuthenticated);
@@ -126,9 +123,6 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
 
     return () => {
       isMountedRef.current = false;
-      if (authCheckIntervalRef.current) {
-        clearInterval(authCheckIntervalRef.current);
-      }
       window.removeEventListener('auth-state-changed', handleAuthChange as EventListener);
     };
   }, []);
@@ -187,10 +181,7 @@ export function useCalendarSync(options: UseCalendarSyncOptions = {}): UseCalend
       return true;
     } catch (error) {
       const duration = Date.now() - startTime;
-      log.error('Sync failed', { 
-        durationMs: duration, 
-        error: error instanceof Error ? error.message : String(error) 
-      });
+      log.error('Sync failed', error instanceof Error ? error : new Error(String(error)), { duration });
 
       if (isMountedRef.current) {
         setSyncState(prev => ({
