@@ -33,7 +33,9 @@ describe('CalendarWidget', () => {
 
     const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     weekdays.forEach(day => {
-      expect(screen.getByText(day)).toBeInTheDocument();
+      // Use getAllByText since 'S' appears twice (Saturday and Sunday)
+      const elements = screen.getAllByText(day);
+      expect(elements.length).toBeGreaterThanOrEqual(1);
     });
   });
 

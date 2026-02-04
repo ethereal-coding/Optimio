@@ -58,7 +58,10 @@ export function detectDuplicates(
     if (existing && existing.id !== incoming.id) {
       // Duplicate found - mark existing (local) for deletion
       // Keep the incoming event (Google is source of truth)
-      eventsToDelete.push(existing);
+      // Only add to delete list if not already added
+      if (!eventsToDelete.some(e => e.id === existing.id)) {
+        eventsToDelete.push(existing);
+      }
       duplicatesFound.push({
         keep: incoming,
         remove: existing,

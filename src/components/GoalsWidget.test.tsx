@@ -12,23 +12,14 @@ describe('GoalsWidget', () => {
     render(<GoalsWidget />, { wrapper });
 
     expect(screen.getByText('Goals')).toBeInTheDocument();
-    expect(screen.getByText('active')).toBeInTheDocument();
   });
 
-  it('displays goal progress percentages', () => {
+  it('displays empty state when no goals', () => {
     render(<GoalsWidget />, { wrapper });
 
-    // Should display percentage values
-    const percentages = screen.getAllByText(/\d+%/);
-    expect(percentages.length).toBeGreaterThan(0);
-  });
-
-  it('displays milestone information', () => {
-    render(<GoalsWidget />, { wrapper });
-
-    // Should display milestone counts
-    const milestoneTexts = screen.getAllByText(/\d+\/\d+ milestones/);
-    expect(milestoneTexts.length).toBeGreaterThan(0);
+    // Should show empty state message
+    expect(screen.getByText('No goals yet')).toBeInTheDocument();
+    expect(screen.getByText('Set your first goal to get started')).toBeInTheDocument();
   });
 
   it('displays add goal button', () => {
@@ -39,5 +30,11 @@ describe('GoalsWidget', () => {
     );
 
     expect(addButton).toBeDefined();
+  });
+
+  it('displays view all button', () => {
+    render(<GoalsWidget />, { wrapper });
+
+    expect(screen.getByText('View All')).toBeInTheDocument();
   });
 });

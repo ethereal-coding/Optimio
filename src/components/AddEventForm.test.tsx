@@ -64,7 +64,7 @@ describe('AddEventForm', () => {
     const titleInput = screen.getByLabelText(/event title/i);
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
 
-    const submitButton = screen.getByText(/add event/i);
+    const submitButton = screen.getByText(/save changes/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -84,7 +84,7 @@ describe('AddEventForm', () => {
     const titleInput = screen.getByLabelText(/event title/i);
     fireEvent.change(titleInput, { target: { value: 'New Event' } });
 
-    const submitButton = screen.getByText(/add event/i);
+    const submitButton = screen.getByText(/save changes/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -115,7 +115,7 @@ describe('AddEventForm', () => {
 
     render(<AddEventForm onSubmit={onSubmit} onCancel={onCancel} />);
 
-    const submitButton = screen.getByText(/add event/i);
+    const submitButton = screen.getByText(/save changes/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -154,7 +154,7 @@ describe('AddEventForm', () => {
     const allDayCheckbox = screen.getByLabelText(/all day event/i);
     fireEvent.click(allDayCheckbox);
 
-    const submitButton = screen.getByText(/add event/i);
+    const submitButton = screen.getByText(/save changes/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {

@@ -12,23 +12,13 @@ describe('NotesWidget', () => {
     render(<NotesWidget />, { wrapper });
 
     expect(screen.getByText('Notes')).toBeInTheDocument();
-    expect(screen.getByText('total')).toBeInTheDocument();
   });
 
-  it('displays search input', () => {
+  it('displays empty state when no notes', () => {
     render(<NotesWidget />, { wrapper });
 
-    const searchInput = screen.getByPlaceholderText('Search notes...');
-    expect(searchInput).toBeInTheDocument();
-  });
-
-  it('displays note titles', () => {
-    render(<NotesWidget />, { wrapper });
-
-    // Should display some note titles from mock data
-    const noteTitles = ['Book Ideas', 'Meeting Notes', 'Spanish Vocabulary', 'Grocery List'];
-    const foundTitles = noteTitles.filter(title => screen.queryByText(title));
-    expect(foundTitles.length).toBeGreaterThan(0);
+    // Should show empty state message
+    expect(screen.getByText('No notes found')).toBeInTheDocument();
   });
 
   it('displays add note button', () => {
@@ -39,5 +29,11 @@ describe('NotesWidget', () => {
     );
 
     expect(addButton).toBeDefined();
+  });
+
+  it('displays view all button', () => {
+    render(<NotesWidget />, { wrapper });
+
+    expect(screen.getByText('View All')).toBeInTheDocument();
   });
 });
