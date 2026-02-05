@@ -26,6 +26,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable';
 
 import {
@@ -47,7 +48,7 @@ import { cn } from '@/lib/utils';
 import { format, isPast, isToday, isTomorrow, addDays, isSameDay } from 'date-fns';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import type { Todo, Goal } from '@/types';
-import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync, reorderTodosWithSync } from '@/lib/todo-sync';
 import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 import type { DragEndEvent } from '@dnd-kit/core';
 
@@ -189,6 +190,53 @@ export function Todos() {
     // Find the todo being dragged
     const todo = todos.find(t => t.id === activeId);
     if (!todo) return;
+
+    // Handle vertical reordering within the same column
+    if (!isOverColumn && activeId !== overId) {
+      // Dropped over another todo - check if they're in the same status group
+      const activeTodo = todos.find(t => t.id === activeId);
+      const overTodo = todos.find(t => t.id === overId);
+      
+      if (activeTodo && overTodo) {
+        // Determine which column each todo belongs to
+        const getTodoColumn = (t: Todo) => {
+          if (t.completed) return 'completed';
+          if (t.dueDate && isPast(t.dueDate) && !isToday(t.dueDate)) return 'in-progress';
+          return 'not-started';
+        };
+        
+        const activeColumn = getTodoColumn(activeTodo);
+        const overColumn = getTodoColumn(overTodo);
+        
+        if (activeColumn === overColumn) {
+          // Same column - reorder vertically
+          const columnTodos = todos.filter(t => getTodoColumn(t) === activeColumn);
+          const oldIndex = columnTodos.findIndex(t => t.id === activeId);
+          const newIndex = columnTodos.findIndex(t => t.id === overId);
+          
+          if (oldIndex !== -1 && newIndex !== -1) {
+            const reorderedColumnTodos = arrayMove(columnTodos, oldIndex, newIndex);
+            
+            // Update order for all todos in this column
+            const updatedColumnTodos = reorderedColumnTodos.map((t, index) => ({
+              ...t,
+              order: index
+            }));
+            
+            // Merge with all other todos
+            const allUpdatedTodos = todos.map(t => {
+              if (getTodoColumn(t) === activeColumn) {
+                return updatedColumnTodos.find(ut => ut.id === t.id) || t;
+              }
+              return t;
+            });
+            
+            await reorderTodosWithSync(allUpdatedTodos, dispatch, actions);
+            return;
+          }
+        }
+      }
+    }
 
     const updatedTodo = { ...todo };
 
