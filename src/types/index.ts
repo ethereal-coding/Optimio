@@ -48,6 +48,7 @@ export interface Todo {
   createdAt: Date;
   completedAt?: Date;
   subtasks?: Subtask[];
+  order?: number; // For drag-and-drop reordering within columns
 }
 
 export interface Subtask {

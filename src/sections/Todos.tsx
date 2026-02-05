@@ -125,10 +125,16 @@ export function Todos() {
     return true;
   });
 
-  // Group todos by status
-  const notStartedTodos = filteredTodos.filter(t => getTodoStatus(t) === 'not-started');
-  const inProgressTodos = filteredTodos.filter(t => getTodoStatus(t) === 'in-progress');
-  const completedTodos = filteredTodos.filter(t => getTodoStatus(t) === 'completed');
+  // Group todos by status and sort by order
+  const notStartedTodos = filteredTodos
+    .filter(t => getTodoStatus(t) === 'not-started')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const inProgressTodos = filteredTodos
+    .filter(t => getTodoStatus(t) === 'in-progress')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const completedTodos = filteredTodos
+    .filter(t => getTodoStatus(t) === 'completed')
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const handleAddTodo = async (todo: Todo) => {
     await addTodoWithSync(todo, dispatch, actions);
