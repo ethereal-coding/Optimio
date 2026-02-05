@@ -52,6 +52,51 @@ export function validateAuthEvent(eventDetail: { _token?: string }): boolean {
 }
 
 /**
+ * Check if the current domain is likely authorized
+ * Logs helpful warning if it might not be configured in Google Cloud Console
+ */
+function checkDomainAuthorization(): void {
+  const currentOrigin = window.location.origin;
+  
+  // Check if we're on localhost (always works during development)
+  if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
+    return; // Localhost is always fine
+  }
+  
+  // Check if we have a client ID configured
+  if (!GOOGLE_CLIENT_ID) {
+    log.warn('⚠️ No Google Client ID configured. Sign-in will not work.');
+    return;
+  }
+  
+  // Log current domain for debugging
+  log.info('🔐 Current domain:', { origin: currentOrigin });
+  
+  // Common deployment platforms that need explicit configuration
+  const needsConfiguration = [
+    'vercel.app',
+    'netlify.app',
+    'github.io',
+    'firebaseapp.com',
+    'web.app',
+    'surge.sh',
+    'herokuapp.com',
+    'render.com',
+    'onrender.com',
+    'railway.app'
+  ];
+  
+  const isCommonPlatform = needsConfiguration.some(domain => currentOrigin.includes(domain));
+  
+  if (isCommonPlatform) {
+    log.warn('⚠️ Deployed to a common hosting platform. Make sure to add this domain to Google Cloud Console:', {
+      origin: currentOrigin,
+      instructions: 'Go to APIs & Services > Credentials > OAuth 2.0 Client ID > Authorized JavaScript origins'
+    });
+  }
+}
+
+/**
  * Initialize Google Identity Services (setup only, no auth)
  * This does NOT trigger any popups - just prepares the client
  */
@@ -64,6 +109,9 @@ export function initializeGoogleAuth(): Promise<void> {
     return Promise.reject(new Error('Google Identity Services not loaded'));
   }
 
+  // Check domain authorization before initializing
+  checkDomainAuthorization();
+
   initPromise = new Promise((resolve, reject) => {
     try {
        
@@ -71,6 +119,24 @@ export function initializeGoogleAuth(): Promise<void> {
         client_id: GOOGLE_CLIENT_ID,
         scope: SCOPES,
         prompt: '', 
+        error_callback: (error: { type: string; message?: string }) => {
+          // Handle initialization errors (like unauthorized domain)
+          if (error.type === 'idpiframe_initialization_failed') {
+            const currentOrigin = window.location.origin;
+            log.error('❌ Google Auth initialization failed - domain not authorized', {
+              origin: currentOrigin,
+              error: error.message,
+              solution: `Add "${currentOrigin}" to Authorized JavaScript origins in Google Cloud Console`
+            });
+            reject(new Error(
+              `Domain "${currentOrigin}" is not authorized. ` +
+              'Add it to Google Cloud Console: APIs & Services > Credentials > OAuth 2.0 Client ID > Authorized JavaScript origins'
+            ));
+            return;
+          }
+          log.error('❌ Google Auth error:', { type: error.type, message: error.message });
+          reject(new Error(`Google Auth error: ${error.message || error.type}`));
+        },
         callback: async (response: { error?: string; access_token?: string; expires_in?: string; scope?: string }) => {
           if (response.error) {
             log.error('❌ OAuth error', new Error(response.error));

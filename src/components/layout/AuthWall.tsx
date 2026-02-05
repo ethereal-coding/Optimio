@@ -44,10 +44,20 @@ export function AuthWall({ children }: AuthWallProps) {
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        if (isMounted) {
-          dispatch(actions.setUser(null));
-          setAuthState('unauthenticated');
+        const errorMessage = err instanceof Error ? err.message : '';
+        
+        if (!isMounted) return;
+        
+        // Show helpful error for domain authorization issues
+        if (errorMessage.includes('not authorized') || errorMessage.includes('idpiframe_initialization_failed')) {
+          setError(
+            `This domain (${window.location.origin}) is not authorized for Google Sign-In. ` +
+            'Add it to Google Cloud Console: APIs & Services > Credentials > OAuth 2.0 Client ID > Authorized JavaScript origins'
+          );
         }
+        
+        dispatch(actions.setUser(null));
+        setAuthState('unauthenticated');
       }
     }
 
@@ -90,7 +100,17 @@ export function AuthWall({ children }: AuthWallProps) {
       setAuthState('authenticated');
     } catch (err) {
       console.error('Sign in failed:', err);
-      setError('Sign in failed. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Sign in failed';
+      
+      // Show helpful error for domain authorization issues
+      if (errorMessage.includes('not authorized') || errorMessage.includes('idpiframe_initialization_failed')) {
+        setError(
+          `This domain (${window.location.origin}) is not authorized for Google Sign-In. ` +
+          'Add it to Google Cloud Console: APIs & Services > Credentials > OAuth 2.0 Client ID > Authorized JavaScript origins'
+        );
+      } else {
+        setError('Sign in failed. Please try again.');
+      }
     } finally {
       setIsSigningIn(false);
     }
