@@ -36,8 +36,7 @@ import {
   PlayCircle,
   CheckCircle2,
   Target,
-  Tag,
-  Link2
+  Tag
 } from 'lucide-react';
 import { TaskGoalLinker } from '@/components/TaskGoalLinker';
 import { FeatureUtilities } from '@/components/FeatureUtilities';
@@ -46,6 +45,7 @@ import { format, isPast, isToday, isTomorrow, addDays, isSameDay } from 'date-fn
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import type { Todo, Goal } from '@/types';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 import type { DragEndEvent } from '@dnd-kit/core';
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low';
@@ -166,6 +166,10 @@ export function Todos() {
     if (updatedTodo && selectedTodo?.id === todoId) {
       setSelectedTodo({ ...updatedTodo, completed: !updatedTodo.completed });
     }
+  };
+
+  const handleUnlinkGoal = async (goalId: string, todoId: string) => {
+    await removeTaskFromGoalWithSync(goalId, todoId, dispatch, actions);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -377,6 +381,7 @@ export function Todos() {
                         goals={goals}
                         onClick={() => setSelectedTodo(todo)}
                         onToggle={() => handleToggleTodo(todo.id)}
+                        onUnlinkGoal={handleUnlinkGoal}
                         getPriorityColor={getPriorityColor}
                       />
                     ))}
@@ -403,6 +408,7 @@ export function Todos() {
                         goals={goals}
                         onClick={() => setSelectedTodo(todo)}
                         onToggle={() => handleToggleTodo(todo.id)}
+                        onUnlinkGoal={handleUnlinkGoal}
                         getPriorityColor={getPriorityColor}
                       />
                     ))}
@@ -429,6 +435,7 @@ export function Todos() {
                         goals={goals}
                         onClick={() => setSelectedTodo(todo)}
                         onToggle={() => handleToggleTodo(todo.id)}
+                        onUnlinkGoal={handleUnlinkGoal}
                         getPriorityColor={getPriorityColor}
                       />
                     ))}
@@ -563,10 +570,11 @@ interface SortableTodoCardProps {
   goals: Goal[];
   onClick: () => void;
   onToggle: (e: React.MouseEvent) => void;
+  onUnlinkGoal?: (goalId: string, todoId: string) => void;
   getPriorityColor: (priority: string) => string;
 }
 
-function SortableTodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: SortableTodoCardProps) {
+function SortableTodoCard({ todo, goals, onClick, onToggle, onUnlinkGoal, getPriorityColor }: SortableTodoCardProps) {
   const {
     attributes,
     listeners,
@@ -589,6 +597,7 @@ function SortableTodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: 
         goals={goals}
         onClick={onClick}
         onToggle={onToggle}
+        onUnlinkGoal={onUnlinkGoal}
         getPriorityColor={getPriorityColor}
       />
     </div>
@@ -601,10 +610,11 @@ interface TodoCardProps {
   goals: Goal[];
   onClick: () => void;
   onToggle: (e: React.MouseEvent) => void;
+  onUnlinkGoal?: (goalId: string, todoId: string) => void;
   getPriorityColor: (priority: string) => string;
 }
 
-function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCardProps) {
+function TodoCard({ todo, goals, onClick, onToggle, onUnlinkGoal, getPriorityColor }: TodoCardProps) {
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
   const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
 
@@ -641,6 +651,19 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
             </h3>
           </div>
         </div>
+        {/* Goal icon - unlink when clicked */}
+        {linkedGoal && onUnlinkGoal && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnlinkGoal(linkedGoal.id, todo.id);
+            }}
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            title={`Linked to: ${linkedGoal.title} (click to unlink)`}
+          >
+            <Target className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Bottom section: Due date on left; Priority, Goal, Category, Tags on right */}
@@ -663,9 +686,12 @@ function TodoCard({ todo, goals, onClick, onToggle, getPriorityColor }: TodoCard
           </span>
           {/* Goal badge */}
           {linkedGoal && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-foreground/50 text-[10px]">
+            <span 
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-secondary text-foreground/50"
+              title={linkedGoal.title}
+            >
               <Target className="h-3 w-3" />
-              <span className="truncate max-w-[80px]">{linkedGoal.title}</span>
+              <span className="truncate max-w-[60px]">{linkedGoal.title.slice(0, 8)}</span>
             </span>
           )}
           {/* Category */}
@@ -730,11 +756,15 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, onLinkGoal }
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              className={cn(
+                "h-8 w-8 hover:bg-secondary",
+                linkedGoal ? "text-white hover:text-muted-foreground" : "text-muted-foreground"
+              )}
               onClick={onLinkGoal}
-              aria-label="Link task to goal"
+              aria-label={linkedGoal ? "Unlink from goal" : "Link task to goal"}
+              title={linkedGoal ? `Linked to: ${linkedGoal.title}` : "Link to goal"}
             >
-              <Link2 className="h-4 w-4" />
+              <Target className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -805,8 +835,7 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, onLinkGoal }
               {/* Goal tag */}
               {linkedGoal && (
                 <span
-                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90"
-                  style={{ backgroundColor: linkedGoal.color }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] bg-secondary text-foreground/50"
                 >
                   <Target className="h-3 w-3" />
                   {linkedGoal.title}

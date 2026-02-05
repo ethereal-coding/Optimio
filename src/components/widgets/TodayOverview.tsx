@@ -11,7 +11,8 @@ import {
   MapPin,
   Edit2,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Target
 } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,7 @@ import { AddEventForm } from '@/components/forms/AddEventForm';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { updateEventWithSync, deleteEventWithSync } from '@/lib/calendar-sync';
 import { updateTodoWithSync, deleteTodoWithSync, toggleTodoWithSync } from '@/lib/todo-sync';
+import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 
 interface TodayOverviewProps {
   className?: string;
@@ -32,6 +34,7 @@ interface TodayOverviewProps {
 
 export const TodayOverview = React.memo(function TodayOverview({ className }: TodayOverviewProps) {
   const { state, dispatch, getTodayEvents, getTodayTodos } = useAppState();
+  const { goals } = state;
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
@@ -186,13 +189,33 @@ export const TodayOverview = React.memo(function TodayOverview({ className }: To
                     </div>
                   </div>
                   
-                  {/* Bottom row: Due date on LEFT; Priority + Category on RIGHT */}
+                  {/* Bottom row: Due date on LEFT; Priority + Goal + Category on RIGHT */}
                   <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50 mt-auto">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       Today
                     </span>
                     <div className="flex items-center gap-1">
+                      {/* Goal tag */}
+                      {(() => {
+                        const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
+                        if (linkedGoal) {
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
+                              }}
+                              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-secondary text-foreground/50 hover:text-foreground transition-colors"
+                              title={`${linkedGoal.title} (click to unlink)`}
+                            >
+                              <Target className="h-3 w-3" />
+                              <span className="truncate max-w-[60px]">{linkedGoal.title.slice(0, 8)}</span>
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                       <span className={cn(
                         'px-1.5 py-0.5 rounded text-[10px] text-white/90 capitalize',
                         todo.priority === 'high' && 'bg-red-500/50 text-red-400 border border-red-500',

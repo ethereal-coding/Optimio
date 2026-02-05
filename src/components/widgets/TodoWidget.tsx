@@ -158,7 +158,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                     role="listitem"
                     aria-label={`${todo.completed ? 'Completed' : 'Pending'} task: ${todo.title}${todo.priority ? `, ${todo.priority} priority` : ''}`}
                   >
-                    {/* Top row: Checkbox + Priority dot + Title */}
+                    {/* Top row: Checkbox + Priority dot + Title + Goal Icon */}
                     <div className="flex items-center gap-3 min-w-0">
                       <Checkbox
                         checked={todo.completed}
@@ -187,6 +187,25 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                           </p>
                         </div>
                       </div>
+                      {/* Goal icon - unlink when clicked */}
+                      {(() => {
+                        const linkedGoal = goals.find((g: Goal) => g.taskIds?.includes(todo.id));
+                        if (linkedGoal) {
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
+                              }}
+                              className="flex-shrink-0 text-foreground hover:text-red-400 transition-colors"
+                              title={`Linked to: ${linkedGoal.title} (click to unlink)`}
+                            >
+                              <Target className="h-4 w-4" />
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     {/* Bottom row: Due date LEFT; Priority, Category RIGHT */}
@@ -215,8 +234,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                                   e.stopPropagation();
                                   removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
                                 }}
-                                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-white/90 hover:opacity-80 transition-opacity"
-                                style={{ backgroundColor: linkedGoal.color }}
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-secondary text-foreground/50 hover:text-foreground transition-colors"
                                 title={`${linkedGoal.title} (click to unlink)`}
                               >
                                 <Target className="h-3 w-3" />
@@ -370,8 +388,8 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewT
               variant="ghost"
               size="icon"
               className={cn(
-                "h-8 w-8 hover:text-foreground hover:bg-secondary",
-                linkedGoal ? "text-foreground" : "text-muted-foreground"
+                "h-8 w-8 hover:bg-secondary",
+                linkedGoal ? "text-white hover:text-muted-foreground" : "text-muted-foreground"
               )}
               onClick={handleGoalClick}
               aria-label={linkedGoal ? "Unlink from goal" : "Link task to goal"}
@@ -457,8 +475,7 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewT
               {/* Goal tag */}
               {linkedGoal && (
                 <span
-                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90"
-                  style={{ backgroundColor: linkedGoal.color }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] bg-secondary text-foreground/50"
                   title={linkedGoal.title}
                 >
                   <Target className="h-3 w-3" />
