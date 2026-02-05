@@ -163,7 +163,7 @@ export const TodayOverview = React.memo(function TodayOverview({ className }: To
                   className="group p-3 rounded-md bg-card border border-border hover:border-border-strong hover:bg-secondary/30 transition-colors cursor-pointer flex flex-col gap-2"
                   onClick={() => setSelectedTodo(todo)}
                 >
-                  {/* Top row: Checkbox + Priority dot + Title */}
+                  {/* Top row: Checkbox + Priority dot + Title + Goal icon */}
                   <div className="flex items-center gap-3">
                     <Checkbox
                       checked={todo.completed}
@@ -187,6 +187,25 @@ export const TodayOverview = React.memo(function TodayOverview({ className }: To
                         </p>
                       </div>
                     </div>
+                    {/* Goal icon - unlink when clicked */}
+                    {(() => {
+                      const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
+                      if (linkedGoal) {
+                        return (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
+                            }}
+                            className="flex-shrink-0 text-white hover:text-muted-foreground transition-colors"
+                            title={`Linked to: ${linkedGoal.title} (click to unlink)`}
+                          >
+                            <Target className="h-4 w-4" />
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   
                   {/* Bottom row: Due date on LEFT; Priority + Goal + Category on RIGHT */}
@@ -196,21 +215,18 @@ export const TodayOverview = React.memo(function TodayOverview({ className }: To
                       Today
                     </span>
                     <div className="flex items-center gap-1">
-                      {/* Goal icon - unlink when clicked */}
+                      {/* Goal badge */}
                       {(() => {
                         const linkedGoal = goals.find(g => g.taskIds?.includes(todo.id));
                         if (linkedGoal) {
                           return (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
-                              }}
-                              className="text-white hover:text-muted-foreground transition-colors"
-                              title={`Linked to: ${linkedGoal.title} (click to unlink)`}
+                            <span
+                              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-secondary text-foreground/50"
+                              title={linkedGoal.title}
                             >
-                              <Target className="h-3.5 w-3.5" />
-                            </button>
+                              <Target className="h-3 w-3" />
+                              <span className="truncate max-w-[60px]">{linkedGoal.title.slice(0, 8)}</span>
+                            </span>
                           );
                         }
                         return null;
