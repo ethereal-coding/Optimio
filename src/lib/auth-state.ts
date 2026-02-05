@@ -1,7 +1,7 @@
 /**
  * Auth State Management
- * Uses sessionStorage for sensitive auth data (cleared when tab closes)
- * Uses localStorage only for non-sensitive UI preferences
+ * Uses localStorage for auth state (persists until user signs out)
+ * Token refresh is handled silently when possible
  */
 
 import { db } from './db';
@@ -22,24 +22,23 @@ export interface AuthState {
 }
 
 /**
- * Save auth state to sessionStorage (cleared when tab closes)
- * More secure than localStorage for sensitive auth data
+ * Save auth state to localStorage (persists until user signs out)
  */
 export function saveAuthState(state: AuthState): void {
   try {
-    sessionStorage.setItem(AUTH_STATE_KEY, JSON.stringify(state));
-    log.debug('💾 Auth state saved to sessionStorage');
+    localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(state));
+    log.debug('💾 Auth state saved to localStorage');
   } catch (error) {
     log.error('Failed to save auth state', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 /**
- * Load auth state from sessionStorage
+ * Load auth state from localStorage
  */
 export function loadAuthState(): AuthState | null {
   try {
-    const stored = sessionStorage.getItem(AUTH_STATE_KEY);
+    const stored = localStorage.getItem(AUTH_STATE_KEY);
     if (!stored) return null;
     return JSON.parse(stored) as AuthState;
   } catch (error) {
@@ -49,11 +48,11 @@ export function loadAuthState(): AuthState | null {
 }
 
 /**
- * Clear auth state from sessionStorage
+ * Clear auth state from localStorage
  */
 export function clearAuthState(): void {
   try {
-    sessionStorage.removeItem(AUTH_STATE_KEY);
+    localStorage.removeItem(AUTH_STATE_KEY);
     log.debug('🗑️ Auth state cleared');
   } catch (error) {
     log.error('Failed to clear auth state', error instanceof Error ? error : new Error(String(error)));

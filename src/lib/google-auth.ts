@@ -251,9 +251,71 @@ async function clearAllAuthData(): Promise<void> {
 }
 
 /**
+ * Refresh access token silently (without popup)
+ * Uses Google's prompt: 'none' to refresh if user has previously consented
+ */
+async function refreshTokenSilently(): Promise<boolean> {
+  try {
+    await initializeGoogleAuth();
+    
+    if (!tokenClient) {
+      return false;
+    }
+
+    return new Promise((resolve) => {
+      // Set a timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        resolve(false);
+      }, 5000);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const originalCallback = (tokenClient as any).callback;
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tokenClient as any).callback = async (response: { error?: string; access_token?: string; expires_in?: string; scope?: string }) => {
+        clearTimeout(timeout);
+        // Restore original callback
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (tokenClient as any).callback = originalCallback;
+        
+        if (response.error || !response.access_token) {
+          log.warn('Silent token refresh failed:', { error: response.error });
+          resolve(false);
+          return;
+        }
+
+        try {
+          // Update stored token
+          const encryptedToken = await encrypt(response.access_token);
+          await db.authTokens.put({
+            id: 'google',
+            accessToken: encryptedToken,
+            expiresAt: Date.now() + (parseInt(response.expires_in || '3600') * 1000),
+            scope: response.scope
+          });
+          
+          log.info('✅ Token refreshed silently');
+          updateLastVerified();
+          resolve(true);
+        } catch (error) {
+          log.error('Failed to store refreshed token', error instanceof Error ? error : new Error(String(error)));
+          resolve(false);
+        }
+      };
+
+      // Request token with prompt: 'none' for silent refresh
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (tokenClient as any).requestAccessToken({ prompt: 'none' });
+    });
+  } catch (error) {
+    log.error('Silent refresh failed', error instanceof Error ? error : new Error(String(error)));
+    return false;
+  }
+}
+
+/**
  * Check if user is authenticated
- * IMPORTANT: This function NEVER triggers popups. Ever.
- * It only checks if we have a valid (non-expired) token in storage.
+ * If token is expired, attempts silent refresh first
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
@@ -267,8 +329,16 @@ export async function isAuthenticated(): Promise<boolean> {
     const isExpired = tokens.expiresAt <= Date.now();
     
     if (isExpired) {
-      // Token expired - log user out, NO auto-refresh popup
-      log.warn('⏰ Token expired, user needs to sign in again');
+      // Try to refresh token silently first
+      log.info('⏰ Token expired, attempting silent refresh...');
+      const refreshed = await refreshTokenSilently();
+      
+      if (refreshed) {
+        return true;
+      }
+      
+      // Silent refresh failed - log user out
+      log.warn('Silent refresh failed, user needs to sign in again');
       await clearAllAuthData();
       window.dispatchEvent(new CustomEvent('auth-state-changed', { 
         detail: { isAuthenticated: false, _token: AUTH_TOKEN } 
@@ -286,12 +356,11 @@ export async function isAuthenticated(): Promise<boolean> {
 
 /**
  * Get valid access token
- * IMPORTANT: This function NEVER triggers popups. Ever.
- * If token is expired, returns null and lets caller handle it.
+ * If token is expired, attempts silent refresh first
  */
 export async function getAccessToken(): Promise<string | null> {
   try {
-    const tokens = await db.authTokens.get('google');
+    let tokens = await db.authTokens.get('google');
 
     if (!tokens) {
       return null;
@@ -301,9 +370,20 @@ export async function getAccessToken(): Promise<string | null> {
     const isExpired = tokens.expiresAt <= Date.now();
     
     if (isExpired) {
-      // Token expired - DON'T try to refresh, just return null
-      log.warn('⏰ Token expired, returning null (no auto-refresh)');
-      return null;
+      // Try to refresh token silently
+      log.info('⏰ Token expired, attempting silent refresh...');
+      const refreshed = await refreshTokenSilently();
+      
+      if (!refreshed) {
+        log.warn('Silent refresh failed, returning null');
+        return null;
+      }
+      
+      // Get the newly stored token
+      tokens = await db.authTokens.get('google');
+      if (!tokens) {
+        return null;
+      }
     }
 
     // Decrypt the token
