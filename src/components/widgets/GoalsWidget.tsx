@@ -246,15 +246,16 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
             <>
               <DialogHeader>
                 <div className="flex items-start justify-between gap-4 pt-4">
-                  <DialogTitle className="text-lg text-foreground flex-1">{selectedGoal.title}</DialogTitle>
+                  <div className="flex-1">
+                    <DialogTitle className="text-xl text-foreground">{selectedGoal.title}</DialogTitle>
+                  </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
                       onClick={() => setEditingGoal(selectedGoal)}
-                      aria-label={`Edit goal: ${selectedGoal.title}`}
-                      aria-describedby={selectedGoal.description ? `goal-desc-${selectedGoal.id}` : undefined}
+                      aria-label="Edit goal"
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -263,7 +264,7 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                       onClick={() => handleDeleteGoal(selectedGoal.id)}
-                      aria-label={`Delete goal: ${selectedGoal.title}`}
+                      aria-label="Delete goal"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -271,75 +272,66 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
                 </div>
               </DialogHeader>
 
-              <div className="border-t border-border -mt-4"></div>
-
-              <div className="space-y-4 pt-3">
-                {/* Progress Overview */}
-                <div className="p-4 rounded-lg bg-muted border border-border">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-muted-foreground">Progress</span>
-                    <span className="text-3xl font-bold" style={{ color: selectedGoal.color }}>
-                      {Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}%
-                    </span>
-                  </div>
-                  <div 
-                    className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3"
-                    role="progressbar"
-                    aria-valuenow={Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label={`${selectedGoal.title} progress`}
-                  >
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100, 100)}%`,
-                        backgroundColor: selectedGoal.color
-                      }}
-                    />
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {(selectedGoal.currentValue ?? 0).toLocaleString()} / {(selectedGoal.targetValue ?? 0).toLocaleString()} {selectedGoal.unit}
-                  </div>
-                </div>
-
-                {selectedGoal.description && (
-                  <div>
-                    <label className="text-sm text-muted-foreground block mb-1">Description</label>
-                    <p id={`goal-desc-${selectedGoal.id}`} className="text-sm text-foreground/70 leading-relaxed">{selectedGoal.description}</p>
-                  </div>
-                )}
-
-                {selectedGoal.milestones.length > 0 && (
-                  <div>
-                    <label className="text-sm text-muted-foreground block mb-2">Milestones</label>
-                    <div className="space-y-2">
-                      {selectedGoal.milestones.map((milestone) => (
-                        <div
-                          key={milestone.id}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <div className={cn(
-                            'h-3.5 w-3.5 rounded-full flex items-center justify-center',
-                            milestone.isCompleted ? 'bg-green-500/20' : 'bg-secondary'
-                          )}>
-                            {milestone.isCompleted ? (
-                              <TrendingUp className="h-2 w-2" />
-                            ) : (
-                              <div className="h-1.5 w-1.5 rounded-full bg-muted" />
-                            )}
-                          </div>
-                          <span className={cn(
-                            "flex-1 text-muted-foreground",
-                            milestone.isCompleted && "line-through text-muted-foreground"
-                          )}>
-                            {milestone.title}
-                          </span>
-                        </div>
-                      ))}
+              <div className="max-h-[60vh] pr-4 overflow-y-auto custom-scrollbar">
+                <div className="space-y-6">
+                  {/* Progress Overview */}
+                  <div className="p-4 rounded-md bg-background border border-border">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-muted-foreground">Progress</span>
+                      <span className="text-3xl font-bold text-foreground">
+                        {Math.round(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100)}%
+                      </span>
+                    </div>
+                    <div className="relative h-3 bg-secondary rounded-full overflow-hidden mb-3">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full transition-all bg-primary"
+                        style={{ width: `${Math.min(((selectedGoal.currentValue ?? 0) / (selectedGoal.targetValue || 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {(selectedGoal.currentValue ?? 0).toLocaleString()} / {(selectedGoal.targetValue ?? 0).toLocaleString()} {selectedGoal.unit}
                     </div>
                   </div>
-                )}
+
+                  {/* Description */}
+                  {selectedGoal.description && (
+                    <div className="prose prose-invert max-w-none">
+                      <p className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{selectedGoal.description}</p>
+                    </div>
+                  )}
+
+                  {/* Milestones */}
+                  {selectedGoal.milestones.length > 0 && (
+                    <div className="space-y-3">
+                      <label className="text-sm text-muted-foreground">Milestones</label>
+                      <div className="space-y-2">
+                        {selectedGoal.milestones.map((milestone) => (
+                          <div
+                            key={milestone.id}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <div className={cn(
+                              'h-3.5 w-3.5 rounded-full flex items-center justify-center',
+                              milestone.isCompleted ? 'bg-green-500/20' : 'bg-secondary'
+                            )}>
+                              {milestone.isCompleted ? (
+                                <TrendingUp className="h-2 w-2" />
+                              ) : (
+                                <div className="h-1.5 w-1.5 rounded-full bg-muted" />
+                              )}
+                            </div>
+                            <span className={cn(
+                              "flex-1 text-muted-foreground",
+                              milestone.isCompleted && "line-through"
+                            )}>
+                              {milestone.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
