@@ -155,8 +155,12 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
               type="button"
               onClick={() => setColor(c.value)}
               className={cn(
-                "w-8 h-8 rounded-full border-2 transition-all",
-                color === c.value ? "border-foreground scale-110" : "border-transparent hover:scale-105"
+                "h-7 w-7 rounded-md transition-all",
+                color === c.value 
+                  ? useWhiteText 
+                    ? "ring-2 ring-offset-2 ring-offset-transparent ring-white scale-110" 
+                    : "ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110"
+                  : "hover:scale-105"
               )}
               style={{ backgroundColor: c.value || 'hsl(var(--card))' }}
               title={c.name}
