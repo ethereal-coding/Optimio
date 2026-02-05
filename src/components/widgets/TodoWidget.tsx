@@ -271,7 +271,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
           setEditingTodo(null);
         }
       }}>
-        <DialogContent className="bg-card border-border rounded-lg max-w-2xl" showCloseButton={false}>
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {selectedTodo && (
             <ViewTodoContent
               todo={selectedTodo}
@@ -293,7 +293,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
           setEditingTodo(null);
         }
       }}>
-        <DialogContent className="bg-card border-border rounded-lg max-w-3xl">
+        <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
           {editingTodo && (
             <>
               <DialogHeader>
