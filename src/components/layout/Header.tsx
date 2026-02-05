@@ -108,7 +108,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Previous day</TooltipContent>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border border-border text-foreground">Previous day</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -122,7 +122,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Next day</TooltipContent>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border border-border text-foreground">Next day</TooltipContent>
             </Tooltip>
           </div>
 
@@ -178,7 +178,7 @@ export function Header({ onSearchOpen, showDateSelector = true }: HeaderProps) {
               <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Notifications</TooltipContent>
+          <TooltipContent side="bottom" sideOffset={8} className="bg-popover border border-border text-foreground">Notifications</TooltipContent>
         </Tooltip>
 
         {/* User Greeting or Sign In Button */}

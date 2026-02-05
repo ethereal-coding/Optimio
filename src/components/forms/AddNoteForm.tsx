@@ -235,7 +235,7 @@ export function AddNoteForm({ onSubmit, onCancel, initialNote }: AddNoteFormProp
             placeholder="Add a tag and press Enter"
             className={cn("flex-1 h-10", inputClassName)}
           />
-          <Button type="button" variant="outline" onClick={addTag} className={cn("h-10 w-10 px-0", buttonClassName)}>
+          <Button type="button" variant="ghost" onClick={addTag} className={cn("h-10 w-10 px-0 border", buttonClassName)}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
