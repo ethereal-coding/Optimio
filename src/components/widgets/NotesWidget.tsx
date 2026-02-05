@@ -28,7 +28,6 @@ import {
 import { AddNoteForm } from '@/components/forms/AddNoteForm';
 import { addNoteWithSync, updateNoteWithSync, deleteNoteWithSync, toggleNotePinWithSync, toggleNoteFavoriteWithSync } from '@/lib/note-sync';
 import type { Note } from '@/types';
-import { useState } from 'react';
 
 interface NotesWidgetProps {
   className?: string;
