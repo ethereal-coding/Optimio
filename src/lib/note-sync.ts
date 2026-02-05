@@ -92,10 +92,20 @@ export async function deleteNoteWithSync(
   // Delete from local state immediately
   dispatch(actions.deleteNote(noteId));
 
-  // Also delete from IndexedDB
+  // Move to deleted table and delete from main table
   try {
-    await db.notes.delete(noteId);
-    debug.log('🗑️ Note deleted from IndexedDB:', noteId);
+    const note = await db.notes.get(noteId);
+    if (note) {
+      // Add to deletedNotes table first
+      await db.deletedNotes.put({
+        ...note,
+        originalId: note.id,
+        deletedAt: new Date().toISOString()
+      });
+      // Then delete from main table
+      await db.notes.delete(noteId);
+      debug.log('🗑️ Note moved to deletedNotes:', noteId);
+    }
   } catch (dbError) {
     log.error('Failed to delete note from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }

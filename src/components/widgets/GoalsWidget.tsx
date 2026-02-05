@@ -79,15 +79,22 @@ export const GoalsWidget = React.memo(function GoalsWidget({ className }: GoalsW
           </div>
           <div className="flex items-center gap-1">
             <Dialog open={showAddGoal} onOpenChange={setShowAddGoal}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                onClick={() => setShowAddGoal(true)}
-                aria-label="Add new goal"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    onClick={() => setShowAddGoal(true)}
+                    aria-label="Add new goal"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                  Add new goal
+                </TooltipContent>
+              </Tooltip>
               <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Create New Goal</DialogTitle>

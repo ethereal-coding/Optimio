@@ -88,15 +88,22 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <Dialog open={showAddTodo} onOpenChange={setShowAddTodo}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                onClick={() => setShowAddTodo(true)}
-                aria-label="Add new task"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    onClick={() => setShowAddTodo(true)}
+                    aria-label="Add new task"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                  Add new task
+                </TooltipContent>
+              </Tooltip>
               <DialogContent className="bg-card border-border rounded-lg max-w-3xl">
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Add New Task</DialogTitle>

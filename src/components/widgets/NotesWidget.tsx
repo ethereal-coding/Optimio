@@ -91,15 +91,22 @@ export const NotesWidget = React.memo(function NotesWidget({ className }: NotesW
           </div>
           <div className="flex items-center gap-1">
             <Dialog open={showAddNote} onOpenChange={setShowAddNote}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                onClick={() => setShowAddNote(true)}
-                aria-label="Add new note"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    onClick={() => setShowAddNote(true)}
+                    aria-label="Add new note"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                  Add new note
+                </TooltipContent>
+              </Tooltip>
               <DialogContent className="bg-card border-border max-w-3xl" showCloseButton={false}>
                 <DialogHeader>
                   <DialogTitle className="text-foreground">Create New Note</DialogTitle>

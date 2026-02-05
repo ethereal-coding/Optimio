@@ -95,10 +95,20 @@ export async function deleteGoalWithSync(
   // Delete from local state immediately
   dispatch(actions.deleteGoal(goalId));
 
-  // Also delete from IndexedDB
+  // Move to deleted table and delete from main table
   try {
-    await db.goals.delete(goalId);
-    debug.log('🗑️ Goal deleted from IndexedDB:', goalId);
+    const goal = await db.goals.get(goalId);
+    if (goal) {
+      // Add to deletedGoals table first
+      await db.deletedGoals.put({
+        ...goal,
+        originalId: goal.id,
+        deletedAt: new Date().toISOString()
+      });
+      // Then delete from main table
+      await db.goals.delete(goalId);
+      debug.log('🗑️ Goal moved to deletedGoals:', goalId);
+    }
   } catch (dbError) {
     log.error('Failed to delete goal from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }

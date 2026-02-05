@@ -109,6 +109,7 @@ export async function toggleTodoWithSync(
 
 /**
  * Delete todo with IndexedDB persistence
+ * Also moves todo to deletedTodos table for recycling bin
  */
 export async function deleteTodoWithSync(
   todoId: string,
@@ -118,10 +119,20 @@ export async function deleteTodoWithSync(
   // Delete from local state immediately
   dispatch(actions.deleteTodo(todoId));
 
-  // Also delete from IndexedDB
+  // Move to deleted table and delete from main table
   try {
-    await db.todos.delete(todoId);
-    debug.log('🗑️ Todo deleted from IndexedDB:', todoId);
+    const todo = await db.todos.get(todoId);
+    if (todo) {
+      // Add to deletedTodos table first
+      await db.deletedTodos.put({
+        ...todo,
+        originalId: todo.id,
+        deletedAt: new Date().toISOString()
+      });
+      // Then delete from main table
+      await db.todos.delete(todoId);
+      debug.log('🗑️ Todo moved to deletedTodos:', todoId);
+    }
   } catch (dbError) {
     log.error('Failed to delete todo from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }

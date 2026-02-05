@@ -155,10 +155,20 @@ export async function deleteEventWithSync(
   // Delete from local state immediately
   dispatch(actions.deleteEvent(calendarId, eventId));
 
-  // Also delete from IndexedDB
+  // Move to deleted table and delete from main table
   try {
-    await db.events.delete(eventId);
-    debug.log('🗑️ Event deleted from IndexedDB:', eventId);
+    const eventToDelete = event || await db.events.get(eventId);
+    if (eventToDelete) {
+      // Add to deletedEvents table first
+      await db.deletedEvents.put({
+        ...eventToDelete,
+        originalId: eventToDelete.id,
+        deletedAt: new Date().toISOString()
+      });
+      // Then delete from main table
+      await db.events.delete(eventId);
+      debug.log('🗑️ Event moved to deletedEvents:', eventId);
+    }
   } catch (dbError) {
     log.error('Failed to delete event from IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
