@@ -658,7 +658,7 @@ function TodoCard({ todo, goals, onClick, onToggle, onUnlinkGoal, getPriorityCol
               e.stopPropagation();
               onUnlinkGoal(linkedGoal.id, todo.id);
             }}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex-shrink-0 text-white hover:text-muted-foreground transition-colors"
             title={`Linked to: ${linkedGoal.title} (click to unlink)`}
           >
             <Target className="h-4 w-4" />
