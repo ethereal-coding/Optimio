@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAppState, actions } from '@/hooks/useAppState';
-import { Target, Link2 } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TaskGoalLinkerProps {
@@ -33,8 +33,8 @@ export function TaskGoalLinker({ todoId, open, onOpenChange }: TaskGoalLinkerPro
       <DialogContent className="bg-card border-border rounded-lg max-w-md">
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
-            <Link2 className="h-5 w-5" />
-            Link Task to Goals
+            <Target className="h-5 w-5" />
+            Link Task to Goal
           </DialogTitle>
         </DialogHeader>
         
@@ -76,7 +76,7 @@ export function TaskGoalLinker({ todoId, open, onOpenChange }: TaskGoalLinkerPro
                           {goal.title}
                         </span>
                         {isLinked && (
-                          <Link2 className="h-3 w-3 text-primary flex-shrink-0" />
+                          <Target className="h-3 w-3 text-primary flex-shrink-0" />
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">

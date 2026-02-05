@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddTodoForm } from '@/components/forms/AddTodoForm';
 import { addTodoWithSync, updateTodoWithSync, toggleTodoWithSync, deleteTodoWithSync } from '@/lib/todo-sync';
+import { removeTaskFromGoalWithSync } from '@/lib/goal-sync';
 import type { Goal } from '@/types';
 
 interface TodoWidgetProps {
@@ -38,7 +39,7 @@ interface TodoWidgetProps {
 
 export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidgetProps) {
   const { state, dispatch } = useAppState();
-  const { todos } = state;
+  const { todos, goals } = state;
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [showAddTodo, setShowAddTodo] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<typeof todos[0] | null>(null);
@@ -204,6 +205,27 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                         )}
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        {/* Goal tag with truncated name */}
+                        {(() => {
+                          const linkedGoal = goals.find((g: Goal) => g.taskIds?.includes(todo.id));
+                          if (linkedGoal) {
+                            return (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
+                                }}
+                                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-white/90 hover:opacity-80 transition-opacity"
+                                style={{ backgroundColor: linkedGoal.color }}
+                                title={`${linkedGoal.title} (click to unlink)`}
+                              >
+                                <Target className="h-3 w-3" />
+                                <span className="truncate max-w-[60px]">{linkedGoal.title.slice(0, 8)}</span>
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
                         <span className={cn(
                           'px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
                           todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
@@ -300,10 +322,20 @@ interface ViewTodoContentProps {
 }
 
 function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewTodoContentProps) {
-  const { state } = useAppState();
+  const { state, dispatch } = useAppState();
   const { goals } = state;
   const isOverdue = todo.dueDate && isPast(todo.dueDate) && !isToday(todo.dueDate) && !todo.completed;
   const linkedGoal = goals.find((g: Goal) => g.taskIds?.includes(todo.id));
+
+  const handleGoalClick = async () => {
+    if (linkedGoal) {
+      // Unlink the task from the goal
+      await removeTaskFromGoalWithSync(linkedGoal.id, todo.id, dispatch, actions);
+    } else {
+      // Open the linker dialog
+      onLinkGoal();
+    }
+  };
 
   // Determine status
   const getStatus = () => {
@@ -337,11 +369,15 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewT
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-              onClick={onLinkGoal}
-              aria-label="Link task to goal"
+              className={cn(
+                "h-8 w-8 hover:text-foreground hover:bg-secondary",
+                linkedGoal ? "text-foreground" : "text-muted-foreground"
+              )}
+              onClick={handleGoalClick}
+              aria-label={linkedGoal ? "Unlink from goal" : "Link task to goal"}
+              title={linkedGoal ? `Linked to: ${linkedGoal.title}` : "Link to goal"}
             >
-              <Link2 className="h-4 w-4" />
+              <Target className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -423,9 +459,10 @@ function ViewTodoContent({ todo, onEdit, onDelete, onToggle, onLinkGoal }: ViewT
                 <span
                   className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] text-white/90"
                   style={{ backgroundColor: linkedGoal.color }}
+                  title={linkedGoal.title}
                 >
                   <Target className="h-3 w-3" />
-                  <span className="truncate max-w-[100px]">{linkedGoal.title}</span>
+                  <span className="truncate max-w-[60px]">{linkedGoal.title.slice(0, 8)}</span>
                 </span>
               )}
 
