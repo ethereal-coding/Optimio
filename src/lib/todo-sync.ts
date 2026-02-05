@@ -21,6 +21,8 @@ interface TodoActions {
   deleteTodo: (todoId: string) => any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toggleTodo: (todoId: string) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reorderTodos: (todos: Todo[]) => any;
 }
 
 /**
@@ -159,5 +161,32 @@ export async function loadTodosFromDB(
   } catch (error) {
     log.error('Failed to load todos from IndexedDB', error instanceof Error ? error : new Error(String(error)));
     return [];
+  }
+}
+
+
+/**
+ * Reorder todos with IndexedDB persistence
+ */
+export async function reorderTodosWithSync(
+  todos: Todo[],
+  dispatch: (action: TodoAction) => void,
+  actions: TodoActions
+): Promise<void> {
+  // Update local state immediately
+  dispatch(actions.reorderTodos(todos));
+
+  // Also update in IndexedDB
+  try {
+    // Update each todo's order in the database
+    for (const todo of todos) {
+      await db.todos.update(todo.id, {
+        ...todo,
+        lastSyncedAt: new Date().toISOString()
+      });
+    }
+    debug.log('💾 Todos reordered in IndexedDB');
+  } catch (dbError) {
+    log.error('Failed to reorder todos in IndexedDB', dbError instanceof Error ? dbError : new Error(String(dbError)));
   }
 }

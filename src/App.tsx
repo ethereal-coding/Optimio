@@ -93,18 +93,16 @@ function AppContent() {
         if (storedTodos.length > 0) {
           debug.log(`📥 Loaded ${storedTodos.length} todos from cache`);
 
-          for (const todo of storedTodos) {
-            // Ensure dates are Date objects and provide defaults for missing fields
-            const hydratedTodo = {
-              ...todo,
-              dueDate: todo.dueDate ? (todo.dueDate instanceof Date ? todo.dueDate : new Date(todo.dueDate)) : undefined,
-              completedAt: todo.completedAt ? (todo.completedAt instanceof Date ? todo.completedAt : new Date(todo.completedAt)) : undefined,
-              createdAt: todo.createdAt instanceof Date ? todo.createdAt : new Date(todo.createdAt),
-              priority: todo.priority || 'medium',
-              completed: todo.completed || false
-            };
-            dispatch(actions.addTodo(hydratedTodo));
-          }
+          // Hydrate todos and set all at once to prevent duplicates
+          const hydratedTodos = storedTodos.map(todo => ({
+            ...todo,
+            dueDate: todo.dueDate ? (todo.dueDate instanceof Date ? todo.dueDate : new Date(todo.dueDate)) : undefined,
+            completedAt: todo.completedAt ? (todo.completedAt instanceof Date ? todo.completedAt : new Date(todo.completedAt)) : undefined,
+            createdAt: todo.createdAt instanceof Date ? todo.createdAt : new Date(todo.createdAt),
+            priority: todo.priority || 'medium',
+            completed: todo.completed || false
+          }));
+          dispatch(actions.setTodos(hydratedTodos));
         } else {
           debug.log('📭 No cached todos found');
         }
@@ -117,17 +115,15 @@ function AppContent() {
         if (storedGoals.length > 0) {
           debug.log(`📥 Loaded ${storedGoals.length} goals from cache`);
 
-          for (const goal of storedGoals) {
-            // Ensure dates are Date objects and provide defaults for missing fields
-            const hydratedGoal = {
-              ...goal,
-              deadline: goal.deadline ? (goal.deadline instanceof Date ? goal.deadline : new Date(goal.deadline)) : undefined,
-              createdAt: goal.createdAt instanceof Date ? goal.createdAt : new Date(goal.createdAt),
-              milestones: goal.milestones || [],
-              currentValue: goal.currentValue || 0
-            };
-            dispatch(actions.addGoal(hydratedGoal));
-          }
+          // Hydrate goals and set all at once to prevent duplicates
+          const hydratedGoals = storedGoals.map(goal => ({
+            ...goal,
+            deadline: goal.deadline ? (goal.deadline instanceof Date ? goal.deadline : new Date(goal.deadline)) : undefined,
+            createdAt: goal.createdAt instanceof Date ? goal.createdAt : new Date(goal.createdAt),
+            milestones: goal.milestones || [],
+            currentValue: goal.currentValue || 0
+          }));
+          dispatch(actions.setGoals(hydratedGoals));
         } else {
           debug.log('📭 No cached goals found');
         }
@@ -140,18 +136,16 @@ function AppContent() {
         if (storedNotes.length > 0) {
           debug.log(`📥 Loaded ${storedNotes.length} notes from cache`);
 
-          for (const note of storedNotes) {
-            // Ensure dates are Date objects and provide defaults for missing fields
-            const hydratedNote = {
-              ...note,
-              createdAt: note.createdAt instanceof Date ? note.createdAt : new Date(note.createdAt),
-              updatedAt: note.updatedAt instanceof Date ? note.updatedAt : new Date(note.updatedAt),
-              tags: note.tags || [],
-              isPinned: note.isPinned || false,
-              isFavorite: note.isFavorite || false
-            };
-            dispatch(actions.addNote(hydratedNote));
-          }
+          // Hydrate notes and set all at once to prevent duplicates
+          const hydratedNotes = storedNotes.map(note => ({
+            ...note,
+            createdAt: note.createdAt instanceof Date ? note.createdAt : new Date(note.createdAt),
+            updatedAt: note.updatedAt instanceof Date ? note.updatedAt : new Date(note.updatedAt),
+            tags: note.tags || [],
+            isPinned: note.isPinned || false,
+            isFavorite: note.isFavorite || false
+          }));
+          dispatch(actions.setNotes(hydratedNotes));
         } else {
           debug.log('📭 No cached notes found');
         }

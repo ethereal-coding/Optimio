@@ -43,6 +43,7 @@ type Action =
   | { type: 'UPDATE_TODO'; payload: Todo }
   | { type: 'DELETE_TODO'; payload: string }
   | { type: 'TOGGLE_TODO'; payload: string }
+  | { type: 'REORDER_TODOS'; payload: Todo[] }
   | { type: 'SET_GOALS'; payload: Goal[] }
   | { type: 'ADD_GOAL'; payload: Goal }
   | { type: 'UPDATE_GOAL'; payload: Goal }
@@ -148,6 +149,12 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         todos: state.todos.filter(t => t.id !== action.payload)
+      };
+
+    case 'REORDER_TODOS':
+      return {
+        ...state,
+        todos: action.payload
       };
 
     case 'TOGGLE_TODO':
@@ -496,6 +503,7 @@ export const actions = {
   updateTodo: (todo: Todo): Action => ({ type: 'UPDATE_TODO', payload: todo }),
   deleteTodo: (id: string): Action => ({ type: 'DELETE_TODO', payload: id }),
   toggleTodo: (id: string): Action => ({ type: 'TOGGLE_TODO', payload: id }),
+  reorderTodos: (todos: Todo[]): Action => ({ type: 'REORDER_TODOS', payload: todos }),
   setGoals: (goals: Goal[]): Action => ({ type: 'SET_GOALS', payload: goals }),
   addGoal: (goal: Goal): Action => ({ type: 'ADD_GOAL', payload: goal }),
   updateGoal: (goal: Goal): Action => ({ type: 'UPDATE_GOAL', payload: goal }),

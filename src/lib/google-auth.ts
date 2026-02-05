@@ -297,9 +297,6 @@ export async function signOut(): Promise<void> {
     window.dispatchEvent(new CustomEvent('auth-state-changed', { 
       detail: { isAuthenticated: false, _token: AUTH_TOKEN } 
     }));
-    
-    // Reload to clear any cached state
-    window.location.reload();
   } catch (error) {
     log.error('❌ Sign out failed', error instanceof Error ? error : new Error(String(error)));
     throw error;
@@ -382,6 +379,7 @@ async function refreshTokenSilently(): Promise<boolean> {
 /**
  * Check if user is authenticated
  * If token is expired, attempts silent refresh first
+ * Does NOT sign out on silent refresh failure - keeps user logged in for local data
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
@@ -403,12 +401,9 @@ export async function isAuthenticated(): Promise<boolean> {
         return true;
       }
       
-      // Silent refresh failed - log user out
-      log.warn('Silent refresh failed, user needs to sign in again');
-      await clearAllAuthData();
-      window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-        detail: { isAuthenticated: false, _token: AUTH_TOKEN } 
-      }));
+      // Silent refresh failed - but DON'T sign out
+      // User can still access local data, just can't sync with Google
+      log.warn('Silent refresh failed, keeping user logged in for local access');
       return false;
     }
 
