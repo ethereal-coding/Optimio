@@ -551,10 +551,17 @@ interface EditNoteContentProps {
 }
 
 function EditNoteContent({ note, onSave, onCancel }: EditNoteContentProps) {
+  // Check if note has a custom color (not graphite)
+  const hasColor = !!note.color;
+  const isGraphite = note.color === 'hsl(var(--card))';
+  const useWhiteText = hasColor && !isGraphite;
+
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="text-foreground">Edit Note</DialogTitle>
+        <DialogTitle className={cn(useWhiteText ? "text-white" : "text-foreground")}>
+          Edit Note
+        </DialogTitle>
       </DialogHeader>
       <AddNoteForm
         initialNote={note}
