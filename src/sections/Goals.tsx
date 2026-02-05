@@ -9,6 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   Target,
@@ -445,24 +448,38 @@ function ViewGoalContent({ goal, todos, onEdit, onDelete, onToggleTodo, onAddTas
             )}
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-              onClick={onEdit}
-              aria-label="Edit goal"
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-              onClick={onDelete}
-              aria-label="Delete goal"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  onClick={onEdit}
+                  aria-label="Edit goal"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Edit goal
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                  onClick={onDelete}
+                  aria-label="Delete goal"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Delete goal
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </DialogHeader>

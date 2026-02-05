@@ -9,6 +9,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   DndContext,
@@ -639,40 +642,68 @@ function ViewNoteContent({ note, onEdit, onDelete, onTogglePin, onToggleFavorite
             {note.title}
           </DialogTitle>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={onTogglePin}
-            >
-              <PinIcon className={cn("h-4 w-4 transition-transform duration-200", note.isPinned ? "fill-foreground rotate-0" : "-rotate-45")} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10"
-              onClick={onToggleFavorite}
-            >
-              <Star className={cn("h-4 w-4 transition-colors", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={onEdit}
-              aria-label="Edit note"
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-white/80 hover:text-red-500 hover:bg-red-500/10"
-              onClick={onDelete}
-              aria-label="Delete note"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
+                  onClick={onTogglePin}
+                >
+                  <PinIcon className={cn("h-4 w-4 transition-transform duration-200", note.isPinned ? "fill-foreground rotate-0" : "-rotate-45")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                {note.isPinned ? 'Unpin note' : 'Pin note'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white/80 hover:text-yellow-500 hover:bg-yellow-500/10"
+                  onClick={onToggleFavorite}
+                >
+                  <Star className={cn("h-4 w-4 transition-colors", note.isFavorite && "fill-yellow-500 text-yellow-500")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                {note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
+                  onClick={onEdit}
+                  aria-label="Edit note"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Edit note
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-white/80 hover:text-red-500 hover:bg-red-500/10"
+                  onClick={onDelete}
+                  aria-label="Delete note"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Delete note
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </DialogHeader>

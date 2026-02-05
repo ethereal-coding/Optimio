@@ -9,6 +9,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   DndContext,
@@ -753,37 +756,57 @@ function ViewTodoContent({ todo, goals, onEdit, onDelete, onToggle, onLinkGoal }
             </DialogTitle>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "h-8 w-8 hover:bg-secondary",
-                linkedGoal ? "text-white hover:text-muted-foreground" : "text-muted-foreground"
-              )}
-              onClick={onLinkGoal}
-              aria-label={linkedGoal ? "Unlink from goal" : "Link task to goal"}
-              title={linkedGoal ? `Linked to: ${linkedGoal.title}` : "Link to goal"}
-            >
-              <Target className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-              onClick={onEdit}
-              aria-label="Edit task"
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-              onClick={onDelete}
-              aria-label="Delete task"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 hover:bg-secondary",
+                    linkedGoal ? "text-white hover:text-muted-foreground" : "text-muted-foreground"
+                  )}
+                  onClick={onLinkGoal}
+                  aria-label={linkedGoal ? "Unlink from goal" : "Link task to goal"}
+                >
+                  <Target className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                {linkedGoal ? `Linked to: ${linkedGoal.title}` : "Link to goal"}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  onClick={onEdit}
+                  aria-label="Edit task"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Edit task
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                  onClick={onDelete}
+                  aria-label="Delete task"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="bg-popover border-border text-foreground">
+                Delete task
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </DialogHeader>
