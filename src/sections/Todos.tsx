@@ -739,7 +739,7 @@ function TodoCard({ todo, goals, onClick, onToggle, onUnlinkGoal, getPriorityCol
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* Priority badge */}
-          <span className={cn('px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors', getPriorityColor(todo.priority))}>
+          <span className={cn('flex items-center px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors', getPriorityColor(todo.priority))}>
             {todo.priority}
           </span>
           {/* Goal badge */}

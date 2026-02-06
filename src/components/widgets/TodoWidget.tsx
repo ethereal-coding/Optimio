@@ -271,7 +271,7 @@ export const TodoWidget = React.memo(function TodoWidget({ className }: TodoWidg
                           return null;
                         })()}
                         <span className={cn(
-                          'px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
+                          'flex items-center px-1.5 py-0.5 rounded text-[10px] capitalize border transition-colors',
                           todo.priority === 'high' && 'bg-red-500/50 text-red-400 border-red-500',
                           todo.priority === 'medium' && 'bg-yellow-500/50 text-yellow-500 border-yellow-500',
                           todo.priority === 'low' && 'bg-blue-500/50 text-blue-400 border-blue-500'
