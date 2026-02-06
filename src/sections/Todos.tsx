@@ -644,7 +644,8 @@ function SortableTodoCard({ todo, goals, onClick, onToggle, onUnlinkGoal, getPri
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1, // Hide original when dragging (like Notes)
+    visibility: isDragging ? 'hidden' as const : 'visible' as const,
   };
 
   return (
