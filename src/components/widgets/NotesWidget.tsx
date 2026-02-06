@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, actions } from '@/hooks/useAppState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -256,6 +256,20 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
   const isGraphite = note.color === 'hsl(var(--card))';
   const useWhiteText = hasCustomColor && !isGraphite;
   
+  // Check if content overflows 2 rows (approx 40px for 2 lines)
+  const contentRef = useRef<HTMLParagraphElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (contentRef.current) {
+        setIsOverflowing(contentRef.current.scrollHeight > 40); // detect if more than 2 lines
+      }
+    };
+    const rafId = requestAnimationFrame(checkOverflow);
+    return () => cancelAnimationFrame(rafId);
+  }, [note.content]);
+  
   return (
     <div
       onClick={onClick}
@@ -321,10 +335,23 @@ function NoteCard({ note, onClick, onTogglePin, onToggleFavorite }: NoteCardProp
         </div>
       </div>
 
-      {/* Content preview */}
-      <p className={cn("text-xs line-clamp-2 leading-relaxed", useWhiteText ? "text-white/70" : "text-muted-foreground")}>
-        {note.content}
-      </p>
+      {/* Content preview - 2 rows with overflow indicator */}
+      <div className="flex-1 min-h-0">
+        {note.content && (
+          <div>
+            <p 
+              ref={contentRef}
+              className={cn("text-xs leading-relaxed whitespace-pre-wrap overflow-hidden", useWhiteText ? "text-white/70" : "text-muted-foreground")}
+              style={{ maxHeight: '40px' }} // 2 lines
+            >
+              {note.content}
+            </p>
+            {isOverflowing && (
+              <p className={cn("text-xs mt-0.5", useWhiteText ? "text-white/70" : "text-muted-foreground")}>...</p>
+            )}
+          </div>
+        )}
+      </div>
       
       {/* Bottom row: Updated time on left; Tags on right */}
       <div 
