@@ -112,7 +112,8 @@ export const CalendarWidget = React.memo(function CalendarWidget({ className }: 
   const virtualizer = useVirtualizer({
     count: selectedDateEvents.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 72, // estimated row height (p-3 padding + content)
+    estimateSize: () => 80, // estimated row height (card ~72px + 8px gap)
+    gap: 8, // 8px gap between items
   });
 
   return (
